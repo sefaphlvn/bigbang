@@ -1,25 +1,25 @@
-package extension
+package xds
 
 import (
 	"errors"
 
-	"github.com/sefaphlvn/bigbang/restapi/models"
+	"github.com/sefaphlvn/bigbang/restServer/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (extension *DBHandler) ListExtensions(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+func (xds *DBHandler) ListResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
 	var records []bson.M
-	collection := extension.DB.Client.Collection("extensions")
+	collection := xds.DB.Client.Collection(resourceDetails.Type)
 	opts := options.Find().SetProjection(bson.M{"resource": 0})
 
-	cursor, err := collection.Find(extension.DB.Ctx, bson.M{}, opts)
+	cursor, err := collection.Find(xds.DB.Ctx, bson.M{}, opts)
 	if err != nil {
 		return nil, errors.New("unknown db error")
 	}
 
-	if err = cursor.All(extension.DB.Ctx, &records); err != nil {
+	if err = cursor.All(xds.DB.Ctx, &records); err != nil {
 		return nil, errors.New("unknown db error")
 	}
 

@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/restapi/crud/extension"
-	"github.com/sefaphlvn/bigbang/restapi/crud/xds"
-	"github.com/sefaphlvn/bigbang/restapi/models"
+	"github.com/sefaphlvn/bigbang/restServer/crud/extension"
+	"github.com/sefaphlvn/bigbang/restServer/crud/xds"
+	"github.com/sefaphlvn/bigbang/restServer/models"
 )
 
 type DBFunc func(resource models.DBResourceClass, resourceType models.ResourceDetails) (interface{}, error)

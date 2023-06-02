@@ -1,4 +1,4 @@
-module github.com/sefaphlvn/bigbang/restapi
+module github.com/sefaphlvn/bigbang/restServer
 
 go 1.20
 

@@ -1,8 +1,8 @@
 package xds
 
 import (
-	"github.com/sefaphlvn/bigbang/restapi/crud"
-	"github.com/sefaphlvn/bigbang/restapi/db"
+	"github.com/sefaphlvn/bigbang/restServer/crud"
+	"github.com/sefaphlvn/bigbang/restServer/db"
 )
 
 type DBHandler crud.DbHandler
