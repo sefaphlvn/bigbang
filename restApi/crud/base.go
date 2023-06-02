@@ -1,6 +1,6 @@
 package crud
 
-import "github.com/sefaphlvn/bigbang/restApi/db"
+import "github.com/sefaphlvn/bigbang/restapi/db"
 
 type DbHandler struct {
 	DB *db.MongoDB

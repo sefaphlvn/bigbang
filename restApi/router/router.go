@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/restApi/handlers"
-	"github.com/sefaphlvn/bigbang/restApi/helper"
+	"github.com/sefaphlvn/bigbang/restapi/handlers"
+	"github.com/sefaphlvn/bigbang/restapi/helper"
 )
 
 func InitRouter(h *handlers.Handler) *gin.Engine {

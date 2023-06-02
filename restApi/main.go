@@ -3,12 +3,12 @@ package main
 import (
 	"flag"
 
-	"github.com/sefaphlvn/bigbang/restApi/crud/extension"
-	"github.com/sefaphlvn/bigbang/restApi/crud/xds"
-	"github.com/sefaphlvn/bigbang/restApi/db"
-	"github.com/sefaphlvn/bigbang/restApi/handlers"
-	httpserver "github.com/sefaphlvn/bigbang/restApi/http_server"
-	"github.com/sefaphlvn/bigbang/restApi/router"
+	"github.com/sefaphlvn/bigbang/restapi/crud/extension"
+	"github.com/sefaphlvn/bigbang/restapi/crud/xds"
+	"github.com/sefaphlvn/bigbang/restapi/db"
+	"github.com/sefaphlvn/bigbang/restapi/handlers"
+	httpserver "github.com/sefaphlvn/bigbang/restapi/http_server"
+	"github.com/sefaphlvn/bigbang/restapi/router"
 )
 
 func main() {
