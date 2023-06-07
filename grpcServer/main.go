@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
 	"os"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 
+	"github.com/sefaphlvn/bigbang/grpcServer/db"
 	"github.com/sefaphlvn/bigbang/grpcServer/poke"
 	grpcserver "github.com/sefaphlvn/bigbang/grpcServer/server"
 )
@@ -23,6 +25,15 @@ func init() {
 	flag.BoolVar(&l.Debug, "debug", true, "Enable xDS server debug logging")
 	flag.UintVar(&port, "port", 18000, "xDS management server port")
 	flag.StringVar(&nodeID, "nodeID", "test", "Node ID")
+
+	db, err := db.NewMongoDB("mongodb://localhost:27017")
+
+	if err != nil {
+		log.Fatalf("failed to connect database: %v", err)
+	}
+
+	grpcserver.InitialSnapshots(db)
+
 }
 
 func main() {
@@ -47,5 +58,4 @@ func main() {
 	cb := &grpcserver.Callbacks{Debug: l.Debug}
 	srv := server.NewServer(ctx, cache, cb)
 	grpcserver.RunServer(srv, port)
-
 }

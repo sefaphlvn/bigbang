@@ -1,7 +1,7 @@
 package main
 
 import (
-	"flag"
+	"log"
 
 	"github.com/sefaphlvn/bigbang/restServer/crud/extension"
 	"github.com/sefaphlvn/bigbang/restServer/crud/xds"
@@ -12,12 +12,22 @@ import (
 )
 
 func main() {
-	flag.Parse()
-	db := db.NewMongoDB("mongodb://localhost:27017")
+	db, err := db.NewMongoDB("mongodb://localhost:27017")
+
+	if err != nil {
+		log.Fatalf("failed to connect database: %v", err)
+	}
+
 	xdsHandler := xds.NewXDSHandler(db)
 	extensionHandler := extension.NewExtensionHandler(db)
 	h := handlers.NewHandler(xdsHandler, extensionHandler)
+
+	// Router initialization
 	router := router.InitRouter(h)
+
 	s := httpserver.NewHttpServer(router)
-	s.Run("0.0.0.0:80")
+	if err := s.Run("0.0.0.0:80"); err != nil {
+		log.Fatalf("Server failed to run: %v", err)
+	}
+
 }
