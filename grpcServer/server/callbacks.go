@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 
@@ -77,7 +76,6 @@ func (cb *Callbacks) OnStreamDeltaResponse(int64, *discovery.DeltaDiscoveryReque
 }
 
 func (cb *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {
-	fmt.Println("sadsa")
 	cb.mu.Lock()
 	defer cb.mu.Unlock()
 	cb.DeltaRequests++

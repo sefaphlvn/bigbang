@@ -1,34 +1,22 @@
 package server
 
 import (
-	"context"
-	"errors"
-	"fmt"
 	"log"
 
 	"github.com/sefaphlvn/bigbang/grpcServer/db"
+	"github.com/sefaphlvn/bigbang/grpcServer/server/resources"
 	"github.com/sefaphlvn/bigbang/restServer/models"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func InitialSnapshots(db *db.MongoDB) error {
-	collection := db.Client.Collection("listeners")
-	findOptions := options.Find()
-	findOptions.SetProjection(bson.D{{Key: "general", Value: 1}})
-
-	cur, err := collection.Find(context.TODO(), bson.D{{}}, findOptions)
+func getListenerList(db *db.MongoDB) []string {
+	var serviceNames []string
+	cur, err := db.GetGenerals("listeners")
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return errors.New("not found")
-		} else {
-			return errors.New("unknown db error")
-		}
+		log.Fatal(err)
 	}
-	defer cur.Close(context.TODO())
 
-	for cur.Next(context.TODO()) {
+	for cur.Next(db.Ctx) {
 		var result bson.M
 		err := cur.Decode(&result)
 		if err != nil {
@@ -39,12 +27,26 @@ func InitialSnapshots(db *db.MongoDB) error {
 		bsonBytes, _ := bson.Marshal(result["general"])
 		bson.Unmarshal(bsonBytes, &general)
 
-		fmt.Println(general)
+		serviceNames = append(serviceNames, general.Name)
+	}
+	return serviceNames
+}
+
+func InitialSnapshots(db *db.MongoDB, ctx *Context, l Logger) {
+	serviceNames := getListenerList(db)
+	var ss *resources.AllResources
+	for _, serviceName := range serviceNames {
+		rawListenerResource, err := resources.GetResource(db, "listeners", serviceName)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		lis, err := resources.SetSnapshot(rawListenerResource)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ss = lis
 	}
 
-	if err := cur.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	return err
+	ctx.SetSnashot(ss, l)
 }

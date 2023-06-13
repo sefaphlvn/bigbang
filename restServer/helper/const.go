@@ -25,4 +25,5 @@ var AllowedEndpoints = []string{
 	"/api/v3/extensions/:type",
 	"/api/v3/extensions/:type/:subtype",
 	"/api/v3/extensions/:type/:subtype/:name",
+	"/api/v3/custom/filter_chain_filters",
 }

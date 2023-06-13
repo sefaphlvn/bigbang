@@ -4,11 +4,9 @@ import (
 	"context"
 	"flag"
 	"log"
-	"os"
+	"net/http"
 
-	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
-
 	"github.com/sefaphlvn/bigbang/grpcServer/db"
 	"github.com/sefaphlvn/bigbang/grpcServer/poke"
 	grpcserver "github.com/sefaphlvn/bigbang/grpcServer/server"
@@ -25,37 +23,32 @@ func init() {
 	flag.BoolVar(&l.Debug, "debug", true, "Enable xDS server debug logging")
 	flag.UintVar(&port, "port", 18000, "xDS management server port")
 	flag.StringVar(&nodeID, "nodeID", "test", "Node ID")
+}
 
+func main() {
+	// connect to database
 	db, err := db.NewMongoDB("mongodb://localhost:27017")
-
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
 	}
 
-	grpcserver.InitialSnapshots(db)
-
-}
-
-func main() {
+	// generate cache
+	ctxCache := grpcserver.GetContext(l)
+	handler := &poke.Handler{Ctx: ctxCache, DB: db}
 	go func() {
-		poke.Poke()
+		err := http.ListenAndServe(":8080", handler)
+		if err != nil {
+			log.Fatalf("failed to start HTTP server: %v", err)
+		}
 	}()
 
-	cache := cache.NewSnapshotCache(false, cache.IDHash{}, l)
-	snapshot := grpcserver.GenerateSnapshot()
-	if err := snapshot.Consistent(); err != nil {
-		l.Errorf("snapshot inconsistency: %+v\n%+v", snapshot, err)
-		os.Exit(1)
-	}
+	// set initial snapshots
+	grpcserver.InitialSnapshots(db, ctxCache, l)
+	l.Infof("all snapshots are loaded")
 
-	l.Debugf("will serve snapshot %+v", snapshot)
-	if err := cache.SetSnapshot(context.Background(), nodeID, snapshot); err != nil {
-		l.Errorf("snapshot error %q for %+v", err, snapshot)
-		os.Exit(1)
-	}
-
+	// start grpc server
 	ctx := context.Background()
 	cb := &grpcserver.Callbacks{Debug: l.Debug}
-	srv := server.NewServer(ctx, cache, cb)
+	srv := server.NewServer(ctx, ctxCache.Cash.Cache, cb)
 	grpcserver.RunServer(srv, port)
 }

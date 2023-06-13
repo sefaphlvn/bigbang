@@ -15,13 +15,27 @@ func InitRouter(h *handlers.Handler) *gin.Engine {
 	r.Use(PathCheck())
 	r.Use(gin.Logger())
 
+	apiCustom := r.Group("/api/v3/custom")
 	apiExtension := r.Group("/api/v3/extensions")
 	apiResource := r.Group("/api/v3")
 
+	initCustomRoutes(apiCustom, h)
 	initExtensionRoutes(apiExtension, h)
 	initResourceRoutes(apiResource, h)
 
 	return r
+}
+
+func initCustomRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
+	routes := []struct {
+		method  string
+		path    string
+		handler gin.HandlerFunc
+	}{
+		{"GET", "/filter_chain_filters", h.GetFilterChainFilters},
+	}
+
+	initRoutes(rg, routes)
 }
 
 func initExtensionRoutes(rg *gin.RouterGroup, h *handlers.Handler) {

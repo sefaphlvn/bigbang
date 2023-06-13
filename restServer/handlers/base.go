@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sefaphlvn/bigbang/restServer/crud/custom"
 	"github.com/sefaphlvn/bigbang/restServer/crud/extension"
 	"github.com/sefaphlvn/bigbang/restServer/crud/xds"
 	"github.com/sefaphlvn/bigbang/restServer/models"
@@ -14,12 +15,14 @@ type DBFunc func(resource models.DBResourceClass, resourceType models.ResourceDe
 type Handler struct {
 	XDS       *xds.DBHandler
 	Extension *extension.DBHandler
+	Custom    *custom.DBHandler
 }
 
-func NewHandler(XDS *xds.DBHandler, extension *extension.DBHandler) *Handler {
+func NewHandler(XDS *xds.DBHandler, extension *extension.DBHandler, custom *custom.DBHandler) *Handler {
 	return &Handler{
 		XDS:       XDS,
 		Extension: extension,
+		Custom:    custom,
 	}
 }
 

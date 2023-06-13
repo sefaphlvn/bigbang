@@ -1,6 +1,8 @@
 package server
 
 import (
+	"math/rand"
+	"strconv"
 	"time"
 
 	"google.golang.org/protobuf/types/known/anypb"
@@ -17,11 +19,12 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"github.com/sefaphlvn/bigbang/grpcServer/server/resources"
 )
 
 const (
 	ClusterName  = "example_proxy_cluster"
-	RouteName    = "local_route"
+	RouteName    = "abroute"
 	ListenerName = "listener_0"
 	ListenerPort = 10000
 	UpstreamHost = "www.envoyproxy.io"
@@ -92,6 +95,7 @@ func makeRoute(routeName string, clusterName string) *route.RouteConfiguration {
 }
 
 func makeHTTPListener(listenerName string, route string) *listener.Listener {
+	/* var listen []*listener.Listener */
 	routerConfig, _ := anypb.New(&router.Router{})
 	// HTTP filter configuration
 	manager := &hcm.HttpConnectionManager{
@@ -112,16 +116,16 @@ func makeHTTPListener(listenerName string, route string) *listener.Listener {
 	if err != nil {
 		panic(err)
 	}
-
-	return &listener.Listener{
-		Name: listenerName,
+	aa := rand.Uint32() + 1900
+	listen := &listener.Listener{
+		Name: listenerName + strconv.FormatUint(uint64(aa), 10),
 		Address: &core.Address{
 			Address: &core.Address_SocketAddress{
 				SocketAddress: &core.SocketAddress{
 					Protocol: core.SocketAddress_TCP,
 					Address:  "0.0.0.0",
 					PortSpecifier: &core.SocketAddress_PortValue{
-						PortValue: ListenerPort,
+						PortValue: uint32(1000 + rand.Intn(2000-1000+1)),
 					},
 				},
 			},
@@ -135,6 +139,8 @@ func makeHTTPListener(listenerName string, route string) *listener.Listener {
 			}},
 		}},
 	}
+
+	return listen
 }
 
 func makeConfigSource() *core.ConfigSource {
@@ -155,12 +161,14 @@ func makeConfigSource() *core.ConfigSource {
 	return source
 }
 
-func GenerateSnapshot() *cache.Snapshot {
+func GenerateSnapshot(aa *resources.AllResources) *cache.Snapshot {
 	snap, _ := cache.NewSnapshot("1",
 		map[resource.Type][]types.Resource{
-			resource.ClusterType:  {makeCluster(ClusterName)},
-			resource.RouteType:    {makeRoute(RouteName, ClusterName)},
-			resource.ListenerType: {makeHTTPListener(ListenerName, RouteName)},
+			resource.ClusterType: {makeCluster(ClusterName)},
+			resource.RouteType:   {makeRoute(RouteName, ClusterName)},
+			resource.ListenerType: {
+				aa.Listener[0],
+			},
 		},
 	)
 	return snap
