@@ -26,27 +26,32 @@ func getListenerList(db *db.MongoDB) []string {
 		var general models.General
 		bsonBytes, _ := bson.Marshal(result["general"])
 		bson.Unmarshal(bsonBytes, &general)
-
 		serviceNames = append(serviceNames, general.Name)
 	}
 	return serviceNames
 }
 
-func InitialSnapshots(db *db.MongoDB, ctx *Context, l Logger) {
+func (h *Handler) InitialSnapshots(db *db.MongoDB, ctx *Context, l Logger) {
 	serviceNames := getListenerList(db)
-	var ss *resources.AllResources
 	for _, serviceName := range serviceNames {
-		rawListenerResource, err := resources.GetResource(db, "listeners", serviceName)
+		allResource, err := h.GetConfigurationFromListener(serviceName)
 		if err != nil {
-			log.Fatal(err)
+			l.Errorf("BULK GetConfigurationFromListener(%v): %v", serviceName, err)
 		}
+		ctx.SetSnapshot(allResource, l)
+	}
+}
 
-		lis, err := resources.SetSnapshot(rawListenerResource)
-		if err != nil {
-			log.Fatal(err)
-		}
-		ss = lis
+func (h *Handler) GetConfigurationFromListener(serviceName string) (*resources.AllResources, error) {
+	rawListenerResource, err := resources.GetResource(h.DB, "listeners", serviceName)
+	if err != nil {
+		return nil, err
 	}
 
-	ctx.SetSnashot(ss, l)
+	lis, err := resources.SetSnapshot(rawListenerResource)
+	if err != nil {
+		return nil, err
+	}
+
+	return lis, nil
 }

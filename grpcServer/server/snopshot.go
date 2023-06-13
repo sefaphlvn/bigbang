@@ -9,24 +9,23 @@ import (
 	"github.com/sefaphlvn/bigbang/grpcServer/server/resources"
 )
 
+var (
+	once sync.Once
+	ctx  *Context
+)
+
 type Cash struct {
 	Cache cache.SnapshotCache
 }
 
-var (
-	once sync.Once
-
-	ctx *Context
-)
+type Context struct {
+	Cash *Cash
+}
 
 func NewCash(l Logger) *Cash {
 	return &Cash{
 		Cache: cache.NewSnapshotCache(true, cache.IDHash{}, l),
 	}
-}
-
-type Context struct {
-	Cash *Cash
 }
 
 func GetContext(l Logger) *Context {
@@ -38,7 +37,7 @@ func GetContext(l Logger) *Context {
 	return ctx
 }
 
-func (cash *Context) SetSnashot(aa *resources.AllResources, l Logger) error {
+func (cash *Context) SetSnapshot(aa *resources.AllResources, l Logger) error {
 	snapshot := GenerateSnapshot(aa)
 
 	if err := snapshot.Consistent(); err != nil {

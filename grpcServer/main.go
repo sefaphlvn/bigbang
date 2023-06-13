@@ -34,16 +34,19 @@ func main() {
 
 	// generate cache
 	ctxCache := grpcserver.GetContext(l)
-	handler := &poke.Handler{Ctx: ctxCache, DB: db}
+	grpcServerHandler := &grpcserver.Handler{Ctx: ctxCache, DB: db, L: &l}
+	pokeHandler := &poke.Handler{Ctx: ctxCache, DB: db, L: &l, Func: grpcServerHandler}
+
+	// start http server
 	go func() {
-		err := http.ListenAndServe(":8080", handler)
+		err := http.ListenAndServe(":8080", pokeHandler)
 		if err != nil {
 			log.Fatalf("failed to start HTTP server: %v", err)
 		}
 	}()
 
 	// set initial snapshots
-	grpcserver.InitialSnapshots(db, ctxCache, l)
+	grpcServerHandler.InitialSnapshots(db, ctxCache, l)
 	l.Infof("all snapshots are loaded")
 
 	// start grpc server

@@ -20,6 +20,8 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/test/v3"
+	"github.com/sefaphlvn/bigbang/grpcServer/db"
+	"github.com/sefaphlvn/bigbang/grpcServer/server/resources"
 )
 
 const (
@@ -28,6 +30,16 @@ const (
 	grpcKeepaliveMinTime     = 30 * time.Second
 	grpcMaxConcurrentStreams = 1000000
 )
+
+type Func interface {
+	GetConfigurationFromListener(serviceName string) (*resources.AllResources, error)
+}
+
+type Handler struct {
+	Ctx *Context
+	DB  *db.MongoDB
+	L   *Logger
+}
 
 type Server struct {
 	xdsserver server.Server
