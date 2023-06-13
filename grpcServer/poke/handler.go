@@ -3,20 +3,33 @@ package poke
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/sefaphlvn/bigbang/grpcServer/db"
+	grpcserver "github.com/sefaphlvn/bigbang/grpcServer/server"
 )
 
-func handlerPoke(w http.ResponseWriter, r *http.Request) {
-	msg := r.URL.Query().Get("msg")
-	response := fmt.Sprintf("Received message: %s", msg)
-	fmt.Fprint(w, response)
+type Handler struct {
+	Ctx *grpcserver.Context
+	DB  *db.MongoDB
 }
 
-func handlerPing(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "OK")
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Path {
+	case "/ping":
+		h.handlePing(w, r)
+	case "/poke":
+		h.handlePoke(w, r)
+	default:
+		http.NotFound(w, r)
+	}
 }
 
-func Poke() {
-	http.HandleFunc("/ping", handlerPing)
-	http.HandleFunc("/poke", handlerPoke)
-	http.ListenAndServe(":8080", nil)
+func (h *Handler) handlePing(w http.ResponseWriter, r *http.Request) {
+	// Burada h.Ctx örneğinizi kullanabilirsiniz.
+	fmt.Fprint(w, "pong")
+}
+
+func (h *Handler) handlePoke(w http.ResponseWriter, r *http.Request) {
+	// Burada h.Ctx örneğinizi kullanabilirsiniz.
+	fmt.Fprint(w, "poke")
 }
