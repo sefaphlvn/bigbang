@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/sefaphlvn/bigbang/restServer/auth"
 	"github.com/sefaphlvn/bigbang/restServer/crud/custom"
 	"github.com/sefaphlvn/bigbang/restServer/crud/extension"
 	"github.com/sefaphlvn/bigbang/restServer/crud/xds"
@@ -22,7 +23,8 @@ func main() {
 	xdsHandler := xds.NewXDSHandler(db)
 	extensionHandler := extension.NewExtensionHandler(db)
 	customHandler := custom.NewCustomHandler(db)
-	h := handlers.NewHandler(xdsHandler, extensionHandler, customHandler)
+	userHandler := auth.NewUserHandler(db)
+	h := handlers.NewHandler(xdsHandler, extensionHandler, customHandler, userHandler)
 
 	// Router initialization
 	router := router.InitRouter(h)

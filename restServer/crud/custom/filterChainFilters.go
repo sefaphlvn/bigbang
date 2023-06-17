@@ -16,7 +16,6 @@ type Record struct {
 }
 
 func (custom *DBHandler) GetFilterChainFilters(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-
 	collection := custom.DB.Client.Collection("extensions")
 	opts := options.Find()
 	opts.SetProjection(bson.M{
@@ -24,7 +23,7 @@ func (custom *DBHandler) GetFilterChainFilters(resource models.DBResourceClass, 
 		"general.subtype": 1,
 	})
 
-	cursor, err := collection.Find(custom.DB.Ctx, bson.M{"general.type": "filters"}, opts)
+	cursor, err := collection.Find(custom.DB.Ctx, bson.M{"general.type": "filters", "general.version": resourceDetails.Version}, opts)
 	if err != nil {
 		return nil, errors.New("unknown db error")
 	}
@@ -38,7 +37,13 @@ func (custom *DBHandler) GetFilterChainFilters(resource models.DBResourceClass, 
 			} `bson:"general"`
 		}
 		cursor.Decode(&doc)
-		results = append(results, Record{Type: doc.General.Subtype, Name: doc.General.Name})
+		results = append(
+			results,
+			Record{
+				Type: doc.General.Subtype,
+				Name: doc.General.Name,
+			},
+		)
 	}
 
 	if err := cursor.Err(); err != nil {
