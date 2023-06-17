@@ -6,72 +6,63 @@ import (
 	"log"
 
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	"github.com/sefaphlvn/bigbang/grpcServer/db"
 	"github.com/sefaphlvn/bigbang/grpcServer/helper"
 	"github.com/sefaphlvn/bigbang/grpcServer/models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func (l *AllResources) DecodeListener(resource *models.Resource) {
+func (R *AllResources) DecodeListener(resource *models.Resource, db *db.MongoDB) {
 	resArray, ok := resource.Resource.(primitive.A)
+	R.Version = resource.Version
+
 	if !ok {
 		log.Fatal("Unexpected resource format")
 	}
 
 	for _, res := range resArray {
-		fmt.Println(res)
 		data, err := json.Marshal(res)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		data = mergeFilters(data)
+		data = R.mergeFilters(data, db)
 		singleListener := &listener.Listener{}
 		err = protojson.Unmarshal(data, singleListener)
 		if err != nil {
-			fmt.Println("sadasdsadasdas")
 			log.Fatal(err)
-
 		}
 
-		l.Listener = append(l.Listener, singleListener)
+		R.Listener = append(R.Listener, singleListener)
 	}
-
-	// prints out the string representation of all listeners
-	/* for _, lis := range l.listener {
-		fmt.Println(lis.String())
-	} */
-
 }
 
-func mergeFilters(data []byte) []byte {
-	listener := helper.ToInterface(data)
-	filterChains := listener["filter_chains"].([]interface{})
+func (R *AllResources) mergeFilters(data []byte, db *db.MongoDB) []byte {
+	listener := helper.ToMapStringInterface(data)
+	filterChains := helper.ItoGenericTypeConvert[[]interface{}](listener["filter_chains"])
 
-	for _, filters := range filterChains { // filter_chains
-		tFilters := filters.(map[string]interface{})
-		ff := tFilters["filters"].([]interface{})
-
-		for i := range ff {
-			ff[i] = helper.ToInterface([]byte(`{
-				"name": "envoy.filters.network.http_connection_manager",
-				"typed_config": {
-					"@type": "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager",
-					"rds": {
-						"route_config_name": "abroute",
-						"config_source": {
-							"ads": { },
-							"initial_fetch_timeout": "15s",
-							"resource_api_version": "V3"
-						}
-					},
-					"stat_prefix": "ddd"
-				}
-			}`))
-		}
+	for _, filterChain := range filterChains { // filter_chains
+		tFilterChain := helper.ItoGenericTypeConvert[map[string]interface{}](filterChain)
+		filters := helper.ItoGenericTypeConvert[[]interface{}](tFilterChain["filters"])
+		tFilterChain["filters"] = R.detectCollectFilter(filters, db)
 	}
 	newData, _ := json.Marshal(listener)
-	fmt.Println(string(newData))
 
 	return newData
+}
+
+func (R *AllResources) detectCollectFilter(filters []interface{}, db *db.MongoDB) interface{} {
+	for i := range filters {
+		filter := helper.ItoGenericTypeConvert[map[string]interface{}](filters[i])
+		fmt.Println(filter)
+
+		resource, err := GetResource(db, "extensions", filter["name"].(string))
+		if err != nil {
+			return nil
+		}
+		filters[i] = resource.Resource
+	}
+
+	return filters
 }

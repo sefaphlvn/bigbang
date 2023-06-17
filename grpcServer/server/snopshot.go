@@ -37,8 +37,8 @@ func GetContext(l Logger) *Context {
 	return ctx
 }
 
-func (cash *Context) SetSnapshot(aa *resources.AllResources, l Logger) error {
-	snapshot := GenerateSnapshot(aa)
+func (cash *Context) SetSnapshot(resources *resources.AllResources, l Logger) error {
+	snapshot := GenerateSnapshot(resources)
 
 	if err := snapshot.Consistent(); err != nil {
 		l.Errorf("snapshot inconsistency: %+v\n%+v", snapshot, err)
@@ -46,7 +46,7 @@ func (cash *Context) SetSnapshot(aa *resources.AllResources, l Logger) error {
 	}
 
 	//l.Debugf("will serve snapshot %+v", snapshot)
-	if err := cash.Cash.Cache.SetSnapshot(context.Background(), "test", snapshot); err != nil {
+	if err := cash.Cash.Cache.SetSnapshot(context.Background(), resources.NodeID, snapshot); err != nil {
 		l.Errorf("snapshot error %q for %+v", err, snapshot)
 		os.Exit(1)
 	}

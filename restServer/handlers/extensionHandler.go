@@ -19,3 +19,7 @@ func (h *Handler) GetExtensions(c *gin.Context) {
 func (h *Handler) ListExtensions(c *gin.Context) {
 	h.handleResource(c, h.Extension.ListExtensions)
 }
+
+func (h *Handler) UpdateExtension(c *gin.Context) {
+	h.handleResource(c, h.Extension.UpdateExtensions)
+}

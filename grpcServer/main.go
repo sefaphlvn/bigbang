@@ -32,7 +32,7 @@ func main() {
 		log.Fatalf("failed to connect database: %v", err)
 	}
 
-	// generate cache
+	// create cache
 	ctxCache := grpcserver.GetContext(l)
 	grpcServerHandler := &grpcserver.Handler{Ctx: ctxCache, DB: db, L: &l}
 	pokeHandler := &poke.Handler{Ctx: ctxCache, DB: db, L: &l, Func: grpcServerHandler}
@@ -46,7 +46,7 @@ func main() {
 	}()
 
 	// set initial snapshots
-	grpcServerHandler.InitialSnapshots(db, ctxCache, l)
+	grpcServerHandler.InitialSnapshots()
 	l.Infof("all snapshots are loaded")
 
 	// start grpc server

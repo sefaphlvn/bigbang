@@ -41,6 +41,12 @@ func NewMongoDB(uri string) (*MongoDB, error) {
 		}
 	}
 
+	userIndex := mongo.IndexModel{Keys: bson.M{"username": 1}, Options: opt}
+	collection := database.Collection("user")
+	if _, err := collection.Indexes().CreateOne(ctx, userIndex); err != nil {
+		log.Fatalf("could not create index for username on collection %s: %v", "user", err)
+	}
+
 	return &MongoDB{
 		Client: database,
 		Ctx:    context.Background(),

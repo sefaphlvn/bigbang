@@ -32,7 +32,7 @@ const (
 )
 
 type Func interface {
-	GetConfigurationFromListener(serviceName string) (*resources.AllResources, error)
+	GetAllResourcesFromListener(serviceName string) (*resources.AllResources, error)
 }
 
 type Handler struct {

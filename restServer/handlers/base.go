@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sefaphlvn/bigbang/restServer/auth"
 	"github.com/sefaphlvn/bigbang/restServer/crud/custom"
 	"github.com/sefaphlvn/bigbang/restServer/crud/extension"
 	"github.com/sefaphlvn/bigbang/restServer/crud/xds"
@@ -16,13 +17,15 @@ type Handler struct {
 	XDS       *xds.DBHandler
 	Extension *extension.DBHandler
 	Custom    *custom.DBHandler
+	Auth      *auth.DBHandler
 }
 
-func NewHandler(XDS *xds.DBHandler, extension *extension.DBHandler, custom *custom.DBHandler) *Handler {
+func NewHandler(XDS *xds.DBHandler, extension *extension.DBHandler, custom *custom.DBHandler, auth *auth.DBHandler) *Handler {
 	return &Handler{
 		XDS:       XDS,
 		Extension: extension,
 		Custom:    custom,
+		Auth:      auth,
 	}
 }
 
@@ -42,6 +45,7 @@ func (h *Handler) handleResource(c *gin.Context, dbFunc DBFunc) {
 		Type:    c.Param("type"),
 		SubType: c.Param("subtype"),
 		Name:    c.Param("name"),
+		Version: c.Param("version"),
 	}
 	resource, err := decodeResource(c)
 	if err != nil {

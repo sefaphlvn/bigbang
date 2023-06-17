@@ -161,15 +161,32 @@ func makeConfigSource() *core.ConfigSource {
 	return source
 }
 
-func GenerateSnapshot(aa *resources.AllResources) *cache.Snapshot {
-	snap, _ := cache.NewSnapshot("1",
+func GenerateSnapshot(resources *resources.AllResources) *cache.Snapshot {
+	var listeners []types.Resource
+	for _, listener := range resources.Listener {
+		listeners = append(listeners, listener)
+	}
+
+	snap, _ := cache.NewSnapshot(resources.Version,
 		map[resource.Type][]types.Resource{
-			resource.ClusterType: {makeCluster(ClusterName)},
-			resource.RouteType:   {makeRoute(RouteName, ClusterName)},
-			resource.ListenerType: {
-				aa.Listener[0],
-			},
+			resource.ClusterType:  {makeCluster(ClusterName)},
+			resource.RouteType:    {makeRoute(RouteName, ClusterName)},
+			resource.ListenerType: listeners,
 		},
 	)
 	return snap
+}
+
+func (h *Handler) GetAllResourcesFromListener(serviceName string) (*resources.AllResources, error) {
+	rawListenerResource, err := resources.GetResource(h.DB, "listeners", serviceName)
+	if err != nil {
+		return nil, err
+	}
+
+	lis, err := resources.SetSnapshot(rawListenerResource, serviceName, h.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	return lis, nil
 }

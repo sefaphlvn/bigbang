@@ -17,6 +17,8 @@ type ResourceDetails struct {
 	Type    string
 	SubType string
 	Name    string
+	Version string
+	Owner   string
 }
 
 type General struct {
@@ -24,6 +26,7 @@ type General struct {
 	Version   string             `json:"version" bson:"version"`
 	Type      string             `json:"type" bson:"type"`
 	SubType   string             `json:"subtype" bson:"subtype"`
+	Owner     string             `json:"owner" bson:"owner"`
 	CreatedAt primitive.DateTime `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt primitive.DateTime `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 }

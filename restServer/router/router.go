@@ -1,29 +1,48 @@
 package router
 
 import (
-	"net/http"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/sefaphlvn/bigbang/restServer/handlers"
-	"github.com/sefaphlvn/bigbang/restServer/helper"
+	"github.com/sefaphlvn/bigbang/restServer/middleware"
 )
 
 func InitRouter(h *handlers.Handler) *gin.Engine {
 	r := gin.New()
-	r.Use(CORS())
-	r.Use(PathCheck())
+	r.Use(middleware.CORS())
+	r.Use(middleware.PathCheck())
 	r.Use(gin.Logger())
+
+	r.POST("/logout", middleware.Authentication(), h.Auth.Logout())
+	r.POST("/refresh", middleware.Refresh(), h.Auth.Refresh())
 
 	apiCustom := r.Group("/api/v3/custom")
 	apiExtension := r.Group("/api/v3/extensions")
 	apiResource := r.Group("/api/v3")
+	apiAuth := r.Group("/auth")
 
+	apiCustom.Use(middleware.Authentication())
+	apiExtension.Use(middleware.Authentication())
+	apiResource.Use(middleware.Authentication())
+
+	initAuthRoutes(apiAuth, h)
 	initCustomRoutes(apiCustom, h)
 	initExtensionRoutes(apiExtension, h)
 	initResourceRoutes(apiResource, h)
 
 	return r
+}
+
+func initAuthRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
+	routes := []struct {
+		method  string
+		path    string
+		handler gin.HandlerFunc
+	}{
+		{"POST", "/signup", h.Auth.SignUp()},
+		{"POST", "/login", h.Auth.Login()},
+	}
+
+	initRoutes(rg, routes)
 }
 
 func initCustomRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
@@ -32,7 +51,7 @@ func initCustomRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		path    string
 		handler gin.HandlerFunc
 	}{
-		{"GET", "/filter_chain_filters", h.GetFilterChainFilters},
+		{"GET", "/filter_chain_filters/:version", h.GetFilterChainFilters},
 	}
 
 	initRoutes(rg, routes)
@@ -48,7 +67,7 @@ func initExtensionRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		{"GET", "/:type/:subtype", h.ListExtensions},
 		{"POST", "/:type/:subtype", h.SetExtension},
 		{"GET", "/:type/:subtype/:name", h.GetExtension},
-		{"PUT", "/:type/:subtype/:name", h.SetExtension},
+		{"PUT", "/:type/:subtype/:name", h.UpdateExtension},
 		{"DELETE", "/:type/:subtype/:name", h.GetExtension},
 	}
 
@@ -87,50 +106,5 @@ func initRoutes(rg *gin.RouterGroup, routes []struct {
 		case "DELETE":
 			rg.DELETE(route.path, route.handler)
 		}
-	}
-}
-
-// CORS Allow
-func CORS() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	}
-}
-
-// Path Allow
-func PathCheck() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		path := c.Request.URL.Path
-		pathParts := strings.Split(path, "/")
-		for _, allowedPath := range helper.AllowedEndpoints {
-			allowedParts := strings.Split(allowedPath, "/")
-			if len(pathParts) != len(allowedParts) {
-				continue
-			}
-
-			matched := true
-			for i := range pathParts {
-				if allowedParts[i] != pathParts[i] && !strings.HasPrefix(allowedParts[i], ":") {
-					matched = false
-					break
-				}
-			}
-
-			if matched {
-				c.Next()
-				return
-			}
-		}
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Invalid path"})
 	}
 }
