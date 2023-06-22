@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -26,11 +25,11 @@ func Authentication() gin.HandlerFunc {
 			return
 		}
 
-		fmt.Println(claims.User_id)
 		c.Set("email", claims.Email)
 		c.Set("username", claims.Username)
 		c.Set("user_id", claims.User_id)
 		c.Set("groups", claims.Groups)
+		c.Set("isAdmin", helper.Contains(claims.Groups, "admin"))
 		c.Next()
 	}
 }

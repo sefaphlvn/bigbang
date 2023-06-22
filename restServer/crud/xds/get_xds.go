@@ -10,7 +10,17 @@ import (
 
 func (xds *DBHandler) GetResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
 	collection := xds.DB.Client.Collection(resourceDetails.Type)
-	filter := bson.M{"general.name": resourceDetails.Name}
+	var filter bson.M
+	if resourceDetails.User.IsAdmin {
+		filter = bson.M{"general.name": resourceDetails.Name}
+	} else {
+		filter = bson.M{
+			"general.name": resourceDetails.Name,
+			"general.groups": bson.M{
+				"$in": resourceDetails.User.Groups,
+			},
+		}
+	}
 	result := collection.FindOne(xds.DB.Ctx, filter)
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {

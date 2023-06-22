@@ -2,6 +2,7 @@ package xds
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,8 @@ func (xds *DBHandler) SetResource(resource models.DBResourceClass, collectionNam
 	general.CreatedAt = primitive.NewDateTimeFromTime(now)
 	general.UpdatedAt = primitive.NewDateTimeFromTime(now)
 	resource.SetGeneral(&general)
+
+	fmt.Println(general)
 
 	collection := xds.DB.Client.Collection(collectionName.Type)
 	_, err := collection.InsertOne(xds.DB.Ctx, resource)

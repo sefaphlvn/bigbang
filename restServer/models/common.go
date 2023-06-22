@@ -18,7 +18,18 @@ type ResourceDetails struct {
 	SubType string
 	Name    string
 	Version string
-	Owner   string
+	User    UserDetails
+}
+
+type UserDetails struct {
+	Groups  []string
+	IsAdmin bool
+}
+
+type Machines struct {
+	Name              string `json:"name" bson:"name"`
+	Ifname            string `json:"ifname" bson:"ifname"`
+	DownstreamAddress string `json:"downstream_address" bson:"downstream_address"`
 }
 
 type General struct {
@@ -26,7 +37,10 @@ type General struct {
 	Version   string             `json:"version" bson:"version"`
 	Type      string             `json:"type" bson:"type"`
 	SubType   string             `json:"subtype" bson:"subtype"`
-	Owner     string             `json:"owner" bson:"owner"`
+	Agent     bool               `json:"agent" bson:"agent"`
+	Groups    []string           `json:"groups" bson:"groups"`
+	Team      string             `json:"team" bson:"team"`
+	Service   string             `json:"service,omitempty" bson:"service,omitempty"`
 	CreatedAt primitive.DateTime `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt primitive.DateTime `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 }

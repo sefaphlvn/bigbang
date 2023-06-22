@@ -14,7 +14,17 @@ func (xds *DBHandler) ListResource(resource models.DBResourceClass, resourceDeta
 	collection := xds.DB.Client.Collection(resourceDetails.Type)
 	opts := options.Find().SetProjection(bson.M{"resource": 0})
 
-	cursor, err := collection.Find(xds.DB.Ctx, bson.M{}, opts)
+	var filter bson.M
+	if resourceDetails.User.IsAdmin {
+		filter = bson.M{}
+	} else {
+		filter = bson.M{
+			"general.groups": bson.M{
+				"$in": resourceDetails.User.Groups,
+			},
+		}
+	}
+	cursor, err := collection.Find(xds.DB.Ctx, filter, opts)
 	if err != nil {
 		return nil, errors.New("unknown db error")
 	}

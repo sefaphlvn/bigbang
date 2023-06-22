@@ -24,7 +24,7 @@ import (
 
 const (
 	ClusterName  = "example_proxy_cluster"
-	RouteName    = "abroute"
+	RouteName    = "gggg"
 	ListenerName = "listener_0"
 	ListenerPort = 10000
 	UpstreamHost = "www.envoyproxy.io"

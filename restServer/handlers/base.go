@@ -40,12 +40,26 @@ func decodeResource(c *gin.Context) (models.DBResourceClass, error) {
 	return &body, nil
 }
 
-func (h *Handler) handleResource(c *gin.Context, dbFunc DBFunc) {
+func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
+	groups, _ := c.Get("groups")
+	isAdmin, _ := c.Get("isAdmin")
+	userGroup, ok := groups.([]string)
+	if !ok {
+		userGroup = []string{}
+	}
+	userIsAdmin, ok := isAdmin.(bool)
+	if !ok {
+		userIsAdmin = false
+	}
 	resourceDetails := models.ResourceDetails{
 		Type:    c.Param("type"),
 		SubType: c.Param("subtype"),
 		Name:    c.Param("name"),
 		Version: c.Param("version"),
+		User: models.UserDetails{
+			Groups:  userGroup,
+			IsAdmin: userIsAdmin,
+		},
 	}
 	resource, err := decodeResource(c)
 	if err != nil {
