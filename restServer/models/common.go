@@ -14,11 +14,12 @@ type DBResourceClass interface {
 }
 
 type ResourceDetails struct {
-	Type    string
-	SubType string
-	Name    string
-	Version string
-	User    UserDetails
+	Collection string
+	Type       string
+	SubType    string
+	Name       string
+	Version    string
+	User       UserDetails
 }
 
 type UserDetails struct {
@@ -26,23 +27,26 @@ type UserDetails struct {
 	IsAdmin bool
 }
 
-type Machines struct {
+type Service struct {
+	Name     string    `json:"name" bson:"name"`
+	Machines []Machine `json:"Machines" bson:"Machines"`
+}
+
+type Machine struct {
 	Name              string `json:"name" bson:"name"`
 	Ifname            string `json:"ifname" bson:"ifname"`
 	DownstreamAddress string `json:"downstream_address" bson:"downstream_address"`
 }
 
 type General struct {
-	Name      string             `json:"name" bson:"name"`
-	Version   string             `json:"version" bson:"version"`
-	Type      string             `json:"type" bson:"type"`
-	SubType   string             `json:"subtype" bson:"subtype"`
-	Agent     bool               `json:"agent" bson:"agent"`
-	Groups    []string           `json:"groups" bson:"groups"`
-	Team      string             `json:"team" bson:"team"`
-	Service   string             `json:"service,omitempty" bson:"service,omitempty"`
-	CreatedAt primitive.DateTime `json:"created_at,omitempty" bson:"created_at,omitempty"`
-	UpdatedAt primitive.DateTime `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	Name      string                 `json:"name" bson:"name"`
+	Version   string                 `json:"version" bson:"version"`
+	Type      string                 `json:"type" bson:"type"`
+	SubType   string                 `json:"subtype" bson:"subtype"`
+	Extra     map[string]interface{} `json:"extra" bson:"extra"`
+	Groups    []string               `json:"groups" bson:"groups"`
+	CreatedAt primitive.DateTime     `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt primitive.DateTime     `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 }
 
 type DBResource struct {

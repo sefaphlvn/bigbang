@@ -88,6 +88,7 @@ func collectCreateIndex(database *mongo.Database, ctx context.Context) (interfac
 		"routes":       {Keys: bson.M{"general.name": 1}, Options: opt},
 		"lb_endpoints": {Keys: bson.M{"general.name": 1}, Options: opt},
 		"extensions":   {Keys: bson.M{"general.name": 1}, Options: opt},
+		"vhds":         {Keys: bson.M{"general.name": 1}, Options: opt},
 	}
 
 	for collectionName, index := range indices {

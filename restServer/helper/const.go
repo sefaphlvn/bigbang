@@ -7,6 +7,7 @@ var Collections = []string{
 	"routes",
 	"lb_endpoints",
 	"extensions",
+	"vhds",
 }
 
 var AllowedEndpoints = []string{
@@ -18,6 +19,8 @@ var AllowedEndpoints = []string{
 	"/api/v3/listeners/:name",
 	"/api/v3/routes",
 	"/api/v3/routes/:name",
+	"/api/v3/vhds",
+	"/api/v3/vhds/:name",
 	"/api/v3/clusters",
 	"/api/v3/clusters/:name",
 	"/api/v3/hcm",
@@ -29,6 +32,5 @@ var AllowedEndpoints = []string{
 	"/api/v3/extensions/:type",
 	"/api/v3/extensions/:type/:subtype",
 	"/api/v3/extensions/:type/:subtype/:name",
-	"/api/v3/custom/filter_chain_filters",
-	"/api/v3/custom/filter_chain_filters/:version",
+	"/api/v3/custom/resource_list",
 }

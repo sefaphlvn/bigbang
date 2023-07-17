@@ -225,7 +225,7 @@ func GenerateAllTokens(email string, Username string, user_id string, groups []s
 		User_id:  user_id,
 		Groups:   groups,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Minute * time.Duration(5)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Minute * time.Duration(60)).Unix(),
 		},
 	}
 
@@ -332,9 +332,6 @@ func ValidateRefreshToken(tokenString string) (SignedDetails, error) {
 	}
 
 	claims, ok := token.Claims.(*SignedDetails)
-	fmt.Println(claims)
-	fmt.Println(ok)
-	fmt.Println(token.Valid)
 	if !ok || !token.Valid {
 		return SignedDetails{}, fmt.Errorf("invalid refresh token")
 	}

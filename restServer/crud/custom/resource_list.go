@@ -15,15 +15,15 @@ type Record struct {
 	Name string `json:"name" bson:"name"`
 }
 
-func (custom *DBHandler) GetFilterChainFilters(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	collection := custom.DB.Client.Collection("extensions")
+func (custom *DBHandler) GetCustomResourceList(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+	collection := custom.DB.Client.Collection(resourceDetails.Collection)
 	opts := options.Find()
 	opts.SetProjection(bson.M{
 		"general.name":    1,
 		"general.subtype": 1,
 	})
 
-	cursor, err := collection.Find(custom.DB.Ctx, bson.M{"general.type": "filters", "general.version": resourceDetails.Version}, opts)
+	cursor, err := collection.Find(custom.DB.Ctx, bson.M{"general.type": resourceDetails.Type, "general.version": resourceDetails.Version}, opts)
 	if err != nil {
 		return nil, errors.New("unknown db error")
 	}

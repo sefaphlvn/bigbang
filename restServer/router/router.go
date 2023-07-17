@@ -51,7 +51,7 @@ func initCustomRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		path    string
 		handler gin.HandlerFunc
 	}{
-		{"GET", "/filter_chain_filters/:version", h.GetFilterChainFilters},
+		{"GET", "/resource_list", h.GetCustomResourceList},
 	}
 
 	initRoutes(rg, routes)

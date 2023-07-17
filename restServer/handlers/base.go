@@ -52,15 +52,27 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 		userIsAdmin = false
 	}
 	resourceDetails := models.ResourceDetails{
-		Type:    c.Param("type"),
-		SubType: c.Param("subtype"),
-		Name:    c.Param("name"),
-		Version: c.Param("version"),
+		SubType:    c.Param("subtype"),
+		Name:       c.Param("name"),
+		Collection: c.Query("collection"),
 		User: models.UserDetails{
 			Groups:  userGroup,
 			IsAdmin: userIsAdmin,
 		},
 	}
+
+	if version := c.Param("version"); version != "" {
+		resourceDetails.Version = version
+	} else if version := c.Query("version"); version != "" {
+		resourceDetails.Version = version
+	}
+
+	if ltype := c.Param("type"); ltype != "" {
+		resourceDetails.Type = ltype
+	} else if ltype := c.Query("type"); ltype != "" {
+		resourceDetails.Type = ltype
+	}
+
 	resource, err := decodeResource(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
