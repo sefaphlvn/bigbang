@@ -10,6 +10,7 @@ type DBResourceClass interface {
 	GetResource() interface{}
 	SetResource(interface{})
 	GetVersion() interface{}
+	GetAdditionalResources() []AdditionalResource
 	SetVersion(interface{})
 }
 
@@ -39,14 +40,27 @@ type Machine struct {
 }
 
 type General struct {
-	Name      string                 `json:"name" bson:"name"`
-	Version   string                 `json:"version" bson:"version"`
-	Type      string                 `json:"type" bson:"type"`
-	SubType   string                 `json:"subtype" bson:"subtype"`
-	Extra     map[string]interface{} `json:"extra" bson:"extra"`
-	Groups    []string               `json:"groups" bson:"groups"`
-	CreatedAt primitive.DateTime     `json:"created_at,omitempty" bson:"created_at,omitempty"`
-	UpdatedAt primitive.DateTime     `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	Name                string                 `json:"name" bson:"name"`
+	Version             string                 `json:"version" bson:"version"`
+	Type                string                 `json:"type" bson:"type"`
+	SubType             string                 `json:"subtype" bson:"subtype"`
+	Extra               map[string]interface{} `json:"extra" bson:"extra"`
+	Groups              []string               `json:"groups" bson:"groups"`
+	AdditionalResources []AdditionalResource   `json:"additional_resources,omitempty" bson:"additional_resources,omitempty"`
+	CreatedAt           primitive.DateTime     `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt           primitive.DateTime     `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+}
+
+type Extra struct {
+	Agent   string `json:"agent,omitempty" bson:"agent,omitempty"`
+	Team    string `json:"team,omitempty" bson:"team,omitempty"`
+	Service string `json:"service,omitempty" bson:"service,omitempty"`
+}
+
+type AdditionalResource struct {
+	Type     string `json:"type" bson:"type"`
+	Value    string `json:"value" bson:"value"`
+	Priority int    `json:"priority" bson:"priority"`
 }
 
 type DBResource struct {
@@ -70,6 +84,10 @@ func (d *DBResource) GetResource() interface{} {
 
 func (d *DBResource) GetVersion() interface{} {
 	return d.Resource.Version
+}
+
+func (d *DBResource) GetAdditionalResources() []AdditionalResource {
+	return d.General.AdditionalResources
 }
 
 func (d *DBResource) SetVersion(res interface{}) {

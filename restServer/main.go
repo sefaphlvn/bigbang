@@ -33,5 +33,4 @@ func main() {
 	if err := s.Run("0.0.0.0:80"); err != nil {
 		log.Fatalf("Server failed to run: %v", err)
 	}
-
 }
