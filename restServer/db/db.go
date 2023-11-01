@@ -76,19 +76,16 @@ func getIndexName(index mongo.IndexModel) string {
 }
 
 func collectCreateIndex(database *mongo.Database, ctx context.Context) (interface{}, error) {
-	opt := options.Index()
-	opt.SetUnique(true)
-
 	indices := map[string]mongo.IndexModel{
-		"user":         {Keys: bson.M{"username": 1}, Options: opt},
-		"service":      {Keys: bson.M{"name": 1}, Options: opt},
-		"clusters":     {Keys: bson.M{"general.name": 1}, Options: opt},
-		"listeners":    {Keys: bson.M{"general.name": 1}, Options: opt},
-		"endpoints":    {Keys: bson.M{"general.name": 1}, Options: opt},
-		"routes":       {Keys: bson.M{"general.name": 1}, Options: opt},
-		"lb_endpoints": {Keys: bson.M{"general.name": 1}, Options: opt},
-		"extensions":   {Keys: bson.M{"general.name": 1}, Options: opt},
-		"vhds":         {Keys: bson.M{"general.name": 1}, Options: opt},
+		"user":         {Keys: bson.M{"username": 1}, Options: options.Index().SetUnique(true).SetName("username_1")},
+		"service":      {Keys: bson.M{"name": 1}, Options: options.Index().SetUnique(true).SetName("name_1")},
+		"clusters":     {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
+		"listeners":    {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
+		"endpoints":    {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
+		"routes":       {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
+		"lb_endpoints": {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
+		"extensions":   {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
+		"vhds":         {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
 	}
 
 	for collectionName, index := range indices {
