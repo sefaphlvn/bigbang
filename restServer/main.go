@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	db, err := db.NewMongoDB("mongodb://localhost:27017")
+	db, err := db.NewMongoDB("mongodb+srv://navigazer:3s7qObVXRpt2wWUT@navigazer.lfh5hlh.mongodb.net/")
 
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
