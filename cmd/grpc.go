@@ -8,8 +8,8 @@ import (
 
 // grpcCmd represents the grpc command
 var grpcCmd = &cobra.Command{
-	Use:   "grpc",
-	Short: "GRPC Server",
+	Use:   "server-grpc",
+	Short: "Start GRPC Server",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("grpc called")

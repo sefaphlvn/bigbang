@@ -17,8 +17,8 @@ import (
 
 // restCmd represents the restServer command
 var restCmd = &cobra.Command{
-	Use:   "restServer",
-	Short: "REST Server",
+	Use:   "server-rest",
+	Short: "Start REST Server",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 
