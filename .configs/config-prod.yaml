@@ -1,0 +1,14 @@
+ServerPort: 80
+MongoDB:
+  Hosts: ["navigazer.lfh5hlh.mongodb.net"]
+  Username: "navigazer"
+  Password: "3s7qObVXRpt2wWUT"
+  Database: "navigazer"
+  Scheme: "mongodb+srv"
+  Port:
+  ReplicaSet: ""
+  TimeoutSeconds: 10
+Log:
+  Level: info          # debug, info, warn, error
+  Formatter: text      # json, text
+  ReportCaller: false

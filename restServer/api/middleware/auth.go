@@ -1,12 +1,12 @@
 package middleware
 
 import (
+	"github.com/sefaphlvn/bigbang/pkg/helper"
+	"github.com/sefaphlvn/bigbang/restServer/api/auth"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/restServer/auth"
-	"github.com/sefaphlvn/bigbang/restServer/helper"
 )
 
 func Authentication() gin.HandlerFunc {
@@ -59,24 +59,7 @@ func Refresh() gin.HandlerFunc {
 	}
 }
 
-// CORS Allow
-func CORS() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, token, refresh-token")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	}
-}
-
-// Path Allow
+// PathCheck Path Allow
 func PathCheck() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path

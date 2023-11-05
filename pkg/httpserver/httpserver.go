@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"github.com/sefaphlvn/bigbang/pkg/config"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,9 +24,9 @@ func NewHttpServer(router *gin.Engine) *Server {
 	}
 }
 
-func (s *Server) Run(addr string) error {
+func (s *Server) Run(config *config.AppConfig, log *logrus.Logger) error {
 	server := &http.Server{
-		Addr:    addr,
+		Addr:    fmt.Sprintf(":%v", config.ServerPort),
 		Handler: s.Router,
 	}
 
@@ -37,10 +39,10 @@ func (s *Server) Run(addr string) error {
 		}
 	}()
 
-	log.Print("Server Started")
+	log.Printf("Starting http web server [::]:%s", config.ServerPort)
 
 	<-done
-	log.Print("Server Stopping...")
+	log.Printf("Http web server stop signal recived")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -49,7 +51,7 @@ func (s *Server) Run(addr string) error {
 	if err != nil {
 		log.Fatalf("Server Shutdown Failed:%+v", err)
 	} else {
-		log.Print("Server Exited Properly")
+		log.Print("Server exited properly")
 	}
 
 	if err == http.ErrServerClosed {

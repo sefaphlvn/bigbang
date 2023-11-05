@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/sefaphlvn/bigbang/pkg/config"
+	"github.com/sirupsen/logrus"
 	"reflect"
 	"strings"
 
@@ -16,6 +18,7 @@ import (
 type MongoDB struct {
 	Client *mongo.Database
 	Ctx    context.Context
+	Logger *logrus.Logger
 }
 
 func indexExists(ctx context.Context, collection *mongo.Collection, indexName string) (bool, error) {
@@ -99,23 +102,28 @@ func collectCreateIndex(database *mongo.Database, ctx context.Context) (interfac
 	return nil, nil
 }
 
-func NewMongoDB(uri string) (*MongoDB, error) {
+func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *MongoDB {
+
+	hosts := strings.Join(config.MongoDB.Hosts, fmt.Sprintf("%s,", config.MongoDB.Port))
+	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", config.MongoDB.Scheme, config.MongoDB.Username, config.MongoDB.Password, hosts, config.MongoDB.Port)
+
 	tM := reflect.TypeOf(bson.M{})
 	reg := bson.NewRegistryBuilder().RegisterTypeMapEntry(bsontype.EmbeddedDocument, tM).Build()
 	ctx := context.Background()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri).SetRegistry(reg))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(connectionString).SetRegistry(reg))
 	if err != nil {
-		return nil, err
+		logger.Fatalf("%s", err)
 	}
 
 	database := client.Database("navigazer")
 	_, err = collectCreateIndex(database, ctx)
 	if err != nil {
-		fmt.Println(err)
+		logger.Fatalf("%s", err)
 	}
 
 	return &MongoDB{
 		Client: database,
 		Ctx:    ctx,
-	}, nil
+		Logger: logger,
+	}
 }
