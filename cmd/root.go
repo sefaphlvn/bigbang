@@ -13,9 +13,6 @@ var rootCmd = &cobra.Command{
 	Use:   "bigbang",
 	Short: "A brief description of your application",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-
-	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -27,6 +24,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is .configs/prod.yaml)")
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", ".configs/config-prod.yaml", "config file (default is .configs/config-prod.yaml)")
 }

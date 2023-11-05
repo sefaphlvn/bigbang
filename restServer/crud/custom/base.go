@@ -1,8 +1,8 @@
 package custom
 
 import (
+	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/restServer/crud"
-	"github.com/sefaphlvn/bigbang/restServer/db"
 )
 
 type DBHandler crud.DbHandler

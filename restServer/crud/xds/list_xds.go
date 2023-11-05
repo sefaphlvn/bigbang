@@ -2,8 +2,7 @@ package xds
 
 import (
 	"fmt"
-
-	"github.com/sefaphlvn/bigbang/restServer/helper"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/restServer/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"

@@ -3,11 +3,10 @@ package custom
 import (
 	"errors"
 	"fmt"
-	"log"
-
 	"github.com/sefaphlvn/bigbang/restServer/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 )
 
 type Record struct {

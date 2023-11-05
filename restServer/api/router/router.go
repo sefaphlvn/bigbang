@@ -2,23 +2,31 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/sefaphlvn/bigbang/restServer/api/middleware"
 	"github.com/sefaphlvn/bigbang/restServer/handlers"
-	"github.com/sefaphlvn/bigbang/restServer/middleware"
+	"github.com/sirupsen/logrus"
 )
 
-func InitRouter(h *handlers.Handler) *gin.Engine {
-	r := gin.New()
-	r.Use(middleware.CORS())
-	r.Use(middleware.PathCheck())
-	r.Use(gin.Logger())
+func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
 
-	r.POST("/logout", middleware.Authentication(), h.Auth.Logout())
-	r.POST("/refresh", middleware.Refresh(), h.Auth.Refresh())
+	gin.SetMode(gin.ReleaseMode)
 
-	apiCustom := r.Group("/api/v3/custom")
-	apiExtension := r.Group("/api/v3/extensions")
-	apiResource := r.Group("/api/v3")
-	apiAuth := r.Group("/auth")
+	e := gin.New()
+
+	e.HandleMethodNotAllowed = true
+	e.ForwardedByClientIP = true
+
+	e.Use(middleware.CORS())
+	e.Use(middleware.PathCheck())
+	e.Use(middleware.GinLog(logger), gin.Recovery())
+
+	e.POST("/logout", middleware.Authentication(), h.Auth.Logout())
+	e.POST("/refresh", middleware.Refresh(), h.Auth.Refresh())
+
+	apiAuth := e.Group("/auth")
+	apiCustom := e.Group("/api/v3/custom")
+	apiExtension := e.Group("/api/v3/extensions")
+	apiResource := e.Group("/api/v3")
 
 	apiCustom.Use(middleware.Authentication())
 	apiExtension.Use(middleware.Authentication())
@@ -29,7 +37,7 @@ func InitRouter(h *handlers.Handler) *gin.Engine {
 	initExtensionRoutes(apiExtension, h)
 	initResourceRoutes(apiResource, h)
 
-	return r
+	return e
 }
 
 func initAuthRoutes(rg *gin.RouterGroup, h *handlers.Handler) {

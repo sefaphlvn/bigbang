@@ -3,23 +3,21 @@ package auth
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
-	"os"
-	"time"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/restServer/crud"
 	"github.com/sefaphlvn/bigbang/restServer/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/sefaphlvn/bigbang/restServer/crud"
-	"github.com/sefaphlvn/bigbang/restServer/db"
+	"log"
+	"net/http"
+	"os"
+	"time"
 )
 
 type DBHandler crud.DbHandler

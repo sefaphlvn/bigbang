@@ -1,14 +1,14 @@
 package handlers
 
 import (
-	"net/http"
-
-	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/restServer/auth"
+	"github.com/sefaphlvn/bigbang/restServer/api/auth"
 	"github.com/sefaphlvn/bigbang/restServer/crud/custom"
 	"github.com/sefaphlvn/bigbang/restServer/crud/extension"
 	"github.com/sefaphlvn/bigbang/restServer/crud/xds"
 	"github.com/sefaphlvn/bigbang/restServer/models"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type DBFunc func(resource models.DBResourceClass, resourceType models.ResourceDetails) (interface{}, error)
