@@ -1,0 +1,9 @@
+ServerPort: 4000
+MongoDB:
+  Hosts: ["navigazer.lfh5hlh.mongodb.net"]
+  Username: "navigazer"
+  Password: "3s7qObVXRpt2wWUT"
+  Database: "navigazer"
+  Port:
+  ReplicaSet: ""
+  TimeoutSeconds: 10
