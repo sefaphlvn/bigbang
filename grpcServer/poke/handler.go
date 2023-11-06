@@ -32,7 +32,7 @@ func (h *Handler) handlePing(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handlePoke(w http.ResponseWriter, r *http.Request) {
-	asd, err := h.Func.GetAllResourcesFromListener("sefa")
+	asd, err := h.Func.GetAllResourcesFromListener("firstLDS")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

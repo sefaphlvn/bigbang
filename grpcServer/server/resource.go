@@ -24,10 +24,9 @@ import (
 
 const (
 	ClusterName  = "example_proxy_cluster"
-	RouteName    = "gggg"
-	ListenerName = "listener_0"
+	RouteName    = "firstRoute"
 	ListenerPort = 10000
-	UpstreamHost = "www.envoyproxy.io"
+	UpstreamHost = "lgsagem.free.fr"
 	UpstreamPort = 80
 )
 
