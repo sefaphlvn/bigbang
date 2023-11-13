@@ -2,6 +2,7 @@ package extension
 
 import (
 	"errors"
+
 	"github.com/sefaphlvn/bigbang/restServer/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,7 +11,7 @@ import (
 
 func (extension *DBHandler) GetExtension(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
 	collection := extension.DB.Client.Collection("extensions")
-	filter := bson.M{"general.name": resourceDetails.Name}
+	filter := bson.M{"general.name": resourceDetails.Name, "general.canonical_name": resourceDetails.CanonicalName}
 	result := collection.FindOne(extension.DB.Ctx, filter)
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {

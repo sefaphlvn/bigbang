@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/sefaphlvn/bigbang/restServer/api/auth"
 	"github.com/sefaphlvn/bigbang/restServer/crud/custom"
 	"github.com/sefaphlvn/bigbang/restServer/crud/extension"
 	"github.com/sefaphlvn/bigbang/restServer/crud/xds"
 	"github.com/sefaphlvn/bigbang/restServer/models"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -52,9 +53,9 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 		userIsAdmin = false
 	}
 	resourceDetails := models.ResourceDetails{
-		SubType:    c.Param("subtype"),
-		Name:       c.Param("name"),
-		Collection: c.Query("collection"),
+		CanonicalName: c.Param("canonical_name"),
+		Name:          c.Param("name"),
+		Collection:    c.Query("collection"),
 		User: models.UserDetails{
 			Groups:  userGroup,
 			IsAdmin: userIsAdmin,

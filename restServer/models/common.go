@@ -15,12 +15,12 @@ type DBResourceClass interface {
 }
 
 type ResourceDetails struct {
-	Collection string
-	Type       string
-	SubType    string
-	Name       string
-	Version    string
-	User       UserDetails
+	Collection    string
+	Type          string
+	CanonicalName string
+	Name          string
+	Version       string
+	User          UserDetails
 }
 
 type UserDetails struct {
@@ -43,7 +43,8 @@ type General struct {
 	Name                string                 `json:"name" bson:"name"`
 	Version             string                 `json:"version" bson:"version"`
 	Type                string                 `json:"type" bson:"type"`
-	SubType             string                 `json:"subtype" bson:"subtype"`
+	GType               string                 `json:"gtype" bson:"gtype"`
+	CanonicalName       string                 `json:"canonical_name" bson:"canonical_name"`
 	Extra               map[string]interface{} `json:"extra" bson:"extra"`
 	Groups              []string               `json:"groups" bson:"groups"`
 	AdditionalResources []AdditionalResource   `json:"additional_resources,omitempty" bson:"additional_resources,omitempty"`

@@ -2,6 +2,7 @@ package xds
 
 import (
 	"fmt"
+
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/restServer/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -64,13 +65,14 @@ func transformRecords(records []bson.M, resourceType string, schema ResourceSche
 		extra, exOK := general["extra"].(bson.M)
 
 		g := models.General{
-			Name:      helper.GetString(general, "name"),
-			Version:   helper.GetString(general, "version"),
-			Type:      helper.GetString(general, "type"),
-			SubType:   helper.GetString(general, "subtype"),
-			CreatedAt: helper.GetDateTime(general, "created_at"),
-			UpdatedAt: helper.GetDateTime(general, "updated_at"),
-			Extra:     map[string]interface{}{},
+			Name:          helper.GetString(general, "name"),
+			Version:       helper.GetString(general, "version"),
+			Type:          helper.GetString(general, "type"),
+			CanonicalName: helper.GetString(general, "canonical_name"),
+			GType:         helper.GetString(general, "gtype"),
+			CreatedAt:     helper.GetDateTime(general, "created_at"),
+			UpdatedAt:     helper.GetDateTime(general, "updated_at"),
+			Extra:         map[string]interface{}{},
 		}
 
 		if exOK {

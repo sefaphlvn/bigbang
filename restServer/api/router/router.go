@@ -26,7 +26,7 @@ func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
 	apiAuth := e.Group("/auth")
 	apiCustom := e.Group("/api/v3/custom")
 	apiExtension := e.Group("/api/v3/extensions")
-	apiResource := e.Group("/api/v3")
+	apiResource := e.Group("/api/v3/xds")
 
 	apiCustom.Use(middleware.Authentication())
 	apiExtension.Use(middleware.Authentication())
@@ -72,11 +72,11 @@ func initExtensionRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		handler gin.HandlerFunc
 	}{
 		{"GET", "/:type", h.GetExtensions},
-		{"GET", "/:type/:subtype", h.ListExtensions},
-		{"POST", "/:type/:subtype", h.SetExtension},
-		{"GET", "/:type/:subtype/:name", h.GetExtension},
-		{"PUT", "/:type/:subtype/:name", h.UpdateExtension},
-		{"DELETE", "/:type/:subtype/:name", h.GetExtension},
+		{"GET", "/:type/:canonical_name", h.ListExtensions},
+		{"POST", "/:type/:canonical_name", h.SetExtension},
+		{"GET", "/:type/:canonical_name/:name", h.GetExtension},
+		{"PUT", "/:type/:canonical_name/:name", h.UpdateExtension},
+		{"DELETE", "/:type/:canonical_name/:name", h.GetExtension},
 	}
 
 	initRoutes(rg, routes)

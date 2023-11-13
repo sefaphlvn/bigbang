@@ -2,9 +2,10 @@ package helper
 
 import (
 	"encoding/json"
+	"log"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"log"
 )
 
 func Contains(s []string, str string) bool {
@@ -17,8 +18,12 @@ func Contains(s []string, str string) bool {
 }
 
 func GetString(m bson.M, key string) string {
-	s, _ := m[key].(string)
-	return s
+	if m != nil {
+		if str, ok := m[key].(string); ok {
+			return str
+		}
+	}
+	return "None"
 }
 
 func GetBool(m bson.M, key string) bool {

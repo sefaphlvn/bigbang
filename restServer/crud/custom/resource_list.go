@@ -3,23 +3,24 @@ package custom
 import (
 	"errors"
 	"fmt"
+	"log"
+
 	"github.com/sefaphlvn/bigbang/restServer/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 )
 
 type Record struct {
-	Type string `json:"type" bson:"type"`
-	Name string `json:"name" bson:"name"`
+	CanonicalName string `json:"canonical_name" bson:"canonical_name"`
+	Name          string `json:"name" bson:"name"`
 }
 
 func (custom *DBHandler) GetCustomResourceList(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
 	collection := custom.DB.Client.Collection(resourceDetails.Collection)
 	opts := options.Find()
 	opts.SetProjection(bson.M{
-		"general.name":    1,
-		"general.subtype": 1,
+		"general.name":           1,
+		"general.canonical_name": 1,
 	})
 
 	cursor, err := collection.Find(custom.DB.Ctx, bson.M{"general.type": resourceDetails.Type, "general.version": resourceDetails.Version}, opts)
@@ -31,16 +32,16 @@ func (custom *DBHandler) GetCustomResourceList(resource models.DBResourceClass, 
 	for cursor.Next(custom.DB.Ctx) {
 		var doc struct {
 			General struct {
-				Name    string `bson:"name"`
-				Subtype string `bson:"subtype"`
+				Name          string `bson:"name"`
+				CanonicalName string `bson:"canonical_name"`
 			} `bson:"general"`
 		}
 		cursor.Decode(&doc)
 		results = append(
 			results,
 			Record{
-				Type: doc.General.Subtype,
-				Name: doc.General.Name,
+				CanonicalName: doc.General.CanonicalName,
+				Name:          doc.General.Name,
 			},
 		)
 	}
@@ -50,7 +51,7 @@ func (custom *DBHandler) GetCustomResourceList(resource models.DBResourceClass, 
 	}
 
 	for _, result := range results {
-		fmt.Printf("Type: %s, Name: %s\n", result.Type, result.Name)
+		fmt.Printf("Type: %s, Name: %s\n", result.CanonicalName, result.Name)
 	}
 
 	return results, nil

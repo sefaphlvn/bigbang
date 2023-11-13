@@ -11,7 +11,7 @@ import (
 )
 
 func (extension *DBHandler) UpdateExtensions(resource models.DBResourceClass, collectionName models.ResourceDetails) (interface{}, error) {
-	filter := bson.M{"general.name": collectionName.Name}
+	filter := bson.M{"general.name": collectionName.Name, "general.canonical_name": collectionName.CanonicalName}
 	version, _ := strconv.Atoi(resource.GetVersion().(string))
 	resource.SetVersion(strconv.Itoa(version + 1))
 	update := bson.M{
