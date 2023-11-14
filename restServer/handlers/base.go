@@ -54,6 +54,7 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 	}
 	resourceDetails := models.ResourceDetails{
 		CanonicalName: c.Param("canonical_name"),
+		Category:      c.Query("category"),
 		Name:          c.Param("name"),
 		Collection:    c.Query("collection"),
 		User: models.UserDetails{
