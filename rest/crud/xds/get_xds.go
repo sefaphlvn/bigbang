@@ -3,7 +3,7 @@ package xds
 import (
 	"errors"
 
-	"github.com/sefaphlvn/bigbang/restServer/models"
+	"github.com/sefaphlvn/bigbang/rest/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )

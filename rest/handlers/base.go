@@ -3,11 +3,11 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/sefaphlvn/bigbang/restServer/api/auth"
-	"github.com/sefaphlvn/bigbang/restServer/crud/custom"
-	"github.com/sefaphlvn/bigbang/restServer/crud/extension"
-	"github.com/sefaphlvn/bigbang/restServer/crud/xds"
-	"github.com/sefaphlvn/bigbang/restServer/models"
+	"github.com/sefaphlvn/bigbang/rest/api/auth"
+	"github.com/sefaphlvn/bigbang/rest/crud/custom"
+	"github.com/sefaphlvn/bigbang/rest/crud/extension"
+	"github.com/sefaphlvn/bigbang/rest/crud/xds"
+	"github.com/sefaphlvn/bigbang/rest/models"
 
 	"github.com/gin-gonic/gin"
 )

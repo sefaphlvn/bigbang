@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"github.com/sefaphlvn/bigbang/pkg/helper"
-	"github.com/sefaphlvn/bigbang/restServer/api/auth"
+	"github.com/sefaphlvn/bigbang/rest/api/auth"
 	"net/http"
 	"strings"
 

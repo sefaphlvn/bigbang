@@ -2,8 +2,8 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/restServer/api/middleware"
-	"github.com/sefaphlvn/bigbang/restServer/handlers"
+	"github.com/sefaphlvn/bigbang/rest/api/middleware"
+	"github.com/sefaphlvn/bigbang/rest/handlers"
 	"github.com/sirupsen/logrus"
 )
 

@@ -5,17 +5,17 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/httpserver"
 	"github.com/sefaphlvn/bigbang/pkg/log"
-	"github.com/sefaphlvn/bigbang/restServer/api/auth"
-	"github.com/sefaphlvn/bigbang/restServer/api/router"
-	"github.com/sefaphlvn/bigbang/restServer/crud/custom"
-	"github.com/sefaphlvn/bigbang/restServer/crud/extension"
-	"github.com/sefaphlvn/bigbang/restServer/crud/xds"
-	"github.com/sefaphlvn/bigbang/restServer/handlers"
+	"github.com/sefaphlvn/bigbang/rest/api/auth"
+	"github.com/sefaphlvn/bigbang/rest/api/router"
+	"github.com/sefaphlvn/bigbang/rest/crud/custom"
+	"github.com/sefaphlvn/bigbang/rest/crud/extension"
+	"github.com/sefaphlvn/bigbang/rest/crud/xds"
+	"github.com/sefaphlvn/bigbang/rest/handlers"
 
 	"github.com/spf13/cobra"
 )
 
-// restCmd represents the restServer command
+// restCmd represents the rest command
 var restCmd = &cobra.Command{
 	Use:   "server-rest",
 	Short: "Start REST Server",
