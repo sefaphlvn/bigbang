@@ -1,10 +1,11 @@
 package server
 
 import (
-	"github.com/sefaphlvn/bigbang/grpc/server/resources"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/sefaphlvn/bigbang/grpc/server/resources"
 
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -162,15 +163,28 @@ func makeConfigSource() *core.ConfigSource {
 
 func GenerateSnapshot(resources *resources.AllResources) *cache.Snapshot {
 	var listeners []types.Resource
+	var extensions []types.Resource
 	for _, listener := range resources.Listener {
 		listeners = append(listeners, listener)
 	}
 
+	routerConfig, _ := anypb.New(&router.Router{})
+
+	extens := []*core.TypedExtensionConfig{{
+		Name:        "newHttpFilter",
+		TypedConfig: routerConfig,
+	}}
+
+	for _, ex := range extens {
+		extensions = append(extensions, ex)
+	}
+
 	snap, _ := cache.NewSnapshot(resources.Version,
 		map[resource.Type][]types.Resource{
-			resource.ClusterType:  {makeCluster(ClusterName)},
-			resource.RouteType:    {makeRoute(RouteName, ClusterName)},
-			resource.ListenerType: listeners,
+			resource.ClusterType:         {makeCluster(ClusterName)},
+			resource.RouteType:           {makeRoute(RouteName, ClusterName)},
+			resource.ListenerType:        listeners,
+			resource.ExtensionConfigType: extensions,
 		},
 	)
 	return snap
