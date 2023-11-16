@@ -11,13 +11,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type ResourcesUsed struct {
+type UsedResources struct {
 	Name string
 	Type string
 }
 
 type AllResources struct {
-	UsedResource []ResourcesUsed
+	UsedResource []UsedResources
 	NodeID       string
 	Version      string
 	Listener     []*listener.Listener
@@ -31,9 +31,9 @@ func NewResources() *AllResources {
 	return &AllResources{}
 }
 
-func SetSnapshot(cur *models.Resource, nodeID string, db *db.MongoDB, l *logrus.Logger) (*AllResources, error) {
+func SetSnapshot(cur *models.Resource, nodeID string, db *db.MongoDB, logger *logrus.Logger) (*AllResources, error) {
 	resourceAll := NewResources()
 	resourceAll.NodeID = nodeID
-	resourceAll.DecodeListener(cur, db, l)
+	resourceAll.DecodeListener(cur, db, logger)
 	return resourceAll, nil
 }

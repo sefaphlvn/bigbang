@@ -12,9 +12,9 @@ func (h *Handler) InitialSnapshots() {
 	for _, serviceName := range serviceNames {
 		allResource, err := h.GetAllResourcesFromListener(serviceName)
 		if err != nil {
-			h.L.Errorf("BULK GetConfigurationFromListener(%v): %v", serviceName, err)
+			h.Logger.Errorf("BULK GetConfigurationFromListener(%v): %v", serviceName, err)
 		}
-		h.Ctx.SetSnapshot(allResource, h.L)
+		h.Ctx.SetSnapshot(allResource, h.Logger)
 	}
 }
 

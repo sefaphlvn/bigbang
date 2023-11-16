@@ -24,5 +24,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", ".configs/config-prod.yaml", "config file (default is .configs/config-prod.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", ".configs/config-prod.yaml", "config file")
 }

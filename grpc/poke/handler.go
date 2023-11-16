@@ -11,10 +11,10 @@ import (
 )
 
 type Handler struct {
-	Ctx  *server.Context
-	DB   *db.MongoDB
-	L    *logrus.Logger
-	Func server.Func
+	Ctx    *server.Context
+	DB     *db.MongoDB
+	Logger *logrus.Logger
+	Func   server.Func
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -29,20 +29,29 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handlePing(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "OK")
+	h.Logger.Info(fmt.Fprint(w, "OK"))
 }
 
 func (h *Handler) handlePoke(w http.ResponseWriter, r *http.Request) {
-	asd, err := h.Func.GetAllResourcesFromListener("newListener")
+	allResources, err := h.Func.GetAllResourcesFromListener("newListener")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.Logger.Error(err)
 		return
 	}
-	h.Ctx.SetSnapshot(asd, h.L)
 
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(asd)
+	err = h.Ctx.SetSnapshot(allResources, h.Logger)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.Logger.Error(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(allResources)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.Logger.Error(err)
+		return
 	}
 }

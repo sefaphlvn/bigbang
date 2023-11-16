@@ -29,12 +29,12 @@ var grpcCmd = &cobra.Command{
 		var logger = log.NewLogger(appConfig)
 		var db = db.NewMongoDB(appConfig, logger)
 
-		// create cache
+		// Create cache
 		ctxCache := grpcserver.GetContext(logger)
-		grpcServerHandler := &grpcserver.Handler{Ctx: ctxCache, DB: db, L: logger}
-		pokeHandler := &poke.Handler{Ctx: ctxCache, DB: db, L: logger, Func: grpcServerHandler}
+		grpcServerHandler := &grpcserver.Handler{Ctx: ctxCache, DB: db, Logger: logger}
+		pokeHandler := &poke.Handler{Ctx: ctxCache, DB: db, Logger: logger, Func: grpcServerHandler}
 
-		// start http server
+		// Start http server
 		go func() {
 			err := http.ListenAndServe(":8080", pokeHandler)
 			if err != nil {
@@ -42,13 +42,13 @@ var grpcCmd = &cobra.Command{
 			}
 		}()
 
-		// set initial snapshots
+		// Set initial snapshots
 		grpcServerHandler.InitialSnapshots()
-		logger.Infof("all snapshots are loaded")
+		logger.Infof("All snapshots are loaded")
 
-		// start grpc server
+		// Start grpc server
 		ctx := context.Background()
-		cb := &grpcserver.Callbacks{Debug: true}
+		cb := &grpcserver.Callbacks{Logger: logger}
 		srv := server.NewServer(ctx, ctxCache.Cash.Cache, cb)
 		grpcserver.RunServer(srv, port)
 	},

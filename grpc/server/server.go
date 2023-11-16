@@ -37,13 +37,13 @@ type Func interface {
 }
 
 type Handler struct {
-	Ctx *Context
-	DB  *db.MongoDB
-	L   *logrus.Logger
+	Ctx    *Context
+	DB     *db.MongoDB
+	Logger *logrus.Logger
 }
 
 type Server struct {
-	xdsserver server.Server
+	xdsServer server.Server
 }
 
 func NewServer(ctx context.Context, cache cache.Cache, cb *test.Callbacks) *Server {
@@ -53,13 +53,13 @@ func NewServer(ctx context.Context, cache cache.Cache, cb *test.Callbacks) *Serv
 
 func (s *Server) registerServer(grpcServer *grpc.Server) {
 	// register services
-	discoverygrpc.RegisterAggregatedDiscoveryServiceServer(grpcServer, s.xdsserver)
-	endpointservice.RegisterEndpointDiscoveryServiceServer(grpcServer, s.xdsserver)
-	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, s.xdsserver)
-	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, s.xdsserver)
-	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, s.xdsserver)
-	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, s.xdsserver)
-	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, s.xdsserver)
+	discoverygrpc.RegisterAggregatedDiscoveryServiceServer(grpcServer, s.xdsServer)
+	endpointservice.RegisterEndpointDiscoveryServiceServer(grpcServer, s.xdsServer)
+	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, s.xdsServer)
+	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, s.xdsServer)
+	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, s.xdsServer)
+	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, s.xdsServer)
+	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, s.xdsServer)
 }
 
 func (s *Server) Run(port uint) {

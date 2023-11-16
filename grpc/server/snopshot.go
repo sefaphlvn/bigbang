@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/sefaphlvn/bigbang/grpc/server/resources"
 	"github.com/sirupsen/logrus"
-	"os"
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
@@ -23,33 +22,32 @@ type Context struct {
 	Cash *Cash
 }
 
-func NewCash(l *logrus.Logger) *Cash {
+func NewCash(logger *logrus.Logger) *Cash {
 	return &Cash{
-		Cache: cache.NewSnapshotCache(true, cache.IDHash{}, l),
+		Cache: cache.NewSnapshotCache(true, cache.IDHash{}, logger),
 	}
 }
 
-func GetContext(l *logrus.Logger) *Context {
+func GetContext(logger *logrus.Logger) *Context {
 	once.Do(func() {
 		ctx = &Context{
-			Cash: NewCash(l),
+			Cash: NewCash(logger),
 		}
 	})
 	return ctx
 }
 
-func (cash *Context) SetSnapshot(resources *resources.AllResources, l *logrus.Logger) error {
+func (c *Context) SetSnapshot(resources *resources.AllResources, logger *logrus.Logger) error {
 	snapshot := GenerateSnapshot(resources)
 
 	if err := snapshot.Consistent(); err != nil {
-		l.Errorf("snapshot inconsistency: %+v\n%+v", snapshot, err)
-		os.Exit(1)
+		logger.Fatalf("snapshot inconsistency: %+v\n%+v", snapshot, err)
 	}
 
-	//l.Debugf("will serve snapshot %+v", snapshot)
-	if err := cash.Cash.Cache.SetSnapshot(context.Background(), resources.NodeID, snapshot); err != nil {
-		l.Errorf("snapshot error %q for %+v", err, snapshot)
-		os.Exit(1)
+	logger.Debugf("Will serve snapshot %+v", snapshot)
+
+	if err := c.Cash.Cache.SetSnapshot(context.Background(), resources.NodeID, snapshot); err != nil {
+		logger.Fatalf("snapshot error %q for %+v", err, snapshot)
 	}
 
 	return nil

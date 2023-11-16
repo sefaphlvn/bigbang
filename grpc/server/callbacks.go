@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"log"
 	"sync"
 
@@ -12,7 +13,7 @@ import (
 
 type Callbacks struct {
 	Signal         chan struct{}
-	Debug          bool
+	Logger         *logrus.Logger
 	Fetches        int
 	Requests       int
 	DeltaRequests  int
@@ -22,80 +23,73 @@ type Callbacks struct {
 
 var _ server.Callbacks = &Callbacks{}
 
-func (cb *Callbacks) Report() {
-	cb.mu.Lock()
-	defer cb.mu.Unlock()
-	log.Printf("server callbacks fetches=%d requests=%d\n", cb.Fetches, cb.Requests)
+func (c *Callbacks) Report() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	log.Printf("server callbacks fetches=%d requests=%d\n", c.Fetches, c.Requests)
 }
 
-func (cb *Callbacks) OnStreamOpen(_ context.Context, id int64, typ string) error {
-	if cb.Debug {
-		log.Printf("stream %d open for %s\n", id, typ)
-	}
+func (c *Callbacks) OnStreamOpen(_ context.Context, id int64, typ string) error {
+	c.Logger.Debugf("stream %d open for %s\n", id, typ)
 	return nil
 }
 
-func (cb *Callbacks) OnStreamClosed(id int64, node *core.Node) {
-	if cb.Debug {
-		log.Printf("stream %d of node %s closed\n", id, node.Id)
-	}
+func (c *Callbacks) OnStreamClosed(id int64, node *core.Node) {
+	c.Logger.Debugf("stream %d of node %s closed\n", id, node.Id)
+
 }
 
-func (cb *Callbacks) OnDeltaStreamOpen(_ context.Context, id int64, typ string) error {
-	if cb.Debug {
-		log.Printf("delta stream %d open for %s\n", id, typ)
-	}
+func (c *Callbacks) OnDeltaStreamOpen(_ context.Context, id int64, typ string) error {
+	c.Logger.Debugf("delta stream %d open for %s\n", id, typ)
 	return nil
 }
 
-func (cb *Callbacks) OnDeltaStreamClosed(id int64, node *core.Node) {
-	if cb.Debug {
-		log.Printf("delta stream %d of node %s closed\n", id, node.Id)
-	}
+func (c *Callbacks) OnDeltaStreamClosed(id int64, node *core.Node) {
+	c.Logger.Debugf("delta stream %d of node %s closed\n", id, node.Id)
 }
 
-func (cb *Callbacks) OnStreamRequest(_ int64, req *discovery.DiscoveryRequest) error {
+func (c *Callbacks) OnStreamRequest(_ int64, req *discovery.DiscoveryRequest) error {
 	log.Printf("DiscoveryRequest: %v\n", req.TypeUrl)
-	cb.mu.Lock()
-	defer cb.mu.Unlock()
-	cb.Requests++
-	if cb.Signal != nil {
-		close(cb.Signal)
-		cb.Signal = nil
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Requests++
+	if c.Signal != nil {
+		close(c.Signal)
+		c.Signal = nil
 	}
 	return nil
 }
 
-func (cb *Callbacks) OnStreamResponse(context.Context, int64, *discovery.DiscoveryRequest, *discovery.DiscoveryResponse) {
+func (c *Callbacks) OnStreamResponse(context.Context, int64, *discovery.DiscoveryRequest, *discovery.DiscoveryResponse) {
 }
 
-func (cb *Callbacks) OnStreamDeltaResponse(int64, *discovery.DeltaDiscoveryRequest, *discovery.DeltaDiscoveryResponse) {
-	cb.mu.Lock()
-	defer cb.mu.Unlock()
-	cb.DeltaResponses++
+func (c *Callbacks) OnStreamDeltaResponse(int64, *discovery.DeltaDiscoveryRequest, *discovery.DeltaDiscoveryResponse) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.DeltaResponses++
 }
 
-func (cb *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {
-	cb.mu.Lock()
-	defer cb.mu.Unlock()
-	cb.DeltaRequests++
-	if cb.Signal != nil {
-		close(cb.Signal)
-		cb.Signal = nil
+func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.DeltaRequests++
+	if c.Signal != nil {
+		close(c.Signal)
+		c.Signal = nil
 	}
 
 	return nil
 }
 
-func (cb *Callbacks) OnFetchRequest(context.Context, *discovery.DiscoveryRequest) error {
-	cb.mu.Lock()
-	defer cb.mu.Unlock()
-	cb.Fetches++
-	if cb.Signal != nil {
-		close(cb.Signal)
-		cb.Signal = nil
+func (c *Callbacks) OnFetchRequest(context.Context, *discovery.DiscoveryRequest) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Fetches++
+	if c.Signal != nil {
+		close(c.Signal)
+		c.Signal = nil
 	}
 	return nil
 }
 
-func (cb *Callbacks) OnFetchResponse(*discovery.DiscoveryRequest, *discovery.DiscoveryResponse) {}
+func (c *Callbacks) OnFetchResponse(*discovery.DiscoveryRequest, *discovery.DiscoveryResponse) {}

@@ -182,7 +182,7 @@ func (h *Handler) GetAllResourcesFromListener(serviceName string) (*resources.Al
 		return nil, err
 	}
 
-	lis, err := resources.SetSnapshot(rawListenerResource, serviceName, h.DB, h.L)
+	lis, err := resources.SetSnapshot(rawListenerResource, serviceName, h.DB, h.Logger)
 	if err != nil {
 		return nil, err
 	}
