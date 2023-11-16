@@ -3,17 +3,18 @@ package poke
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sefaphlvn/bigbang/grpc/server"
+	"github.com/sirupsen/logrus"
 	"net/http"
 
-	"github.com/sefaphlvn/bigbang/grpcServer/db"
-	grpcserver "github.com/sefaphlvn/bigbang/grpcServer/server"
+	"github.com/sefaphlvn/bigbang/pkg/db"
 )
 
 type Handler struct {
-	Ctx  *grpcserver.Context
+	Ctx  *server.Context
 	DB   *db.MongoDB
-	L    *grpcserver.Logger
-	Func grpcserver.Func
+	L    *logrus.Logger
+	Func server.Func
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -32,12 +33,12 @@ func (h *Handler) handlePing(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handlePoke(w http.ResponseWriter, r *http.Request) {
-	asd, err := h.Func.GetAllResourcesFromListener("firstLDS")
+	asd, err := h.Func.GetAllResourcesFromListener("newListener")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	h.Ctx.SetSnapshot(asd, *h.L)
+	h.Ctx.SetSnapshot(asd, h.L)
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(asd)

@@ -102,6 +102,23 @@ func collectCreateIndex(database *mongo.Database, ctx context.Context) (interfac
 	return nil, nil
 }
 
+func (db *MongoDB) GetGenerals(collectionName string) (*mongo.Cursor, error) {
+	collection := db.Client.Collection(collectionName)
+	findOptions := options.Find()
+	findOptions.SetProjection(bson.D{{Key: "general", Value: 1}})
+
+	cur, err := collection.Find(db.Ctx, bson.D{{}}, findOptions)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.New("not found")
+		} else {
+			return nil, errors.New("unknown db error")
+		}
+	}
+
+	return cur, err
+}
+
 func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *MongoDB {
 
 	hosts := strings.Join(config.MongoDB.Hosts, fmt.Sprintf("%s,", config.MongoDB.Port))

@@ -2,11 +2,12 @@ package server
 
 import (
 	"context"
+	"github.com/sefaphlvn/bigbang/grpc/server/resources"
+	"github.com/sirupsen/logrus"
 	"os"
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
-	"github.com/sefaphlvn/bigbang/grpcServer/server/resources"
 )
 
 var (
@@ -22,13 +23,13 @@ type Context struct {
 	Cash *Cash
 }
 
-func NewCash(l Logger) *Cash {
+func NewCash(l *logrus.Logger) *Cash {
 	return &Cash{
 		Cache: cache.NewSnapshotCache(true, cache.IDHash{}, l),
 	}
 }
 
-func GetContext(l Logger) *Context {
+func GetContext(l *logrus.Logger) *Context {
 	once.Do(func() {
 		ctx = &Context{
 			Cash: NewCash(l),
@@ -37,7 +38,7 @@ func GetContext(l Logger) *Context {
 	return ctx
 }
 
-func (cash *Context) SetSnapshot(resources *resources.AllResources, l Logger) error {
+func (cash *Context) SetSnapshot(resources *resources.AllResources, l *logrus.Logger) error {
 	snapshot := GenerateSnapshot(resources)
 
 	if err := snapshot.Consistent(); err != nil {

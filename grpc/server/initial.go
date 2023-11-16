@@ -1,9 +1,9 @@
 package server
 
 import (
+	"github.com/sefaphlvn/bigbang/grpc/models"
 	"log"
 
-	"github.com/sefaphlvn/bigbang/grpcServer/models"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -14,7 +14,7 @@ func (h *Handler) InitialSnapshots() {
 		if err != nil {
 			h.L.Errorf("BULK GetConfigurationFromListener(%v): %v", serviceName, err)
 		}
-		h.Ctx.SetSnapshot(allResource, *h.L)
+		h.Ctx.SetSnapshot(allResource, h.L)
 	}
 }
 

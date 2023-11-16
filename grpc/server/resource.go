@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/sefaphlvn/bigbang/grpc/server/resources"
 	"math/rand"
 	"strconv"
 	"time"
@@ -19,12 +20,11 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/sefaphlvn/bigbang/grpcServer/server/resources"
 )
 
 const (
 	ClusterName  = "example_proxy_cluster"
-	RouteName    = "firstRoute"
+	RouteName    = "v28rds"
 	ListenerPort = 10000
 	UpstreamHost = "lgsagem.free.fr"
 	UpstreamPort = 80
@@ -182,7 +182,7 @@ func (h *Handler) GetAllResourcesFromListener(serviceName string) (*resources.Al
 		return nil, err
 	}
 
-	lis, err := resources.SetSnapshot(rawListenerResource, serviceName, h.DB)
+	lis, err := resources.SetSnapshot(rawListenerResource, serviceName, h.DB, h.L)
 	if err != nil {
 		return nil, err
 	}

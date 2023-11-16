@@ -1,9 +1,21 @@
 package cmd
 
 import (
-	"fmt"
+	"context"
+	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	"github.com/sefaphlvn/bigbang/grpc/poke"
+	grpcserver "github.com/sefaphlvn/bigbang/grpc/server"
+	"github.com/sefaphlvn/bigbang/pkg/config"
+	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/log"
+	"net/http"
 
 	"github.com/spf13/cobra"
+)
+
+var (
+	port   uint
+	nodeID string
 )
 
 // grpcCmd represents the grpc command
@@ -12,20 +24,38 @@ var grpcCmd = &cobra.Command{
 	Short: "Start GRPC Server",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("grpc called")
+
+		var appConfig = config.Read(cfgFile)
+		var logger = log.NewLogger(appConfig)
+		var db = db.NewMongoDB(appConfig, logger)
+
+		// create cache
+		ctxCache := grpcserver.GetContext(logger)
+		grpcServerHandler := &grpcserver.Handler{Ctx: ctxCache, DB: db, L: logger}
+		pokeHandler := &poke.Handler{Ctx: ctxCache, DB: db, L: logger, Func: grpcServerHandler}
+
+		// start http server
+		go func() {
+			err := http.ListenAndServe(":8080", pokeHandler)
+			if err != nil {
+				logger.Fatalf("failed to start HTTP server: %v", err)
+			}
+		}()
+
+		// set initial snapshots
+		grpcServerHandler.InitialSnapshots()
+		logger.Infof("all snapshots are loaded")
+
+		// start grpc server
+		ctx := context.Background()
+		cb := &grpcserver.Callbacks{Debug: true}
+		srv := server.NewServer(ctx, ctxCache.Cash.Cache, cb)
+		grpcserver.RunServer(srv, port)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(grpcCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// grpcCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// grpcCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	grpcCmd.PersistentFlags().UintVar(&port, "port", 18000, "xDS management server port")
+	grpcCmd.PersistentFlags().StringVar(&nodeID, "nodeID", "test", "Node ID")
 }

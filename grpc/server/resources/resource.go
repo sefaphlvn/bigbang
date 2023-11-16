@@ -3,9 +3,9 @@ package resources
 import (
 	"errors"
 	"fmt"
+	"github.com/sefaphlvn/bigbang/grpc/models"
 
-	"github.com/sefaphlvn/bigbang/grpcServer/db"
-	"github.com/sefaphlvn/bigbang/grpcServer/models"
+	"github.com/sefaphlvn/bigbang/pkg/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

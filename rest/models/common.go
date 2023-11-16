@@ -59,9 +59,11 @@ type Extra struct {
 }
 
 type AdditionalResource struct {
-	Type     string `json:"type" bson:"type"`
-	Value    string `json:"value" bson:"value"`
-	Priority int    `json:"priority" bson:"priority"`
+	GType         string `json:"gtype" bson:"gtype"`
+	Value         string `json:"value" bson:"value"`
+	Priority      int    `json:"priority" bson:"priority"`
+	Category      string `json:"category" bson:"category"`
+	CanonicalName string `json:"canonical_name" bson:"canonical_name"`
 }
 
 type DBResource struct {

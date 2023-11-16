@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/sefaphlvn/bigbang/grpc/server/resources"
+	"github.com/sirupsen/logrus"
 	"log"
 	"net"
 	"time"
@@ -20,8 +22,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/test/v3"
-	"github.com/sefaphlvn/bigbang/grpcServer/db"
-	"github.com/sefaphlvn/bigbang/grpcServer/server/resources"
+	"github.com/sefaphlvn/bigbang/pkg/db"
 )
 
 const (
@@ -38,7 +39,7 @@ type Func interface {
 type Handler struct {
 	Ctx *Context
 	DB  *db.MongoDB
-	L   *Logger
+	L   *logrus.Logger
 }
 
 type Server struct {
