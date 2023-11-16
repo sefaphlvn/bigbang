@@ -11,4 +11,4 @@ MongoDB:
 Log:
   Level: info          # debug, info, warn, error
   Formatter: text      # json, text
-  ReportCaller: false
+  ReportCaller: true

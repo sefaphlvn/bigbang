@@ -2,7 +2,9 @@ package helper
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"reflect"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -57,4 +59,18 @@ func ItoGenericTypeConvert[T any](data interface{}) T {
 	}
 
 	return typedData
+}
+
+func PrettyPrinter(data interface{}) {
+	prettyJSON, err := json.MarshalIndent(data, "", "    ")
+	if err != nil {
+		log.Fatalf("JSON marshaling error: %v", err)
+	}
+
+	fmt.Println(string(prettyJSON))
+}
+
+func GetResourceType(data interface{}) {
+	resourceType := reflect.TypeOf(data)
+	fmt.Printf("Resource type: %v\n", resourceType)
 }
