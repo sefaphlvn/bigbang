@@ -19,6 +19,7 @@ type ResourceDetails struct {
 	Type          string
 	CanonicalName string
 	Name          string
+	Category      string
 	Version       string
 	User          UserDetails
 }
@@ -45,6 +46,7 @@ type General struct {
 	Type                string                 `json:"type" bson:"type"`
 	GType               string                 `json:"gtype" bson:"gtype"`
 	CanonicalName       string                 `json:"canonical_name" bson:"canonical_name"`
+	Category            string                 `json:"category" bson:"category"`
 	Extra               map[string]interface{} `json:"extra" bson:"extra"`
 	Groups              []string               `json:"groups" bson:"groups"`
 	AdditionalResources []AdditionalResource   `json:"additional_resources,omitempty" bson:"additional_resources,omitempty"`
