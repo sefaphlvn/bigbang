@@ -164,18 +164,19 @@ func makeConfigSource() *core.ConfigSource {
 func GenerateSnapshot(resources *resources.AllResources) *cache.Snapshot {
 	var listeners []types.Resource
 	var extensions []types.Resource
-	for _, listener := range resources.Listener {
-		listeners = append(listeners, listener)
+
+	for _, l := range resources.Listener {
+		listeners = append(listeners, l)
 	}
 
 	routerConfig, _ := anypb.New(&router.Router{})
 
-	extens := []*core.TypedExtensionConfig{{
+	typedExtensionConfig := []*core.TypedExtensionConfig{{
 		Name:        "newHttpFilter",
 		TypedConfig: routerConfig,
 	}}
 
-	for _, ex := range extens {
+	for _, ex := range typedExtensionConfig {
 		extensions = append(extensions, ex)
 	}
 

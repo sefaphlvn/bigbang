@@ -49,7 +49,7 @@ func (c *Callbacks) OnDeltaStreamClosed(id int64, node *core.Node) {
 }
 
 func (c *Callbacks) OnStreamRequest(_ int64, req *discovery.DiscoveryRequest) error {
-	log.Printf("DiscoveryRequest: %v\n", req.TypeUrl)
+	c.Logger.Infof("DiscoveryRequest: %v\n", req.TypeUrl)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.Requests++

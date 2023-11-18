@@ -22,7 +22,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/test/v3"
-	"github.com/sefaphlvn/bigbang/pkg/db"
 )
 
 const (
@@ -34,12 +33,6 @@ const (
 
 type Func interface {
 	GetAllResourcesFromListener(serviceName string) (*resources.AllResources, error)
-}
-
-type Handler struct {
-	Ctx    *Context
-	DB     *db.MongoDB
-	Logger *logrus.Logger
 }
 
 type Server struct {
@@ -102,7 +95,7 @@ func registerServer(grpcServer *grpc.Server, server server.Server) {
 }
 
 // RunServer starts an xDS server at the given port.
-func RunServer(srv server.Server, port uint) {
+func RunServer(srv server.Server, port uint, logger *logrus.Logger) {
 	var grpcOptions []grpc.ServerOption
 	grpcOptions = append(grpcOptions,
 		grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams),
@@ -124,8 +117,8 @@ func RunServer(srv server.Server, port uint) {
 
 	registerServer(grpcServer, srv)
 
-	log.Printf("management server listening on %d\n", port)
+	logger.Infof("management server listening on %d\n", port)
 	if err = grpcServer.Serve(lis); err != nil {
-		log.Println(err)
+		logger.Fatal(err)
 	}
 }
