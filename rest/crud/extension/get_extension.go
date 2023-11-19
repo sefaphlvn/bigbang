@@ -3,6 +3,7 @@ package extension
 import (
 	"errors"
 
+	"github.com/sefaphlvn/bigbang/rest/crud/common"
 	"github.com/sefaphlvn/bigbang/rest/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,7 +13,9 @@ import (
 func (extension *DBHandler) GetExtension(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
 	collection := extension.DB.Client.Collection("extensions")
 	filter := bson.M{"general.name": resourceDetails.Name, "general.canonical_name": resourceDetails.CanonicalName}
-	result := collection.FindOne(extension.DB.Ctx, filter)
+	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
+	result := collection.FindOne(extension.DB.Ctx, filterWithRestriction)
+
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
 			return nil, errors.New("not found")
@@ -20,10 +23,12 @@ func (extension *DBHandler) GetExtension(resource models.DBResourceClass, resour
 			return nil, errors.New("unknown db error")
 		}
 	}
+
 	err := result.Decode(resource)
 	if err != nil {
 		return nil, err
 	}
+
 	return resource, nil
 }
 
