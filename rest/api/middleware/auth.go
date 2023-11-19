@@ -27,7 +27,7 @@ func Authentication() gin.HandlerFunc {
 
 		c.Set("email", claims.Email)
 		c.Set("username", claims.Username)
-		c.Set("user_id", claims.User_id)
+		c.Set("user_id", claims.UserId)
 		c.Set("groups", claims.Groups)
 		c.Set("isAdmin", helper.Contains(claims.Groups, "admin"))
 		c.Next()
@@ -50,7 +50,7 @@ func Refresh() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("user_id", claims.User_id)
+		c.Set("user_id", claims.UserId)
 		c.Set("username", claims.Username)
 		c.Set("email", claims.Email)
 		c.Set("groups", claims.Groups)

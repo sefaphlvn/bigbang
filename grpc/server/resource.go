@@ -1,10 +1,11 @@
 package server
 
 import (
-	"github.com/sefaphlvn/bigbang/grpc/server/resources"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/sefaphlvn/bigbang/grpc/server/resources"
 
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -162,30 +163,30 @@ func makeConfigSource() *core.ConfigSource {
 
 func GenerateSnapshot(resources *resources.AllResources) *cache.Snapshot {
 	var listeners []types.Resource
-	for _, listener := range resources.Listener {
-		listeners = append(listeners, listener)
+	var extensions []types.Resource
+
+	for _, l := range resources.Listener {
+		listeners = append(listeners, l)
+	}
+
+	routerConfig, _ := anypb.New(&router.Router{})
+
+	typedExtensionConfig := []*core.TypedExtensionConfig{{
+		Name:        "newHttpFilter",
+		TypedConfig: routerConfig,
+	}}
+
+	for _, ex := range typedExtensionConfig {
+		extensions = append(extensions, ex)
 	}
 
 	snap, _ := cache.NewSnapshot(resources.Version,
 		map[resource.Type][]types.Resource{
-			resource.ClusterType:  {makeCluster(ClusterName)},
-			resource.RouteType:    {makeRoute(RouteName, ClusterName)},
-			resource.ListenerType: listeners,
+			resource.ClusterType:         {makeCluster(ClusterName)},
+			resource.RouteType:           {makeRoute(RouteName, ClusterName)},
+			resource.ListenerType:        listeners,
+			resource.ExtensionConfigType: extensions,
 		},
 	)
 	return snap
-}
-
-func (h *Handler) GetAllResourcesFromListener(serviceName string) (*resources.AllResources, error) {
-	rawListenerResource, err := resources.GetResource(h.DB, "listeners", serviceName)
-	if err != nil {
-		return nil, err
-	}
-
-	lis, err := resources.SetSnapshot(rawListenerResource, serviceName, h.DB, h.Logger)
-	if err != nil {
-		return nil, err
-	}
-
-	return lis, nil
 }

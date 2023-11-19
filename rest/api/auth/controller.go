@@ -25,7 +25,7 @@ type DBHandler crud.DbHandler
 type SignedDetails struct {
 	Email    string
 	Username string
-	User_id  string
+	UserId   string
 	Groups   []string
 	jwt.StandardClaims
 }
@@ -82,8 +82,8 @@ func (userDB *DBHandler) SignUp() gin.HandlerFunc {
 
 		count, err := userCollection.CountDocuments(ctx, bson.M{"username": user.Username})
 		if err != nil {
-			log.Panic(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "error occured while checking for the username"})
+			log.Panic(err)
 			return
 		}
 
@@ -220,7 +220,7 @@ func GenerateAllTokens(email string, Username string, user_id string, groups []s
 	claims := &SignedDetails{
 		Email:    email,
 		Username: Username,
-		User_id:  user_id,
+		UserId:   user_id,
 		Groups:   groups,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Minute * time.Duration(60)).Unix(),
@@ -230,7 +230,7 @@ func GenerateAllTokens(email string, Username string, user_id string, groups []s
 	refreshClaims := &SignedDetails{
 		Email:    email,
 		Username: Username,
-		User_id:  user_id,
+		UserId:   user_id,
 		Groups:   groups,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(168)).Unix(),

@@ -14,16 +14,16 @@ var (
 	ctx  *Context
 )
 
-type Cash struct {
+type Cache struct {
 	Cache cache.SnapshotCache
 }
 
 type Context struct {
-	Cash *Cash
+	Cache *Cache
 }
 
-func NewCash(logger *logrus.Logger) *Cash {
-	return &Cash{
+func NewCache(logger *logrus.Logger) *Cache {
+	return &Cache{
 		Cache: cache.NewSnapshotCache(true, cache.IDHash{}, logger),
 	}
 }
@@ -31,7 +31,7 @@ func NewCash(logger *logrus.Logger) *Cash {
 func GetContext(logger *logrus.Logger) *Context {
 	once.Do(func() {
 		ctx = &Context{
-			Cash: NewCash(logger),
+			Cache: NewCache(logger),
 		}
 	})
 	return ctx
@@ -46,7 +46,7 @@ func (c *Context) SetSnapshot(resources *resources.AllResources, logger *logrus.
 
 	logger.Debugf("Will serve snapshot %+v", snapshot)
 
-	if err := c.Cash.Cache.SetSnapshot(context.Background(), resources.NodeID, snapshot); err != nil {
+	if err := c.Cache.Cache.SetSnapshot(context.Background(), resources.NodeID, snapshot); err != nil {
 		logger.Fatalf("snapshot error %q for %+v", err, snapshot)
 	}
 
