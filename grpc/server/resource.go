@@ -190,17 +190,3 @@ func GenerateSnapshot(resources *resources.AllResources) *cache.Snapshot {
 	)
 	return snap
 }
-
-func (h *Handler) GetAllResourcesFromListener(serviceName string) (*resources.AllResources, error) {
-	rawListenerResource, err := resources.GetResource(h.DB, "listeners", serviceName)
-	if err != nil {
-		return nil, err
-	}
-
-	lis, err := resources.SetSnapshot(rawListenerResource, serviceName, h.DB, h.Logger)
-	if err != nil {
-		return nil, err
-	}
-
-	return lis, nil
-}

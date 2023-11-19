@@ -8,8 +8,6 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/log"
-	"net/http"
-
 	"github.com/spf13/cobra"
 )
 
@@ -29,28 +27,16 @@ var grpcCmd = &cobra.Command{
 		var logger = log.NewLogger(appConfig)
 		var db = db.NewMongoDB(appConfig, logger)
 
-		// Create cache
-		ctxCache := grpcserver.GetContext(logger)
-		grpcServerHandler := &grpcserver.Handler{Ctx: ctxCache, DB: db, Logger: logger}
-		pokeHandler := &poke.Handler{Ctx: ctxCache, DB: db, Logger: logger, Func: grpcServerHandler}
+		var ctxCache = grpcserver.GetContext(logger)
 
-		// Start http server
-		go func() {
-			err := http.ListenAndServe(":8080", pokeHandler)
-			if err != nil {
-				logger.Fatalf("failed to start HTTP server: %v", err)
-			}
-		}()
+		var pokeServer = poke.NewPokeServer(ctxCache, db, logger)
+		go pokeServer.Run(pokeServer)
 
-		// Set initial snapshots
-		grpcServerHandler.InitialSnapshots()
-		logger.Infof("All snapshots are loaded")
+		var callbacks = grpcserver.NewCallbacks(logger)
+		var srv = server.NewServer(context.Background(), ctxCache.Cache.Cache, callbacks)
+		var grpcServer = grpcserver.NewServer(srv, port, logger)
 
-		// Start grpc server
-		ctx := context.Background()
-		cb := &grpcserver.Callbacks{Logger: logger}
-		srv := server.NewServer(ctx, ctxCache.Cash.Cache, cb)
-		grpcserver.RunServer(srv, port, logger)
+		grpcServer.Run()
 	},
 }
 
