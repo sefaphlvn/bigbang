@@ -47,7 +47,7 @@ type General struct {
 	GType               string                 `json:"gtype" bson:"gtype"`
 	CanonicalName       string                 `json:"canonical_name" bson:"canonical_name"`
 	Category            string                 `json:"category" bson:"category"`
-	Extra               map[string]interface{} `json:"extra" bson:"extra"`
+	Extra               map[string]interface{} `json:"extra,omitempty" bson:"extra,omitempty"`
 	Groups              []string               `json:"groups" bson:"groups"`
 	AdditionalResources []AdditionalResource   `json:"additional_resources,omitempty" bson:"additional_resources,omitempty"`
 	CreatedAt           primitive.DateTime     `json:"created_at,omitempty" bson:"created_at,omitempty"`
@@ -60,12 +60,18 @@ type Extra struct {
 	Service string `json:"service,omitempty" bson:"service,omitempty"`
 }
 
-type AdditionalResource struct {
+type Extensions struct {
 	GType         string `json:"gtype" bson:"gtype"`
 	Value         string `json:"value" bson:"value"`
 	Priority      int    `json:"priority" bson:"priority"`
 	Category      string `json:"category" bson:"category"`
 	CanonicalName string `json:"canonical_name" bson:"canonical_name"`
+}
+
+type AdditionalResource struct {
+	ParentName   string       `json:"parent_name,omitempty" bson:"parent_name,omitempty"`
+	Extensions   []Extensions `json:"extensions,omitempty" bson:"extensions,omitempty"`
+	MainResource string       `json:"main_resource,omitempty" bson:"main_resource,omitempty"`
 }
 
 type DBResource struct {

@@ -5,13 +5,16 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sefaphlvn/bigbang/rest/crud/common"
 	"github.com/sefaphlvn/bigbang/rest/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (extension *DBHandler) UpdateExtensions(resource models.DBResourceClass, collectionName models.ResourceDetails) (interface{}, error) {
-	filter := bson.M{"general.name": collectionName.Name, "general.canonical_name": collectionName.CanonicalName}
+func (extension *DBHandler) UpdateExtensions(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+	filter := bson.M{"general.name": resourceDetails.Name, "general.canonical_name": resourceDetails.CanonicalName}
+	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
+
 	version, _ := strconv.Atoi(resource.GetVersion().(string))
 	resource.SetVersion(strconv.Itoa(version + 1))
 	update := bson.M{
@@ -24,7 +27,7 @@ func (extension *DBHandler) UpdateExtensions(resource models.DBResourceClass, co
 	}
 
 	collection := extension.DB.Client.Collection("extensions")
-	_, err := collection.UpdateOne(extension.DB.Ctx, filter, update)
+	_, err := collection.UpdateOne(extension.DB.Ctx, filterWithRestriction, update)
 
 	if err != nil {
 		return nil, err
