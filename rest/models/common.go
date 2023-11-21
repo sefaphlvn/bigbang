@@ -62,7 +62,7 @@ type Extra struct {
 
 type Extensions struct {
 	GType         string `json:"gtype" bson:"gtype"`
-	Value         string `json:"value" bson:"value"`
+	Name          string `json:"name" bson:"name"`
 	Priority      int    `json:"priority" bson:"priority"`
 	Category      string `json:"category" bson:"category"`
 	CanonicalName string `json:"canonical_name" bson:"canonical_name"`
