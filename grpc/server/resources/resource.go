@@ -3,6 +3,7 @@ package resources
 import (
 	"errors"
 	"fmt"
+
 	"github.com/sefaphlvn/bigbang/grpc/models"
 
 	"github.com/sefaphlvn/bigbang/pkg/db"
@@ -11,14 +12,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func GetResource(db *db.MongoDB, collectionName string, name string) (*models.Resource, error) {
-	var doc struct {
-		Resource models.Resource `bson:"resource"`
-	}
+func GetResource(db *db.MongoDB, collectionName string, name string) (*models.DBResource, error) {
+	var doc models.DBResource
 
 	collection := db.Client.Collection(collectionName)
 	findOptions := options.FindOne()
-	findOptions.SetProjection(bson.D{{Key: "resource", Value: 1}, {Key: "_id", Value: 0}})
+	findOptions.SetProjection(bson.D{{Key: "resource", Value: 1}, {Key: "_id", Value: 0}, {Key: "general", Value: 1}})
 
 	filter := bson.D{{Key: "general.name", Value: name}}
 
@@ -32,5 +31,5 @@ func GetResource(db *db.MongoDB, collectionName string, name string) (*models.Re
 		}
 	}
 
-	return &doc.Resource, nil
+	return &doc, nil
 }

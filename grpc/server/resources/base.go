@@ -2,6 +2,7 @@ package resources
 
 import (
 	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
@@ -25,13 +26,14 @@ type AllResources struct {
 	Route        route.RouteConfiguration
 	Endpoint     []*endpoint.Endpoint
 	Secret       tls.Secret
+	Extensions   []*core.TypedExtensionConfig
 }
 
 func NewResources() *AllResources {
 	return &AllResources{}
 }
 
-func SetSnapshot(cur *models.Resource, nodeID string, db *db.MongoDB, logger *logrus.Logger) (*AllResources, error) {
+func SetSnapshot(cur *models.DBResource, nodeID string, db *db.MongoDB, logger *logrus.Logger) (*AllResources, error) {
 	resourceAll := NewResources()
 	resourceAll.NodeID = nodeID
 	resourceAll.DecodeListener(cur, db, logger)

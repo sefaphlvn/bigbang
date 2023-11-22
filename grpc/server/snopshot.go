@@ -2,9 +2,11 @@ package server
 
 import (
 	"context"
-	"github.com/sefaphlvn/bigbang/grpc/server/resources"
-	"github.com/sirupsen/logrus"
 	"sync"
+
+	"github.com/sefaphlvn/bigbang/grpc/server/resources"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
+	"github.com/sirupsen/logrus"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 )
@@ -40,6 +42,7 @@ func GetContext(logger *logrus.Logger) *Context {
 func (c *Context) SetSnapshot(resources *resources.AllResources, logger *logrus.Logger) error {
 	snapshot := GenerateSnapshot(resources)
 
+	helper.PrettyPrinter(snapshot)
 	if err := snapshot.Consistent(); err != nil {
 		logger.Fatalf("snapshot inconsistency: %+v\n%+v", snapshot, err)
 	}

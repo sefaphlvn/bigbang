@@ -3,14 +3,15 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"go.mongodb.org/mongo-driver/x/bsonx"
-	"strings"
-	"time"
 )
 
 func NewClient(appConfig *config.AppConfig, log *logrus.Logger) DBClient {
@@ -87,14 +88,14 @@ func (c *dbClient) Ping() error {
 	return nil
 }
 
-func generateIndexKeys(arr []string) bsonx.Doc {
+func generateIndexKeys(arr []string) bson.D {
 
-	var keys bsonx.Doc
+	var keys bson.D
 
 	for _, s := range arr {
-		keys = append(keys, bsonx.Elem{
+		keys = append(keys, bson.E{
 			Key:   s,
-			Value: bsonx.Int32(1),
+			Value: int32(1),
 		})
 	}
 

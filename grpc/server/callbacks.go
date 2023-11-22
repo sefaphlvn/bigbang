@@ -2,8 +2,9 @@ package server
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
 	"sync"
+
+	"github.com/sirupsen/logrus"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -51,6 +52,11 @@ func (c *Callbacks) OnDeltaStreamClosed(id int64, node *core.Node) {
 }
 
 func (c *Callbacks) OnStreamRequest(_ int64, req *discovery.DiscoveryRequest) error {
+
+	/* 	helper.PrettyPrinter(req.ResourceNames)
+	   	helper.PrettyPrinter(req.TypeUrl)
+	   	helper.PrettyPrinter(req.ResourceLocators)
+	   	helper.PrettyPrinter(req.ResponseNonce) */
 	c.logger.Infof("DiscoveryRequest: %v\n", req.TypeUrl)
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -63,15 +69,18 @@ func (c *Callbacks) OnStreamRequest(_ int64, req *discovery.DiscoveryRequest) er
 }
 
 func (c *Callbacks) OnStreamResponse(context.Context, int64, *discovery.DiscoveryRequest, *discovery.DiscoveryResponse) {
+
 }
 
 func (c *Callbacks) OnStreamDeltaResponse(int64, *discovery.DeltaDiscoveryRequest, *discovery.DeltaDiscoveryResponse) {
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.deltaResponses++
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.deltaRequests++

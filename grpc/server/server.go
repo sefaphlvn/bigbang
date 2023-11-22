@@ -2,9 +2,10 @@ package server
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -12,6 +13,7 @@ import (
 	clusterservice "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	discoverygrpc "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	endpointservice "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
+	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
 	listenerservice "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	runtimeservice "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
@@ -77,4 +79,6 @@ func (s *Server) registerServer(grpcServer *grpc.Server) {
 	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, s.xdsServer)
 	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, s.xdsServer)
 	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, s.xdsServer)
+	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(grpcServer, s.xdsServer)
+
 }
