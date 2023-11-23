@@ -18,7 +18,7 @@ func (R *AllResources) CollectExtensions(resource []models.AdditionalResource, d
 	var typedExtensionConfig = []*core.TypedExtensionConfig{}
 	for _, additionalResource := range resource {
 		for _, extension := range additionalResource.Extensions {
-			anyResource, addadditionalResource, _ := R.CreateDynamicFilter(extension.GType, extension.Name, additionalResource.ParentName, db)
+			anyResource, addadditionalResource, _ := R.CreateDynamicFilter(extension.GType, extension.Name, db)
 			typedExtensionConfig = append(typedExtensionConfig, &core.TypedExtensionConfig{
 				Name:        additionalResource.ParentName,
 				TypedConfig: anyResource,
@@ -34,7 +34,7 @@ func (R *AllResources) CollectExtensions(resource []models.AdditionalResource, d
 
 }
 
-func (R *AllResources) CreateDynamicFilter(typeUrl string, resourceName string, parentName string, db *db.MongoDB) (*anypb.Any, []models.AdditionalResource, error) {
+func (R *AllResources) CreateDynamicFilter(typeUrl string, resourceName string, db *db.MongoDB) (*anypb.Any, []models.AdditionalResource, error) {
 	var message *anypb.Any
 	var additionalResource []models.AdditionalResource
 	switch typeUrl {
@@ -79,13 +79,6 @@ func (R *AllResources) CreateDynamicFilter(typeUrl string, resourceName string, 
 			log.Fatal(err)
 		}
 		message, _ = anypb.New(router)
-
-		typedExtensionConfig := &core.TypedExtensionConfig{
-			Name:        parentName,
-			TypedConfig: message,
-		}
-
-		R.Extensions = append(R.Extensions, typedExtensionConfig)
 
 	default:
 		return nil, nil, fmt.Errorf("unknown type URL: %s", typeUrl)
