@@ -180,6 +180,8 @@ func GenerateSnapshot(resources *resources.AllResources) *cache.Snapshot {
 		map[resource.Type][]types.Resource{
 			resource.ClusterType:         {makeCluster(ClusterName)},
 			resource.RouteType:           {makeRoute(RouteName, ClusterName)},
+			resource.VirtualHostType:     {},
+			resource.EndpointType:        {},
 			resource.ListenerType:        listeners,
 			resource.ExtensionConfigType: extensions,
 		},

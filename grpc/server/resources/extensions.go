@@ -15,7 +15,7 @@ import (
 )
 
 func (R *AllResources) CollectExtensions(resource []models.AdditionalResource, db *db.MongoDB) {
-	var typedExtensionConfig = []*core.TypedExtensionConfig{}
+	var typedExtensionConfig []*core.TypedExtensionConfig
 	for _, additionalResource := range resource {
 		for _, extension := range additionalResource.Extensions {
 			anyResource, addadditionalResource, _ := R.CreateDynamicFilter(extension.GType, extension.Name, db)
