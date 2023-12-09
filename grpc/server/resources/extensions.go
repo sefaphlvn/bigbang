@@ -14,27 +14,27 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func (R *AllResources) CollectExtensions(resource []models.AdditionalResource, db *db.MongoDB) {
+func (r *AllResources) CollectExtensions(resource []models.AdditionalResource, db *db.MongoDB) {
 	var typedExtensionConfig []*core.TypedExtensionConfig
 	for _, additionalResource := range resource {
 		for _, extension := range additionalResource.Extensions {
-			anyResource, addadditionalResource, _ := R.CreateDynamicFilter(extension.GType, extension.Name, db)
+			anyResource, addadditionalResource, _ := r.CreateDynamicFilter(extension.GType, extension.Name, db)
 			typedExtensionConfig = append(typedExtensionConfig, &core.TypedExtensionConfig{
 				Name:        additionalResource.ParentName,
 				TypedConfig: anyResource,
 			})
 
-			R.Extensions = append(R.Extensions, typedExtensionConfig...)
+			r.Extensions = append(r.Extensions, typedExtensionConfig...)
 
 			if addadditionalResource != nil {
-				R.CollectExtensions(addadditionalResource, db)
+				r.CollectExtensions(addadditionalResource, db)
 			}
 		}
 	}
 
 }
 
-func (R *AllResources) CreateDynamicFilter(typeUrl string, resourceName string, db *db.MongoDB) (*anypb.Any, []models.AdditionalResource, error) {
+func (r *AllResources) CreateDynamicFilter(typeUrl string, resourceName string, db *db.MongoDB) (*anypb.Any, []models.AdditionalResource, error) {
 	var message *anypb.Any
 	var additionalResource []models.AdditionalResource
 	switch typeUrl {

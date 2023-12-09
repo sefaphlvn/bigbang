@@ -23,7 +23,7 @@ type AllResources struct {
 	Version      string
 	Listener     []*listener.Listener
 	Cluster      []*cluster.Cluster
-	Route        route.RouteConfiguration
+	Route        *route.RouteConfiguration
 	Endpoint     []*endpoint.Endpoint
 	Secret       tls.Secret
 	Extensions   []*core.TypedExtensionConfig
