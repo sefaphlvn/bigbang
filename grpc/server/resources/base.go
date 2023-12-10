@@ -23,7 +23,7 @@ type AllResources struct {
 	Version      string
 	Listener     []*listener.Listener
 	Cluster      []*cluster.Cluster
-	Route        route.RouteConfiguration
+	Route        *route.RouteConfiguration
 	Endpoint     []*endpoint.Endpoint
 	Secret       tls.Secret
 	Extensions   []*core.TypedExtensionConfig
@@ -33,9 +33,9 @@ func NewResources() *AllResources {
 	return &AllResources{}
 }
 
-func SetSnapshot(cur *models.DBResource, nodeID string, db *db.MongoDB, logger *logrus.Logger) (*AllResources, error) {
+func SetSnapshot(rawListenerResource *models.DBResource, nodeID string, db *db.MongoDB, logger *logrus.Logger) (*AllResources, error) {
 	resourceAll := NewResources()
 	resourceAll.NodeID = nodeID
-	resourceAll.DecodeListener(cur, db, logger)
+	resourceAll.DecodeListener(rawListenerResource, db, logger)
 	return resourceAll, nil
 }

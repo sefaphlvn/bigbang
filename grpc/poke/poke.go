@@ -74,20 +74,6 @@ func (p *Poke) handlePoke(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (p *Poke) getAllResourcesFromListener(serviceName string) (*resources.AllResources, error) {
-	rawListenerResource, err := resources.GetResource(p.db, "listeners", serviceName)
-	if err != nil {
-		return nil, err
-	}
-
-	lis, err := resources.SetSnapshot(rawListenerResource, serviceName, p.db, p.logger)
-	if err != nil {
-		return nil, err
-	}
-
-	return lis, nil
-}
-
 func (p *Poke) initialSnapshots() {
 	serviceNames := p.getListenerList()
 	for _, serviceName := range serviceNames {
@@ -129,4 +115,18 @@ func (p *Poke) getListenerList() []string {
 		serviceNames = append(serviceNames, general.Name)
 	}
 	return serviceNames
+}
+
+func (p *Poke) getAllResourcesFromListener(serviceName string) (*resources.AllResources, error) {
+	rawListenerResource, err := resources.GetResource(p.db, "listeners", serviceName)
+	if err != nil {
+		return nil, err
+	}
+
+	lis, err := resources.SetSnapshot(rawListenerResource, serviceName, p.db, p.logger)
+	if err != nil {
+		return nil, err
+	}
+
+	return lis, nil
 }

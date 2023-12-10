@@ -11,26 +11,35 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func (R *AllResources) DecodeListener(resource *models.DBResource, db *db.MongoDB, logger *logrus.Logger) {
-	resArray, ok := resource.Resource.Resource.(primitive.A)
-	R.Version = resource.Resource.Version
-
+func (r *AllResources) DecodeListener(rawListenerResource *models.DBResource, db *db.MongoDB, logger *logrus.Logger) {
+	resArray, ok := rawListenerResource.Resource.Resource.(primitive.A)
 	if !ok {
 		logger.Fatal("Unexpected resource format")
 	}
+
+	r.Version = rawListenerResource.Resource.Version
 
 	for _, res := range resArray {
 		data, err := json.Marshal(res)
 		if err != nil {
 			logger.Fatal(err)
 		}
+
 		singleListener := &listener.Listener{}
 		err = protojson.Unmarshal(data, singleListener)
 		if err != nil {
-			logger.Fatal(err, "sss")
+			logger.Fatal(err)
 		}
 
-		R.CollectExtensions(resource.General.AdditionalResources, db)
-		R.Listener = append(R.Listener, singleListener)
+		route, err := r.GetRoutes(db)
+		if err != nil {
+			logger.Fatal(err)
+		}
+
+		r.Route = route
+
+		r.CollectExtensions(rawListenerResource.General.AdditionalResources, db)
+
+		r.Listener = append(r.Listener, singleListener)
 	}
 }
