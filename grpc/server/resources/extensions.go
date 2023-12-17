@@ -3,22 +3,25 @@ package resources
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	router "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"github.com/sefaphlvn/bigbang/grpc/models"
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func (r *AllResources) CollectExtensions(resource []models.AdditionalResource, db *db.MongoDB) {
+func (r *AllResources) CollectExtensions(resource []models.AdditionalResource, db *db.MongoDB, logger *logrus.Logger) {
 	var typedExtensionConfig []*core.TypedExtensionConfig
 	for _, additionalResource := range resource {
 		for _, extension := range additionalResource.Extensions {
-			anyResource, addadditionalResource, _ := r.CreateDynamicFilter(extension.GType, extension.Name, db)
+			anyResource, additionalResources, err := r.CreateDynamicFilter(extension.GType, extension.Name, db)
+			if err != nil {
+				logger.Fatal(err)
+			}
+
 			typedExtensionConfig = append(typedExtensionConfig, &core.TypedExtensionConfig{
 				Name:        additionalResource.ParentName,
 				TypedConfig: anyResource,
@@ -26,8 +29,8 @@ func (r *AllResources) CollectExtensions(resource []models.AdditionalResource, d
 
 			r.Extensions = append(r.Extensions, typedExtensionConfig...)
 
-			if addadditionalResource != nil {
-				r.CollectExtensions(addadditionalResource, db)
+			if additionalResources != nil {
+				r.CollectExtensions(additionalResources, db, logger)
 			}
 		}
 	}
@@ -43,42 +46,48 @@ func (r *AllResources) CreateDynamicFilter(typeUrl string, resourceName string, 
 
 		additionalResource = resource.GetGeneral().AdditionalResources
 		if err != nil {
-			log.Fatal(err)
+			return nil, nil, err
 		}
 
 		data, err := json.Marshal(resource.Resource.Resource)
 		if err != nil {
-			log.Fatal(err)
+			return nil, nil, err
 		}
 
-		hcmman := &hcm.HttpConnectionManager{}
-		err = protojson.Unmarshal(data, hcmman)
+		httpConnectionManager := &hcm.HttpConnectionManager{}
+		err = protojson.Unmarshal(data, httpConnectionManager)
 		if err != nil {
-			log.Fatal(err)
+			return nil, nil, err
 		}
 
-		aa := hcmman.GetRds()
+		rds := httpConnectionManager.GetRds()
+		if rds != nil {
+			r.Route, err = r.GetRoutes(rds.RouteConfigName, db)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
 
-		fmt.Println(aa.RouteConfigName)
-		message, _ = anypb.New(hcmman)
+		message, _ = anypb.New(httpConnectionManager)
 
 	case Router:
 		resource, err := GetResource(db, "extensions", resourceName)
 		if err != nil {
-			log.Fatal(err)
+			return nil, nil, err
 		}
 
 		data, err := json.Marshal(resource.Resource.Resource)
 		if err != nil {
-			log.Fatal(err)
+			return nil, nil, err
 		}
 
-		router := &router.Router{}
-		err = protojson.Unmarshal(data, router)
+		routerJson := &router.Router{}
+		err = protojson.Unmarshal(data, routerJson)
 		if err != nil {
-			log.Fatal(err)
+			return nil, nil, err
 		}
-		message, _ = anypb.New(router)
+
+		message, _ = anypb.New(routerJson)
 
 	default:
 		return nil, nil, fmt.Errorf("unknown type URL: %s", typeUrl)
@@ -88,7 +97,6 @@ func (r *AllResources) CreateDynamicFilter(typeUrl string, resourceName string, 
 }
 
 const (
-	APITypePrefix         = "type.googleapis.com/"
 	HTTPConnectionManager = "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager"
 	Router                = "envoy.extensions.filters.http.router.v3.Router"
 )

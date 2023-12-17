@@ -7,8 +7,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func (r *AllResources) GetRoutes(db *db.MongoDB) (*routev3.RouteConfiguration, error) {
-	route, err := GetResource(db, "routes", "v28rds")
+func (r *AllResources) GetRoutes(rdsName string, db *db.MongoDB) (*routev3.RouteConfiguration, error) {
+	route, err := GetResource(db, "routes", rdsName)
 	if err != nil {
 		return nil, err
 	}
