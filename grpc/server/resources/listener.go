@@ -31,14 +31,7 @@ func (r *AllResources) DecodeListener(rawListenerResource *models.DBResource, db
 			logger.Fatal(err)
 		}
 
-		route, err := r.GetRoutes(db)
-		if err != nil {
-			logger.Fatal(err)
-		}
-
-		r.Route = route
-
-		r.CollectExtensions(rawListenerResource.General.AdditionalResources, db)
+		r.CollectExtensions(rawListenerResource.General.AdditionalResources, db, logger)
 
 		r.Listener = append(r.Listener, singleListener)
 	}
