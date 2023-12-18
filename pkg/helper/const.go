@@ -15,6 +15,8 @@ var AllowedEndpoints = []string{
 	"/auth/signup",
 	"/auth/login",
 	"/refresh",
+	"/api/v3/xds/bootstrap",
+	"/api/v3/xds/bootstrap/:name",
 	"/api/v3/xds/listeners",
 	"/api/v3/xds/listeners/:name",
 	"/api/v3/xds/routes",
