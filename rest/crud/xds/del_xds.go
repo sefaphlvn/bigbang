@@ -4,13 +4,13 @@ import (
 	"errors"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/rest/models"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (xds *DBHandler) DelResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	collection := xds.DB.Client.Collection(resourceDetails.Type)
+	collection := xds.DB.Client.Collection(resourceDetails.Type.String())
 
 	var filter bson.M
 	if resourceDetails.User.IsAdmin {

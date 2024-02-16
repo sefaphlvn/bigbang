@@ -4,19 +4,34 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type KnownTYPES string
+
+const (
+	EDS        KnownTYPES = "endpoints"
+	CDS        KnownTYPES = "clusters"
+	LDS        KnownTYPES = "listeners"
+	ROUTE      KnownTYPES = "routes"
+	EXTENSIONS KnownTYPES = "extensions"
+)
+
+func (kt KnownTYPES) String() string {
+	return string(kt)
+}
+
 type DBResourceClass interface {
 	GetGeneral() General
 	SetGeneral(*General)
 	GetResource() interface{}
 	SetResource(interface{})
 	GetVersion() interface{}
-	GetAdditionalResources() []AdditionalResource
+	GetAdditionalResources() []*AdditionalResource
 	SetVersion(interface{})
 }
 
 type ResourceDetails struct {
 	Collection    string
-	Type          string
+	Type          KnownTYPES
+	GType         GTypes
 	CanonicalName string
 	Name          string
 	Category      string
@@ -43,13 +58,13 @@ type Machine struct {
 type General struct {
 	Name                string                 `json:"name" bson:"name"`
 	Version             string                 `json:"version" bson:"version"`
-	Type                string                 `json:"type" bson:"type"`
-	GType               string                 `json:"gtype" bson:"gtype"`
+	Type                KnownTYPES             `json:"type" bson:"type"`
+	GType               GTypes                 `json:"gtype" bson:"gtype"`
 	CanonicalName       string                 `json:"canonical_name" bson:"canonical_name"`
 	Category            string                 `json:"category" bson:"category"`
 	Extra               map[string]interface{} `json:"extra,omitempty" bson:"extra,omitempty"`
 	Groups              []string               `json:"groups" bson:"groups"`
-	AdditionalResources []AdditionalResource   `json:"additional_resources,omitempty" bson:"additional_resources,omitempty"`
+	AdditionalResources []*AdditionalResource  `json:"additional_resources,omitempty" bson:"additional_resources,omitempty"`
 	CreatedAt           primitive.DateTime     `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt           primitive.DateTime     `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 }
@@ -61,7 +76,7 @@ type Extra struct {
 }
 
 type Extensions struct {
-	GType         string `json:"gtype" bson:"gtype"`
+	GType         GTypes `json:"gtype" bson:"gtype"`
 	Name          string `json:"name" bson:"name"`
 	Priority      int    `json:"priority" bson:"priority"`
 	Category      string `json:"category" bson:"category"`
@@ -97,7 +112,7 @@ func (d *DBResource) GetVersion() interface{} {
 	return d.Resource.Version
 }
 
-func (d *DBResource) GetAdditionalResources() []AdditionalResource {
+func (d *DBResource) GetAdditionalResources() []*AdditionalResource {
 	return d.General.AdditionalResources
 }
 

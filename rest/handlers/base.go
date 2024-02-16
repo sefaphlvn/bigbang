@@ -3,11 +3,11 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/api/auth"
 	"github.com/sefaphlvn/bigbang/rest/crud/custom"
 	"github.com/sefaphlvn/bigbang/rest/crud/extension"
 	"github.com/sefaphlvn/bigbang/rest/crud/xds"
-	"github.com/sefaphlvn/bigbang/rest/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -48,10 +48,12 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 	if !ok {
 		userGroup = []string{}
 	}
+
 	userIsAdmin, ok := isAdmin.(bool)
 	if !ok {
 		userIsAdmin = false
 	}
+
 	resourceDetails := models.ResourceDetails{
 		CanonicalName: c.Param("canonical_name"),
 		Category:      c.Query("category"),
@@ -70,9 +72,9 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 	}
 
 	if ltype := c.Param("type"); ltype != "" {
-		resourceDetails.Type = ltype
+		resourceDetails.Type = models.KnownTYPES(ltype)
 	} else if ltype := c.Query("type"); ltype != "" {
-		resourceDetails.Type = ltype
+		resourceDetails.Type = models.KnownTYPES(ltype)
 	}
 
 	resource, err := decodeResource(c)

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/rest/models"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -17,7 +17,7 @@ func (xds *DBHandler) SetResource(resource models.DBResourceClass, collectionNam
 	general.UpdatedAt = primitive.NewDateTimeFromTime(now)
 	resource.SetGeneral(&general)
 
-	collection := xds.DB.Client.Collection(collectionName.Type)
+	collection := xds.DB.Client.Collection(collectionName.Type.String())
 	_, err := collection.InsertOne(xds.DB.Ctx, resource)
 	if err != nil {
 		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {

@@ -3,14 +3,14 @@ package xds
 import (
 	"errors"
 
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (xds *DBHandler) GetResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	collection := xds.DB.Client.Collection(resourceDetails.Type)
+	collection := xds.DB.Client.Collection(resourceDetails.Type.String())
 	filter := bson.M{"general.name": resourceDetails.Name}
 	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
 	result := collection.FindOne(xds.DB.Ctx, filterWithRestriction)

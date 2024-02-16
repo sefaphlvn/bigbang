@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/models"
+	"github.com/sefaphlvn/bigbang/rest/poker"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,7 +17,7 @@ import (
 func (xds *DBHandler) UpdateResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
 	filter := bson.M{"general.name": resourceDetails.Name}
 	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
-	result := xds.DB.Client.Collection(resourceDetails.Type).FindOne(xds.DB.Ctx, filterWithRestriction)
+	result := xds.DB.Client.Collection(resourceDetails.Type.String()).FindOne(xds.DB.Ctx, filterWithRestriction)
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
@@ -37,11 +38,14 @@ func (xds *DBHandler) UpdateResource(resource models.DBResourceClass, resourceDe
 		},
 	}
 
-	collection := xds.DB.Client.Collection(resourceDetails.Type)
+	collection := xds.DB.Client.Collection(resourceDetails.Type.String())
 	_, err := collection.UpdateOne(xds.DB.Ctx, filterWithRestriction, update)
-
 	if err != nil {
 		return nil, err
 	}
+
+	poker.DetectChangedResource(resource.GetGeneral().GType, resourceDetails.Name, xds.DB)
+	poker.ResetProcessedResources()
+
 	return gin.H{"message": "Success"}, nil
 }

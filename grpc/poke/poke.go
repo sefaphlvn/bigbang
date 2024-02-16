@@ -1,25 +1,25 @@
 package poke
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/sefaphlvn/bigbang/grpc/models"
+	"net/http"
+
 	"github.com/sefaphlvn/bigbang/grpc/server"
-	"github.com/sefaphlvn/bigbang/grpc/server/resources"
+	"github.com/sefaphlvn/bigbang/grpc/server/resources/resource"
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/pkg/resources"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
-	"net/http"
 
 	"github.com/sefaphlvn/bigbang/pkg/db"
 )
 
 type Poke struct {
 	ctx    *server.Context
-	db     *db.MongoDB
+	db     *db.WTF
 	logger *logrus.Logger
 }
 
-func NewPokeServer(ctx *server.Context, db *db.MongoDB, logger *logrus.Logger) *Poke {
+func NewPokeServer(ctx *server.Context, db *db.WTF, logger *logrus.Logger) *Poke {
 	return &Poke{
 		ctx:    ctx,
 		db:     db,
@@ -32,45 +32,6 @@ func (p *Poke) Run(pokeHandler *Poke) {
 	p.logger.Infof("Poke server listening on :8080")
 	if err := http.ListenAndServe(":8080", pokeHandler); err != nil {
 		p.logger.Fatalf("failed to start HTTP server: %v", err)
-	}
-}
-
-func (p *Poke) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
-	case "/ping":
-		p.handlePing(w, r)
-	case "/poke":
-		p.handlePoke(w, r)
-	default:
-		http.NotFound(w, r)
-	}
-}
-
-func (p *Poke) handlePing(w http.ResponseWriter, r *http.Request) {
-	p.logger.Info(fmt.Fprint(w, "OK"))
-}
-
-func (p *Poke) handlePoke(w http.ResponseWriter, r *http.Request) {
-	allResources, err := p.getAllResourcesFromListener("newListener")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		p.logger.Error(err)
-		return
-	}
-
-	err = p.ctx.SetSnapshot(allResources, p.logger)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		p.logger.Error(err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(allResources)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		p.logger.Error(err)
-		return
 	}
 }
 
@@ -117,13 +78,13 @@ func (p *Poke) getListenerList() []string {
 	return serviceNames
 }
 
-func (p *Poke) getAllResourcesFromListener(serviceName string) (*resources.AllResources, error) {
+func (p *Poke) getAllResourcesFromListener(serviceName string) (*resource.AllResources, error) {
 	rawListenerResource, err := resources.GetResource(p.db, "listeners", serviceName)
 	if err != nil {
 		return nil, err
 	}
 
-	lis, err := resources.SetSnapshot(rawListenerResource, serviceName, p.db, p.logger)
+	lis, err := resource.SetSnapshot(rawListenerResource, serviceName, p.db, p.logger)
 	if err != nil {
 		return nil, err
 	}

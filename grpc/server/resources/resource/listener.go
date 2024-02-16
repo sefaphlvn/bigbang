@@ -1,38 +1,41 @@
-package resources
+package resource
 
 import (
 	"encoding/json"
 
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	"github.com/sefaphlvn/bigbang/grpc/models"
+	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func (r *AllResources) DecodeListener(rawListenerResource *models.DBResource, db *db.MongoDB, logger *logrus.Logger) {
+func (ar *AllResources) DecodeListener(rawListenerResource *models.DBResource, db *db.WTF, logger *logrus.Logger) {
 	resArray, ok := rawListenerResource.Resource.Resource.(primitive.A)
 	if !ok {
 		logger.Fatal("Unexpected resource format")
 	}
 
-	r.Version = rawListenerResource.Resource.Version
+	ar.SetVersion(rawListenerResource.Resource.Version)
 
+	var lstnr []types.Resource
 	for _, res := range resArray {
 		data, err := json.Marshal(res)
 		if err != nil {
-			logger.Fatal(err)
+			logger.Error(err)
 		}
 
 		singleListener := &listener.Listener{}
 		err = protojson.Unmarshal(data, singleListener)
 		if err != nil {
-			logger.Fatal(err)
+			logger.Error(err)
 		}
 
-		r.CollectExtensions(rawListenerResource.General.AdditionalResources, db, logger)
-
-		r.Listener = append(r.Listener, singleListener)
+		lstnr = append(lstnr, singleListener)
+		ar.SetListener(lstnr)
 	}
+
+	ar.CollectExtensions(rawListenerResource.General.AdditionalResources, db, logger)
 }

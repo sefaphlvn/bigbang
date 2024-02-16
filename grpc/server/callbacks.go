@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -72,11 +73,21 @@ func (c *Callbacks) OnStreamResponse(context.Context, int64, *discovery.Discover
 
 }
 
-func (c *Callbacks) OnStreamDeltaResponse(int64, *discovery.DeltaDiscoveryRequest, *discovery.DeltaDiscoveryResponse) {
-
+func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscoveryRequest, resp *discovery.DeltaDiscoveryResponse) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.deltaResponses++
+
+	// DeltaDiscoveryResponse nesnesini JSON formatına dönüştür
+	respJson, err := json.Marshal(resp)
+	if err != nil {
+		// JSON dönüşümü sırasında bir hata oluşursa, hatayı logla
+		c.logger.Errorf("JSON marshalling error: %v", err)
+		return
+	}
+
+	// JSON olarak dönüştürülmüş yanıtı logla
+	c.logger.Debugf("DeltaDiscoveryResponse: %s", string(respJson))
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {

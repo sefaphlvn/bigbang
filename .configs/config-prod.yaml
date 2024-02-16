@@ -1,14 +1,18 @@
 ServerPort: 80
+GrpcService: localhost:8080
 MongoDB:
-  Hosts: ["navigazer.lfh5hlh.mongodb.net"]
-  Username: "navigazer"
-  Password: "3s7qObVXRpt2wWUT"
+  #Hosts: ["navigazer.lfh5hlh.mongodb.net"]
+  Hosts: ["localhost:27017"]
+  Username: ""
+  #Password: "3s7qObVXRpt2wWUT"
+  Password: ""
   Database: "navigazer"
-  Scheme: "mongodb+srv"
+  #Scheme: "mongodb+srv"
+  Scheme: "mongodb"
   Port:
   ReplicaSet: ""
   TimeoutSeconds: 10
 Log:
-  Level: info          # debug, info, warn, error
+  Level: debug          # debug, info, warn, error
   Formatter: text      # json, text
   ReportCaller: false

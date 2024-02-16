@@ -3,8 +3,9 @@ package config
 import "time"
 
 type AppConfig struct {
-	ServerPort string `json:"server_port" yaml:"serverPort"`
-	MongoDB    struct {
+	ServerPort  string `json:"server_port" yaml:"ServerPort"`
+	GrpcService string `json:"grpc_service" yaml:"GrpcService"`
+	MongoDB     struct {
 		Hosts          []string      `json:"hosts" yaml:"hosts"`
 		Username       string        `json:"username" yaml:"username"`
 		Password       string        `json:"password" yaml:"password"`

@@ -3,21 +3,22 @@ package auth
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud"
-	"github.com/sefaphlvn/bigbang/rest/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
-	"log"
-	"net/http"
-	"os"
-	"time"
 )
 
 type DBHandler crud.DbHandler
@@ -34,7 +35,7 @@ var SECRET_KEY string = os.Getenv("secret")
 
 var validate = validator.New()
 
-func NewUserHandler(db *db.MongoDB) *DBHandler {
+func NewUserHandler(db *db.WTF) *DBHandler {
 	return &DBHandler{
 		DB: db,
 	}
@@ -167,7 +168,6 @@ func (userDB *DBHandler) Logout() gin.HandlerFunc {
 			return
 		}
 
-		fmt.Println(userId)
 		filter := bson.M{"user_id": userId}
 		update := bson.M{
 			"$unset": bson.M{

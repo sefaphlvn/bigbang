@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/sefaphlvn/bigbang/rest/models"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -28,7 +28,7 @@ func (custom *DBHandler) GetCustomResourceList(resource models.DBResourceClass, 
 	})
 
 	var filters = bson.M{"general.type": resourceDetails.Type, "general.version": resourceDetails.Version}
-	fmt.Println(resourceDetails.Category)
+
 	if resourceDetails.Category != "" {
 		filters["general.category"] = resourceDetails.Category
 	}

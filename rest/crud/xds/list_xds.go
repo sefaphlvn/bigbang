@@ -3,8 +3,8 @@ package xds
 import (
 	"fmt"
 
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -17,7 +17,7 @@ type Field struct {
 type ResourceSchema map[string][]Field
 
 func (xds *DBHandler) ListResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	collection := xds.DB.Client.Collection(resourceDetails.Type)
+	collection := xds.DB.Client.Collection(resourceDetails.Type.String())
 	opts := options.Find().SetProjection(bson.M{"resource": 0})
 
 	filterWithRestriction := common.AddUserFilter(resourceDetails, bson.M{})
