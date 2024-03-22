@@ -1,14 +1,18 @@
-ServerPort: 80
-MongoDB:
-  Hosts: ["navigazer.lfh5hlh.mongodb.net"]
-  Username: "navigazer"
-  Password: "3s7qObVXRpt2wWUT"
-  Database: "navigazer"
-  Scheme: "mongodb+srv"
-  Port:
-  ReplicaSet: ""
-  TimeoutSeconds: 10
-Log:
-  Level: info          # debug, info, warn, error
-  Formatter: text      # json, text
-  ReportCaller: false
+ServerPort: "80"
+GrpcService: localhost:8080
+
+MongoDB_Hosts: navigazer.lfh5hlh.mongodb.net
+#Hosts: ["localhost:27017"]
+MongoDB_Username: "navigazer"
+MongoDB_Password: "3s7qObVXRpt2wWUT"
+#Password: ""
+MongoDB_Database: "navigazer"
+MongoDB_Scheme: "mongodb+srv"
+#Scheme: "mongodb"
+MongoDB_Port:
+MongoDB_ReplicaSet: ""
+MongoDB_TimeoutSeconds: "10"
+
+Log_Level: debug          # debug, info, warn, error
+Log_Formatter: text      # json, text
+Log_ReportCaller: "false"

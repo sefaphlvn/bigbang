@@ -3,8 +3,8 @@ package extension
 import (
 	"errors"
 
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,7 +18,7 @@ func (extension *DBHandler) GetExtension(resource models.DBResourceClass, resour
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			return nil, errors.New("not found")
+			return nil, errors.New("not found: (" + resourceDetails.Name + ")")
 		} else {
 			return nil, errors.New("unknown db error")
 		}
@@ -38,7 +38,7 @@ func (extension *DBHandler) GetExtensions(resource models.DBResourceClass, resou
 	result := collection.FindOne(extension.DB.Ctx, filter)
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			return nil, errors.New("not found")
+			return nil, errors.New("not found: (" + resourceDetails.Name + ")")
 		} else {
 			return nil, errors.New("unknown db error")
 		}

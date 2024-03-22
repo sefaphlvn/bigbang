@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sefaphlvn/bigbang/pkg/db"
-	"github.com/sefaphlvn/bigbang/pkg/httpserver"
+	server "github.com/sefaphlvn/bigbang/pkg/httpserver"
 	"github.com/sefaphlvn/bigbang/pkg/log"
 	"github.com/sefaphlvn/bigbang/rest/api/auth"
 	"github.com/sefaphlvn/bigbang/rest/api/router"
@@ -21,11 +21,9 @@ var restCmd = &cobra.Command{
 	Short: "Start REST Server",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		var appConfig = config.Read(cfgFile)
 		var logger = log.NewLogger(appConfig)
 		var db = db.NewMongoDB(appConfig, logger)
-
 		var xdsHandler = xds.NewXDSHandler(db)
 		var extensionHandler = extension.NewExtensionHandler(db)
 		var customHandler = custom.NewCustomHandler(db)
@@ -33,7 +31,6 @@ var restCmd = &cobra.Command{
 
 		h := handlers.NewHandler(xdsHandler, extensionHandler, customHandler, userHandler)
 		r := router.InitRouter(h, logger)
-
 		if err := server.NewHttpServer(r).Run(appConfig, logger); err != nil {
 			logger.Fatalf("Server failed to run: %v", err)
 		}

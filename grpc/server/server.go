@@ -76,9 +76,9 @@ func (s *Server) registerServer(grpcServer *grpc.Server) {
 	endpointservice.RegisterEndpointDiscoveryServiceServer(grpcServer, s.xdsServer)
 	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, s.xdsServer)
 	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, s.xdsServer)
+	routeservice.RegisterVirtualHostDiscoveryServiceServer(grpcServer, s.xdsServer)
 	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, s.xdsServer)
 	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, s.xdsServer)
 	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, s.xdsServer)
 	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(grpcServer, s.xdsServer)
-
 }

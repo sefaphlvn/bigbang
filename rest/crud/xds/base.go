@@ -7,7 +7,7 @@ import (
 
 type DBHandler crud.DbHandler
 
-func NewXDSHandler(db *db.MongoDB) *DBHandler {
+func NewXDSHandler(db *db.WTF) *DBHandler {
 	return &DBHandler{
 		DB: db,
 	}

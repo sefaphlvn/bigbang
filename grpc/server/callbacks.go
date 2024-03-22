@@ -72,11 +72,20 @@ func (c *Callbacks) OnStreamResponse(context.Context, int64, *discovery.Discover
 
 }
 
-func (c *Callbacks) OnStreamDeltaResponse(int64, *discovery.DeltaDiscoveryRequest, *discovery.DeltaDiscoveryResponse) {
-
+func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscoveryRequest, resp *discovery.DeltaDiscoveryResponse) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.deltaResponses++
+
+	// DeltaDiscoveryResponse nesnesini JSON formatına dönüştür
+	/* respJson, err := json.Marshal(resp)
+	if err != nil {
+		c.logger.Errorf("JSON marshalling error: %v", err)
+		return
+	}
+
+	helper.PrettyPrinter(respJson) */
+	//c.logger.Debugf("DeltaDiscoveryResponse: %s", helper.PrettyPrinter(string(respJson)))
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {

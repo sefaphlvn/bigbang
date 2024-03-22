@@ -3,13 +3,14 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/sefaphlvn/bigbang/pkg/config"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/sefaphlvn/bigbang/pkg/config"
+	"github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,10 +27,9 @@ func NewHttpServer(router *gin.Engine) *Server {
 
 func (s *Server) Run(config *config.AppConfig, log *logrus.Logger) error {
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%v", config.ServerPort),
+		Addr:    fmt.Sprintf(":%s", config.ServerPort),
 		Handler: s.Router,
 	}
-
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
@@ -38,11 +38,9 @@ func (s *Server) Run(config *config.AppConfig, log *logrus.Logger) error {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
-
-	log.Printf("Starting http web server [::]:%s", config.ServerPort)
-
+	log.Infof("Starting http web server [::]:%s", config.ServerPort)
 	<-done
-	log.Printf("Http web server stop signal recived")
+	log.Info("Http web server stop signal recived")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

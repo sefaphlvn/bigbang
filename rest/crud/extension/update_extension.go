@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/models"
+	"github.com/sefaphlvn/bigbang/rest/poker"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -19,10 +20,10 @@ func (extension *DBHandler) UpdateExtensions(resource models.DBResourceClass, re
 	resource.SetVersion(strconv.Itoa(version + 1))
 	update := bson.M{
 		"$set": bson.M{
-			"resource.resource":            resource.GetResource(),
-			"resource.version":             resource.GetVersion(),
-			"general.additional_resources": resource.GetAdditionalResources(),
-			"general.updated_at":           primitive.NewDateTimeFromTime(time.Now()),
+			"resource.resource":        resource.GetResource(),
+			"resource.version":         resource.GetVersion(),
+			"general.config_discovery": resource.GetConfigDiscovery(),
+			"general.updated_at":       primitive.NewDateTimeFromTime(time.Now()),
 		},
 	}
 
@@ -32,5 +33,9 @@ func (extension *DBHandler) UpdateExtensions(resource models.DBResourceClass, re
 	if err != nil {
 		return nil, err
 	}
+
+	poker.DetectChangedResource(resource.GetGeneral().GType, resourceDetails.Name, extension.DB)
+	poker.ResetProcessedResources()
+
 	return gin.H{"message": "Success"}, nil
 }

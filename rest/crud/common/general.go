@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/sefaphlvn/bigbang/rest/models"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
