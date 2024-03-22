@@ -20,10 +20,10 @@ func (extension *DBHandler) UpdateExtensions(resource models.DBResourceClass, re
 	resource.SetVersion(strconv.Itoa(version + 1))
 	update := bson.M{
 		"$set": bson.M{
-			"resource.resource":            resource.GetResource(),
-			"resource.version":             resource.GetVersion(),
-			"general.additional_resources": resource.GetAdditionalResources(),
-			"general.updated_at":           primitive.NewDateTimeFromTime(time.Now()),
+			"resource.resource":        resource.GetResource(),
+			"resource.version":         resource.GetVersion(),
+			"general.config_discovery": resource.GetConfigDiscovery(),
+			"general.updated_at":       primitive.NewDateTimeFromTime(time.Now()),
 		},
 	}
 

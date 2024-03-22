@@ -11,17 +11,17 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func (ar *AllResources) CollectExtensions(resource []*models.AdditionalResource, db *db.WTF, logger *logrus.Logger) {
+func (ar *AllResources) CollectExtensions(resource []*models.ConfigDiscovery, db *db.WTF, logger *logrus.Logger) {
 	var typedExtensionConfig types.Resource
-	for _, additionalResource := range resource {
-		for _, extension := range additionalResource.Extensions {
+	for _, configDiscovery := range resource {
+		for _, extension := range configDiscovery.Extensions {
 			anyResource, additionalResources, err := ar.CreateDynamicFilter(extension.GType, extension.Name, db)
 			if err != nil {
 				logger.Error(err)
 			}
 
 			typedExtensionConfig = &core.TypedExtensionConfig{
-				Name:        additionalResource.ParentName,
+				Name:        configDiscovery.ParentName,
 				TypedConfig: anyResource,
 			}
 
@@ -34,7 +34,7 @@ func (ar *AllResources) CollectExtensions(resource []*models.AdditionalResource,
 
 }
 
-func (ar *AllResources) CreateDynamicFilter(typeUrl models.GTypes, resourceName string, wtf *db.WTF) (*anypb.Any, []*models.AdditionalResource, error) {
+func (ar *AllResources) CreateDynamicFilter(typeUrl models.GTypes, resourceName string, wtf *db.WTF) (*anypb.Any, []*models.ConfigDiscovery, error) {
 	switch typeUrl {
 	case models.HTTPConnectionManager:
 		return ar.DecodeHTTPConnectionManager(ar.Resources, resourceName, wtf)

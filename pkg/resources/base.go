@@ -31,7 +31,7 @@ func GetResource(db *db.WTF, collectionName string, name string) (*models.DBReso
 	err := collection.FindOne(db.Ctx, filter, findOptions).Decode(&doc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, errors.New("not found2")
+			return nil, errors.New("not found: (" + name + ")")
 		} else {
 			return nil, errors.New("unknown db error")
 		}
@@ -58,7 +58,7 @@ func GetGenerals(wtf *db.WTF, collectionName string, filter primitive.D) ([]*mod
 	for cursor.Next(wtf.Ctx) {
 		var resp GeneralResponse
 		if err = cursor.Decode(&resp); err != nil {
-			fmt.Println(err)
+			wtf.Logger.Debug(err)
 			return nil, err
 		}
 		results = append(results, &resp.General)
@@ -68,25 +68,28 @@ func GetGenerals(wtf *db.WTF, collectionName string, filter primitive.D) ([]*mod
 		return nil, err
 	}
 
-	if len(results) == 0 {
-		return nil, errors.New("not found")
-	}
-
 	return results, nil
 }
 
-func GetResourceWithType(data *models.DBResource, msg proto.Message) error {
-	jsonData, err := json.Marshal(data.Resource.Resource)
+func GetResourceWithType(data interface{}, msg proto.Message) error {
+	jsonData, err := json.Marshal(data)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	err = protojson.Unmarshal(jsonData, msg)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	return nil
+}
+
+func InterfaceToJSON(data interface{}) string {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return string(jsonData)
 }

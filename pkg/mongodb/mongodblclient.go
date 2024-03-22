@@ -3,10 +3,10 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/sefaphlvn/bigbang/pkg/config"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,12 +16,11 @@ import (
 
 func NewClient(appConfig *config.AppConfig, log *logrus.Logger) DBClient {
 
-	hosts := strings.Join(appConfig.MongoDB.Hosts, fmt.Sprintf("%s,", appConfig.MongoDB.Port))
-	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", appConfig.MongoDB.Scheme, appConfig.MongoDB.Username, appConfig.MongoDB.Password, hosts, appConfig.MongoDB.Port)
+	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", appConfig.MongoDB_Scheme, appConfig.MongoDB_Username, appConfig.MongoDB_Password, appConfig.MongoDB_Hosts, appConfig.MongoDB_Port)
 
 	clientOptions := options.Client().ApplyURI(connectionString)
 
-	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), appConfig.MongoDB.TimeoutSeconds)
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), time.Duration(helper.ToInt(appConfig.MongoDB_TimeoutSeconds))*time.Second)
 	defer cancel()
 
 	client, err := mongo.Connect(ctxWithTimeout, clientOptions)

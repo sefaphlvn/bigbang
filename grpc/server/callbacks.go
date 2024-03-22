@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -79,15 +78,14 @@ func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscover
 	c.deltaResponses++
 
 	// DeltaDiscoveryResponse nesnesini JSON formatına dönüştür
-	respJson, err := json.Marshal(resp)
+	/* respJson, err := json.Marshal(resp)
 	if err != nil {
-		// JSON dönüşümü sırasında bir hata oluşursa, hatayı logla
 		c.logger.Errorf("JSON marshalling error: %v", err)
 		return
 	}
 
-	// JSON olarak dönüştürülmüş yanıtı logla
-	c.logger.Debugf("DeltaDiscoveryResponse: %s", string(respJson))
+	helper.PrettyPrinter(respJson) */
+	//c.logger.Debugf("DeltaDiscoveryResponse: %s", helper.PrettyPrinter(string(respJson)))
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {

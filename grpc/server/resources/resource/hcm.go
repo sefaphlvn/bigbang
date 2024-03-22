@@ -9,18 +9,18 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func (ar *AllResources) DecodeHTTPConnectionManager(arp *common.Resources, resourceName string, wtf *db.WTF) (*anypb.Any, []*models.AdditionalResource, error) {
+func (ar *AllResources) DecodeHTTPConnectionManager(arp *common.Resources, resourceName string, wtf *db.WTF) (*anypb.Any, []*models.ConfigDiscovery, error) {
 	var message *anypb.Any
-	var additionalResource []*models.AdditionalResource
+	var configDiscovery []*models.ConfigDiscovery
 
 	resource, err := resources.GetResource(wtf, "extensions", resourceName)
-	additionalResource = resource.GetGeneral().AdditionalResources
+	configDiscovery = resource.GetGeneral().ConfigDiscovery
 	if err != nil {
 		return nil, nil, err
 	}
 
 	httpConnectionManager := &hcm.HttpConnectionManager{}
-	err = resources.GetResourceWithType(resource, httpConnectionManager)
+	err = resources.GetResourceWithType(resource.GetResource(), httpConnectionManager)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -35,5 +35,5 @@ func (ar *AllResources) DecodeHTTPConnectionManager(arp *common.Resources, resou
 
 	message, _ = anypb.New(httpConnectionManager)
 
-	return message, additionalResource, nil
+	return message, configDiscovery, nil
 }

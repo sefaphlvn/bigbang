@@ -13,12 +13,13 @@ func (ar *AllResources) GetRoutes(rdsName string, wtf *db.WTF) error {
 	}
 
 	singleRoute := &routev3.RouteConfiguration{}
-	err = resources.GetResourceWithType(route, singleRoute)
+	err = resources.GetResourceWithType(route.GetResource(), singleRoute)
 	if err != nil {
 		return err
 	}
 
 	ar.AppendRoute(singleRoute)
+	ar.GetClustersFromRequestMirrorPolicies(singleRoute.RequestMirrorPolicies, wtf)
 	ar.SetClustersFromVirtualHosts(singleRoute.VirtualHosts, wtf)
 
 	return nil
@@ -27,6 +28,7 @@ func (ar *AllResources) GetRoutes(rdsName string, wtf *db.WTF) error {
 func (ar *AllResources) SetClustersFromVirtualHosts(virtualHosts []*routev3.VirtualHost, wtf *db.WTF) {
 	var clusters []string
 	for _, vh := range virtualHosts {
+		ar.GetClustersFromRequestMirrorPolicies(vh.RequestMirrorPolicies, wtf)
 		for _, r := range vh.Routes {
 			clusters = ar.GetClustersFromAction(r.GetAction(), wtf)
 			ar.GetClusters(clusters, wtf)
@@ -48,20 +50,6 @@ func (ar *AllResources) GetClustersFromAction(action interface{}, db *db.WTF) []
 		if c != "" {
 			clusters = append(clusters, c)
 		}
-		/* 	case *routev3.Route_Redirect:
-		   		// action, Route_Redirect tipindedir
-		   		// action.Redirect ile ilgili işlemler yapabilirsiniz
-		   	case *routev3.Route_DirectResponse:
-		   		// action, Route_DirectResponse tipindedir
-		   		// action.DirectResponse ile ilgili işlemler yapabilirsiniz
-		   	case *routev3.Route_FilterAction:
-		   		// action, Route_FilterAction tipindedir
-		   		// action.FilterAction ile ilgili işlemler yapabilirsiniz
-		   	case *routev3.Route_NonForwardingAction:
-		   		// action, Route_NonForwardingAction tipindedir
-		   		// action.NonForwardingAction ile ilgili işlemler yapabilirsiniz
-		   	default:
-		   		// action, beklenen tiplerden biri değil */
 	}
 	return clusters
 }

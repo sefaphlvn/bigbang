@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func (ar *AllResources) DecodeTcpProxy(resourceName string, wtf *db.WTF) (*anypb.Any, []*models.AdditionalResource, error) {
+func (ar *AllResources) DecodeTcpProxy(resourceName string, wtf *db.WTF) (*anypb.Any, []*models.ConfigDiscovery, error) {
 	var message *anypb.Any
 	resource, err := resources.GetResource(wtf, "extensions", resourceName)
 	if err != nil {
@@ -16,7 +16,7 @@ func (ar *AllResources) DecodeTcpProxy(resourceName string, wtf *db.WTF) (*anypb
 	}
 
 	singleResource := &tcpProxy.TcpProxy{}
-	err = resources.GetResourceWithType(resource, singleResource)
+	err = resources.GetResourceWithType(resource.GetResource(), singleResource)
 	if err != nil {
 		return nil, nil, err
 	}

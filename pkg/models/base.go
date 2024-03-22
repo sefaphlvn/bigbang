@@ -24,7 +24,9 @@ type DBResourceClass interface {
 	GetResource() interface{}
 	SetResource(interface{})
 	GetVersion() interface{}
-	GetAdditionalResources() []*AdditionalResource
+	GetConfigDiscovery() []*ConfigDiscovery
+	GetTypedConfig() []*TypedConfig
+	SetTypedConfig([]*TypedConfig)
 	SetVersion(interface{})
 }
 
@@ -37,6 +39,7 @@ type ResourceDetails struct {
 	Category      string
 	Version       string
 	User          UserDetails
+	SaveOrPublish string
 }
 
 type UserDetails struct {
@@ -56,23 +59,24 @@ type Machine struct {
 }
 
 type General struct {
-	Name                string                 `json:"name" bson:"name"`
-	Version             string                 `json:"version" bson:"version"`
-	Type                KnownTYPES             `json:"type" bson:"type"`
-	GType               GTypes                 `json:"gtype" bson:"gtype"`
-	CanonicalName       string                 `json:"canonical_name" bson:"canonical_name"`
-	Category            string                 `json:"category" bson:"category"`
-	Extra               map[string]interface{} `json:"extra,omitempty" bson:"extra,omitempty"`
-	Groups              []string               `json:"groups" bson:"groups"`
-	AdditionalResources []*AdditionalResource  `json:"additional_resources,omitempty" bson:"additional_resources,omitempty"`
-	CreatedAt           primitive.DateTime     `json:"created_at,omitempty" bson:"created_at,omitempty"`
-	UpdatedAt           primitive.DateTime     `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	Name            string                 `json:"name" bson:"name"`
+	Version         string                 `json:"version" bson:"version"`
+	Type            KnownTYPES             `json:"type" bson:"type"`
+	GType           GTypes                 `json:"gtype" bson:"gtype"`
+	CanonicalName   string                 `json:"canonical_name" bson:"canonical_name"`
+	Category        string                 `json:"category" bson:"category"`
+	Service         GeneralService         `json:"service,omitempty" bson:"service,omitempty"`
+	Metadata        map[string]interface{} `json:"metadata,omitempty" bson:"metadata,omitempty"`
+	Groups          []string               `json:"groups" bson:"groups"`
+	ConfigDiscovery []*ConfigDiscovery     `json:"config_discovery,omitempty" bson:"config_discovery,omitempty"`
+	TypedConfig     []*TypedConfig         `json:"typed_config,omitempty" bson:"typed_config,omitempty"`
+	CreatedAt       primitive.DateTime     `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt       primitive.DateTime     `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 }
 
-type Extra struct {
-	Agent   string `json:"agent,omitempty" bson:"agent,omitempty"`
-	Team    string `json:"team,omitempty" bson:"team,omitempty"`
-	Service string `json:"service,omitempty" bson:"service,omitempty"`
+type GeneralService struct {
+	Name    string `json:"name" bson:"name"`
+	Enabled bool   `json:"enabled" bson:"enabled"`
 }
 
 type Extensions struct {
@@ -83,10 +87,18 @@ type Extensions struct {
 	CanonicalName string `json:"canonical_name" bson:"canonical_name"`
 }
 
-type AdditionalResource struct {
+type ConfigDiscovery struct {
 	ParentName   string       `json:"parent_name,omitempty" bson:"parent_name,omitempty"`
 	Extensions   []Extensions `json:"extensions,omitempty" bson:"extensions,omitempty"`
 	MainResource string       `json:"main_resource,omitempty" bson:"main_resource,omitempty"`
+}
+
+type TypedConfig struct {
+	Name          string `json:"name" bson:"name"`
+	CanonicalName string `json:"canonical_name" bson:"canonical_name"`
+	Gtype         string `json:"gtype" bson:"gtype"`
+	Type          string `json:"type" bson:"type"`
+	Category      string `json:"category" bson:"category"`
 }
 
 type DBResource struct {
@@ -112,8 +124,16 @@ func (d *DBResource) GetVersion() interface{} {
 	return d.Resource.Version
 }
 
-func (d *DBResource) GetAdditionalResources() []*AdditionalResource {
-	return d.General.AdditionalResources
+func (d *DBResource) GetConfigDiscovery() []*ConfigDiscovery {
+	return d.General.ConfigDiscovery
+}
+
+func (d *DBResource) GetTypedConfig() []*TypedConfig {
+	return d.General.TypedConfig
+}
+
+func (d *DBResource) SetTypedConfig(res []*TypedConfig) {
+	d.General.TypedConfig = res
 }
 
 func (d *DBResource) SetVersion(res interface{}) {

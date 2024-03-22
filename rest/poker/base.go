@@ -4,12 +4,19 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
-var ProcessedResources = make(map[string]bool)
+type Processed struct {
+	Listeners []string
+	Depends   []string
+}
+
+var processed = Processed{Listeners: []string{}, Depends: []string{}}
 
 func ReSnapshot(listenerName string, wtf *db.WTF) {
 	baseURL := fmt.Sprintf("http://%s/poke", wtf.Config.GrpcService)
@@ -17,16 +24,22 @@ func ReSnapshot(listenerName string, wtf *db.WTF) {
 	params := url.Values{}
 	params.Add("service", listenerName)
 
-	wtf.Logger.Infof("new version added to snapshot: %s", listenerName)
 	fullURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
 	resp, err := http.Get(fullURL)
 	if err != nil {
-		fmt.Printf("HTTP request failed: %s\n", err)
+		wtf.Logger.Debugf("HTTP request failed: %s\n", err)
 	}
-	defer resp.Body.Close()
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 }
 
 func DetectChangedResource(gType models.GTypes, resourceName string, wtf *db.WTF) {
+	if gType != models.Listener {
+		pathWithGtype := gType.String() + "===" + resourceName
+		processed.Depends = append(processed.Depends, pathWithGtype)
+	}
+
 	switch gType {
 	case models.Endpoint:
 		PokerEds(wtf, resourceName)
@@ -40,16 +53,20 @@ func DetectChangedResource(gType models.GTypes, resourceName string, wtf *db.WTF
 		PokerHCM(wtf, resourceName)
 	case models.TcpProxy:
 		PokerTcpProxy(wtf, resourceName)
+	case models.DownstreamTlsContext, models.UpstreamTlsContext, models.TlsCertificate, models.CertificateValidationContext:
+		PokerTLS(wtf, resourceName, gType)
 	case models.Listener:
-		if !ProcessedResources[resourceName] {
+		if !helper.Contains(processed.Listeners, resourceName) {
 			ReSnapshot(resourceName, wtf)
-			ProcessedResources[resourceName] = true
+			processed.Listeners = append(processed.Listeners, resourceName)
+			result := strings.Join(processed.Depends, " \n ")
+			wtf.Logger.Infof("new version added to snapshot for (%s) processed resource paths: \n %s", resourceName, result)
 		}
 	default:
-		fmt.Println("sss")
+		wtf.Logger.Infof("not covered gtype: %s", gType)
 	}
 }
 
 func ResetProcessedResources() {
-	ProcessedResources = make(map[string]bool)
+	processed = Processed{Listeners: []string{}, Depends: []string{}}
 }

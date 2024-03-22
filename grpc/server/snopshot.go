@@ -40,14 +40,11 @@ func GetContext(logger *logrus.Logger) *Context {
 
 func (c *Context) SetSnapshot(resources *xdsResource.AllResources, logger *logrus.Logger) error {
 	snapshot := GenerateSnapshot(resources)
-
-	// helper.PrettyPrinter(snapshot)
 	if err := snapshot.Consistent(); err != nil {
 		logger.Fatalf("snapshot inconsistency: %+v\n%+v", snapshot, err)
 	}
 
-	logger.Debugf("Will serve snapshot %+v", snapshot)
-
+	logger.Debugf("end serve snapshot: (%s)", resources.NodeID)
 	if err := c.Cache.Cache.SetSnapshot(context.Background(), resources.GetNodeID(), snapshot); err != nil {
 		logger.Fatalf("snapshot error %q for %+v", err, snapshot)
 	}

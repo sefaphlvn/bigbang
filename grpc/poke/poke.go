@@ -38,10 +38,13 @@ func (p *Poke) Run(pokeHandler *Poke) {
 func (p *Poke) initialSnapshots() {
 	serviceNames := p.getListenerList()
 	for _, serviceName := range serviceNames {
+		p.logger.Debugf("start serve snapshot: (%s)", serviceName)
+
 		allResource, err := p.getAllResourcesFromListener(serviceName)
 		if err != nil {
 			p.logger.Errorf("BULK GetConfigurationFromListener(%v): %v", serviceName, err)
 		}
+
 		err = p.ctx.SetSnapshot(allResource, p.logger)
 		if err != nil {
 			p.logger.Errorf("%s", err)

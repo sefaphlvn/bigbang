@@ -9,7 +9,7 @@ import (
 func (p *Poke) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/ping":
-		p.handlePing(w, r)
+		p.handlePing(w)
 	case "/poke":
 		p.handlePoke(w, r)
 	default:
@@ -17,7 +17,7 @@ func (p *Poke) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (p *Poke) handlePing(w http.ResponseWriter, r *http.Request) {
+func (p *Poke) handlePing(w http.ResponseWriter) {
 	p.logger.Info(fmt.Fprint(w, "OK"))
 }
 
@@ -28,29 +28,29 @@ func (p *Poke) handlePoke(w http.ResponseWriter, r *http.Request) {
 
 	if serviceValue == "" {
 		http.Error(w, "Service query parameter is required", http.StatusBadRequest)
-		return // Query parametre boşsa, burada fonksiyonu sonlandır
+		return
 	}
 
 	allResources, err := p.getAllResourcesFromListener(serviceValue)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		p.logger.Error(err)
-		return // Bir hata oluşursa, burada fonksiyonu sonlandır
+		return
 	}
 
 	err = p.ctx.SetSnapshot(allResources, p.logger)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		p.logger.Error(err)
-		return // Bir hata oluşursa, burada fonksiyonu sonlandır
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK) // İşlemler başarılıysa HTTP 200 durum kodunu ayarla
+	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(allResources)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		p.logger.Error(err)
-		return // JSON encode işlemi sırasında bir hata oluşursa, burada fonksiyonu sonlandır
+		return
 	}
 }

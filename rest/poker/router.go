@@ -7,7 +7,7 @@ import (
 )
 
 func PokerRouter(wtf *db.WTF, name string) {
-	filter := bson.D{{Key: "general.additional_resources.extensions.name", Value: name}}
+	filter := bson.D{{Key: "general.config_discovery.extensions.name", Value: name}}
 
 	rGeneral, err := resources.GetGenerals(wtf, "extensions", filter)
 	if err != nil {

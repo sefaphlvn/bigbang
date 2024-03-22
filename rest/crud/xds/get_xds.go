@@ -17,7 +17,7 @@ func (xds *DBHandler) GetResource(resource models.DBResourceClass, resourceDetai
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			return nil, errors.New("not found")
+			return nil, errors.New("not found: (" + resourceDetails.Name + ")")
 		} else {
 			return nil, errors.New("unknown db error")
 		}

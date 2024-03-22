@@ -27,7 +27,7 @@ func NewHttpServer(router *gin.Engine) *Server {
 
 func (s *Server) Run(config *config.AppConfig, log *logrus.Logger) error {
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%v", config.ServerPort),
+		Addr:    fmt.Sprintf(":%s", config.ServerPort),
 		Handler: s.Router,
 	}
 	done := make(chan os.Signal, 1)

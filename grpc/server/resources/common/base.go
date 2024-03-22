@@ -17,7 +17,7 @@ type Resources struct {
 	Cluster    []types.Resource
 	Route      []types.Resource
 	Endpoint   []types.Resource
-	Secret     *tls.Secret
+	Secret     []types.Resource
 	Extensions []types.Resource
 }
 
@@ -46,6 +46,7 @@ type AllResources interface {
 
 	SetSecret(secret *tls.Secret)
 	GetSecret() *tls.Secret
+	AppendSecret(secret *tls.Secret)
 
 	SetExtensions(extensions []types.Resource)
 	GetExtensions() []*core.TypedExtensionConfig
@@ -136,11 +137,23 @@ func (ar *Resources) GetEndpointT() []types.Resource {
 	return ar.Endpoint
 }
 
-func (ar *Resources) SetSecret(secret *tls.Secret) {
+func (ar *Resources) SetSecret(secret []types.Resource) {
 	ar.Secret = secret
 }
 
-func (ar *Resources) GetSecret() *tls.Secret {
+func (ar *Resources) AppendSecret(secret *tls.Secret) {
+	ar.Secret = append(ar.Secret, secret)
+}
+
+func (ar *Resources) GetSecret() []*tls.Secret {
+	secret := make([]*tls.Secret, len(ar.Secret))
+	for i, res := range ar.Secret {
+		secret[i] = res.(*tls.Secret)
+	}
+	return secret
+}
+
+func (ar *Resources) GetSecretT() []types.Resource {
 	return ar.Secret
 }
 

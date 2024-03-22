@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -73,4 +74,23 @@ func PrettyPrinter(data interface{}) {
 func GetResourceType(data interface{}) {
 	resourceType := reflect.TypeOf(data)
 	fmt.Printf("Resource type: %v\n", resourceType)
+}
+
+func ToBool(strBool string) bool {
+	boolean, err := strconv.ParseBool(strBool)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return boolean
+}
+
+func ToInt(strInt string) int {
+	number, err := strconv.Atoi(strInt)
+	if err != nil {
+		fmt.Println("Hata: MongoDB_Timeout değeri integer'a çevrilemiyor.")
+		return 0
+	}
+
+	return number
 }

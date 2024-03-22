@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func (ar *AllResources) DecodeRouter(resourceName string, db *db.WTF) (*anypb.Any, []*models.AdditionalResource, error) {
+func (ar *AllResources) DecodeRouter(resourceName string, db *db.WTF) (*anypb.Any, []*models.ConfigDiscovery, error) {
 	var message *anypb.Any
 	resource, err := resources.GetResource(db, "extensions", resourceName)
 	if err != nil {
@@ -16,7 +16,7 @@ func (ar *AllResources) DecodeRouter(resourceName string, db *db.WTF) (*anypb.An
 	}
 
 	singleRouter := &router.Router{}
-	err = resources.GetResourceWithType(resource, singleRouter)
+	err = resources.GetResourceWithType(resource.GetResource(), singleRouter)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -1,8 +1,6 @@
 package poker
 
 import (
-	"fmt"
-
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 	"go.mongodb.org/mongo-driver/bson"
@@ -50,7 +48,6 @@ func PokerCds(wtf *db.WTF, clusterName string) {
 		}
 
 		for _, general := range resourceGeneral {
-			fmt.Println("-----------------------------", general.Name, general.GType)
 			DetectChangedResource(general.GType, general.Name, wtf)
 		}
 	}

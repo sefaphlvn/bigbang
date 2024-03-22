@@ -1,23 +1,19 @@
 package config
 
-import "time"
-
 type AppConfig struct {
-	ServerPort  string `json:"server_port" yaml:"ServerPort"`
-	GrpcService string `json:"grpc_service" yaml:"GrpcService"`
-	MongoDB     struct {
-		Hosts          []string      `json:"hosts" yaml:"hosts"`
-		Username       string        `json:"username" yaml:"username"`
-		Password       string        `json:"password" yaml:"password"`
-		Port           string        `json:"port" yaml:"port"`
-		Database       string        `json:"database" yaml:"database"`
-		Scheme         string        `json:"scheme" yaml:"scheme"`
-		ReplicaSet     string        `json:"replica_set" yaml:"replicaSet"`
-		TimeoutSeconds time.Duration `json:"timeout_seconds" yaml:"timeoutSeconds"`
-	} `json:"mongo_db" yaml:"mongoDB"`
-	Log struct {
-		Level        string `json:"level" yaml:"level"`
-		Formatter    string `json:"formatter" yaml:"formatter"`
-		ReportCaller bool   `json:"report_caller" yaml:"reportCaller"`
-	} `json:"log" yaml:"log"`
+	ServerPort  string `mapstructure:"SERVERPORT" yaml:"ServerPort"`
+	GrpcService string `mapstructure:"GRPCSERVICE" yaml:"GrpcService"`
+
+	MongoDB_Hosts          string `mapstructure:"MONGODB_HOSTS" yaml:"MongoDB_Hosts"`
+	MongoDB_Username       string `mapstructure:"MONGODB_USERNAME" yaml:"MongoDB_Username"`
+	MongoDB_Password       string `mapstructure:"MONGODB_PASSWORD" yaml:"MongoDB_Password"`
+	MongoDB_Port           string `mapstructure:"MONGODB_PORT" yaml:"MongoDB_Port"`
+	MongoDB_Database       string `mapstructure:"MONGODB_DATABASE" yaml:"MongoDB_Database"`
+	MongoDB_Scheme         string `mapstructure:"MONGODB_SCHEME" yaml:"MongoDB_Scheme"`
+	MongoDB_ReplicaSet     string `mapstructure:"MONGODB_REPLICASET" yaml:"MongoDB_ReplicaSet"`
+	MongoDB_TimeoutSeconds string `mapstructure:"MONGODB_TIMEOUTSECONDS" yaml:"MongoDB_TimeoutSeconds"`
+
+	Log_Level        string `mapstructure:"LOG_LEVEL" yaml:"Log_Level"`
+	Log_Formatter    string `mapstructure:"LOG_FORMATTER" yaml:"Log_Formatter"`
+	Log_ReportCaller string `mapstructure:"LOG_REPORTCALLER" yaml:"Log_ReportCaller"`
 }

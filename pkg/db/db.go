@@ -24,8 +24,8 @@ type WTF struct {
 }
 
 func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *WTF {
-	hosts := strings.Join(config.MongoDB.Hosts, fmt.Sprintf("%s,", config.MongoDB.Port))
-	connectionString := fmt.Sprintf("%s://%s%s", config.MongoDB.Scheme, hosts, config.MongoDB.Port)
+	// connectionString := fmt.Sprintf("%s://%s%s", config.MongoDB.Scheme, hosts, config.MongoDB.Port)
+	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", config.MongoDB_Scheme, config.MongoDB_Username, config.MongoDB_Password, config.MongoDB_Hosts, config.MongoDB_Port)
 
 	tM := reflect.TypeOf(bson.M{})
 	reg := bson.NewRegistryBuilder().RegisterTypeMapEntry(bsontype.EmbeddedDocument, tM).Build()
@@ -35,7 +35,7 @@ func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *WTF {
 		logger.Fatalf("%s", err)
 	}
 
-	database := client.Database(config.MongoDB.Database)
+	database := client.Database(config.MongoDB_Database)
 	_, err = collectCreateIndex(database, ctx, logger)
 	if err != nil {
 		logger.Fatalf("%s", err)
@@ -57,7 +57,7 @@ func (db *WTF) GetGenerals(collectionName string) (*mongo.Cursor, error) {
 	cur, err := collection.Find(db.Ctx, bson.D{{}}, findOptions)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, errors.New("not found")
+			return nil, errors.New("listener not found")
 		} else {
 			return nil, errors.New("unknown db error")
 		}
@@ -95,6 +95,7 @@ func collectCreateIndex(database *mongo.Database, ctx context.Context, logger *l
 		"extensions": {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
 		"vhds":       {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
 		"bootstrap":  {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
+		"secrets":    {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
 	}
 
 	for collectionName, index := range indices {

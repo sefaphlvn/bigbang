@@ -56,9 +56,11 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 
 	resourceDetails := models.ResourceDetails{
 		CanonicalName: c.Param("canonical_name"),
+		GType:         models.GTypes(c.Query("gtype")),
 		Category:      c.Query("category"),
 		Name:          c.Param("name"),
 		Collection:    c.Query("collection"),
+		SaveOrPublish: c.Query("save_or_publish"),
 		User: models.UserDetails{
 			Groups:  userGroup,
 			IsAdmin: userIsAdmin,
