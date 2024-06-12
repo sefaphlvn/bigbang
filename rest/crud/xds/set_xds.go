@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud/typed_configs"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -16,6 +17,8 @@ func (xds *DBHandler) SetResource(resource models.DBResourceClass, collectionNam
 	now := time.Now()
 	general.CreatedAt = primitive.NewDateTimeFromTime(now)
 	general.UpdatedAt = primitive.NewDateTimeFromTime(now)
+
+	helper.PrettyPrinter(general)
 	resource.SetGeneral(&general)
 	resource.SetTypedConfig(typed_configs.DecodeSetTypedConfigs(resource, xds.DB.Logger))
 

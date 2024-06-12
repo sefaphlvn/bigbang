@@ -1,5 +1,7 @@
 package helper
 
+import "os"
+
 var Collections = []string{
 	"clusters",
 	"listeners",
@@ -12,9 +14,13 @@ var Collections = []string{
 
 var AllowedEndpoints = []string{
 	"/logout",
-	"/auth/signup",
-	"/auth/login",
 	"/refresh",
+	"/auth/login",
+	"/api/v3/setting/user_list",
+	"/api/v3/setting/user/:user_id",
+	"/api/v3/setting/group_list",
+	"/api/v3/setting/group/:group_id",
+	"/api/v3/setting/permissions/:kind/:type/:id",
 	"/api/v3/xds/secrets",
 	"/api/v3/xds/secrets/:name",
 	"/api/v3/xds/bootstrap",
@@ -36,3 +42,5 @@ var AllowedEndpoints = []string{
 	"/api/v3/extensions/:type/:canonical_name/:name",
 	"/api/v3/custom/resource_list",
 }
+
+var SECRET_KEY string = os.Getenv("secret")

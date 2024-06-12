@@ -44,7 +44,9 @@ type ResourceDetails struct {
 
 type UserDetails struct {
 	Groups  []string
+	Role    string
 	IsAdmin bool
+	UserID  string
 }
 
 type Service struct {
@@ -67,11 +69,16 @@ type General struct {
 	Category        string                 `json:"category" bson:"category"`
 	Service         GeneralService         `json:"service,omitempty" bson:"service,omitempty"`
 	Metadata        map[string]interface{} `json:"metadata,omitempty" bson:"metadata,omitempty"`
-	Groups          []string               `json:"groups" bson:"groups"`
+	Permissions     Permissions            `json:"permissions" bson:"permissions"`
 	ConfigDiscovery []*ConfigDiscovery     `json:"config_discovery,omitempty" bson:"config_discovery,omitempty"`
 	TypedConfig     []*TypedConfig         `json:"typed_config,omitempty" bson:"typed_config,omitempty"`
 	CreatedAt       primitive.DateTime     `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt       primitive.DateTime     `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+}
+
+type Permissions struct {
+	Users  []string `json:"users" bson:"users"`
+	Groups []string `json:"groups" bson:"groups"`
 }
 
 type GeneralService struct {

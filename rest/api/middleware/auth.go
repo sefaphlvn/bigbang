@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"github.com/sefaphlvn/bigbang/pkg/helper"
-	"github.com/sefaphlvn/bigbang/rest/api/auth"
 	"net/http"
 	"strings"
+
+	"github.com/sefaphlvn/bigbang/pkg/helper"
+	"github.com/sefaphlvn/bigbang/rest/api/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,7 +30,14 @@ func Authentication() gin.HandlerFunc {
 		c.Set("username", claims.Username)
 		c.Set("user_id", claims.UserId)
 		c.Set("groups", claims.Groups)
-		c.Set("isAdmin", helper.Contains(claims.Groups, "admin"))
+		c.Set("role", claims.Role)
+		isAdmin := false
+		if claims.Role == "admin" {
+			isAdmin = true
+		} else if claims.AdminGroup {
+			isAdmin = true
+		}
+		c.Set("isAdmin", isAdmin)
 		c.Next()
 	}
 }

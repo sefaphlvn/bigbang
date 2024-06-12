@@ -6,10 +6,14 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/sefaphlvn/bigbang/pkg/config"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,6 +26,14 @@ type WTF struct {
 	Logger *logrus.Logger
 	Config *config.AppConfig
 }
+
+var (
+	admin_user      = "admin"
+	admin_email     = "admin@navigazer.com"
+	admin_role      = "admin"
+	admin_active    = true
+	admin_baseGroup = ""
+)
 
 func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *WTF {
 	// connectionString := fmt.Sprintf("%s://%s%s", config.MongoDB.Scheme, hosts, config.MongoDB.Port)
@@ -41,12 +53,23 @@ func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *WTF {
 		logger.Fatalf("%s", err)
 	}
 
-	return &WTF{
+	wtf := &WTF{
 		Client: database,
 		Ctx:    ctx,
 		Logger: logger,
 		Config: config,
 	}
+
+	userID, err := createAdminUser(wtf)
+	if err != nil {
+		logger.Infof("Admin user not created: %s", err)
+	}
+
+	if err := createAdminGroup(wtf, userID); err != nil {
+		logger.Infof("Admin group not created: %s", err)
+	}
+
+	return wtf
 }
 
 func (db *WTF) GetGenerals(collectionName string) (*mongo.Cursor, error) {
@@ -86,7 +109,8 @@ func indexExists(ctx context.Context, collection *mongo.Collection, indexName st
 
 func collectCreateIndex(database *mongo.Database, ctx context.Context, logger *logrus.Logger) (interface{}, error) {
 	indices := map[string]mongo.IndexModel{
-		"user":       {Keys: bson.M{"username": 1}, Options: options.Index().SetUnique(true).SetName("username_1")},
+		"users":      {Keys: bson.M{"username": 1}, Options: options.Index().SetUnique(true).SetName("username_1")},
+		"groups":     {Keys: bson.M{"groupname": 1}, Options: options.Index().SetUnique(true).SetName("groupname_1")},
 		"service":    {Keys: bson.M{"name": 1}, Options: options.Index().SetUnique(true).SetName("name_1")},
 		"clusters":   {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
 		"listeners":  {Keys: bson.M{"general.name": 1}, Options: options.Index().SetUnique(true).SetName("general_name_1")},
@@ -146,4 +170,53 @@ func getIndexName(index mongo.IndexModel) string {
 	}
 
 	return strings.Join(nameParts, "_")
+}
+
+func createAdminUser(db *WTF) (string, error) {
+	collection := db.Client.Collection("users")
+	var user models.User
+	err := collection.FindOne(db.Ctx, bson.M{"username": "admin"}).Decode(&user)
+	if err == mongo.ErrNoDocuments {
+		hashedPassword := helper.HashPassword("admin")
+		user.Password = &hashedPassword
+		now := time.Now()
+
+		user.Created_at = primitive.NewDateTimeFromTime(now)
+		user.Updated_at = primitive.NewDateTimeFromTime(now)
+		user.ID = primitive.NewObjectID()
+		user.User_id = user.ID.Hex()
+		user.Email = &admin_email
+		user.Username = &admin_user
+		user.Role = &admin_role
+		user.BaseGroup = &admin_baseGroup
+		user.Active = &admin_active
+
+		token, refreshToken, _ := helper.GenerateAllTokens(*user.Email, *user.Username, user.User_id, []string{}, nil, false, *user.Role)
+		user.Token = &token
+		user.Refresh_token = &refreshToken
+
+		_, insertErr := collection.InsertOne(db.Ctx, user)
+		if insertErr != nil {
+			return "", insertErr
+		}
+	}
+	return user.User_id, nil
+}
+
+func createAdminGroup(db *WTF, userID string) error {
+	collection := db.Client.Collection("groups")
+	var group models.Group
+	err := collection.FindOne(db.Ctx, bson.M{"groupname": userID}).Decode(&group)
+	if err == mongo.ErrNoDocuments && userID != "" {
+		_, err = collection.InsertOne(db.Ctx, bson.M{
+			"groupname":  "admin",
+			"members":    []string{userID},
+			"created_at": primitive.NewDateTimeFromTime(time.Now()),
+			"updated_at": primitive.NewDateTimeFromTime(time.Now()),
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

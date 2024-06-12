@@ -34,8 +34,10 @@ func (extension *DBHandler) UpdateExtensions(resource models.DBResourceClass, re
 		return nil, err
 	}
 
-	poker.DetectChangedResource(resource.GetGeneral().GType, resourceDetails.Name, extension.DB)
-	poker.ResetProcessedResources()
+	if resourceDetails.SaveOrPublish == "publish" {
+		poker.DetectChangedResource(resource.GetGeneral().GType, resourceDetails.Name, extension.DB)
+		poker.ResetProcessedResources()
+	}
 
 	return gin.H{"message": "Success"}, nil
 }

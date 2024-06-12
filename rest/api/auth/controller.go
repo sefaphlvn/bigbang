@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,31 +23,12 @@ import (
 
 type DBHandler crud.DbHandler
 
-type SignedDetails struct {
-	Email    string
-	Username string
-	UserId   string
-	Groups   []string
-	jwt.StandardClaims
-}
-
-var SECRET_KEY string = os.Getenv("secret")
-
 var validate = validator.New()
 
 func NewUserHandler(db *db.WTF) *DBHandler {
 	return &DBHandler{
 		DB: db,
 	}
-}
-
-func HashPassword(password string) string {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	return string(bytes)
 }
 
 func VerifyPassword(userHashedPassword string, providedPassword string) (bool, string) {
@@ -63,201 +44,12 @@ func VerifyPassword(userHashedPassword string, providedPassword string) (bool, s
 	return check, msg
 }
 
-func (userDB *DBHandler) SignUp() gin.HandlerFunc {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("user")
-	return func(c *gin.Context) {
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		defer cancel()
-		var user models.User
-
-		if err := c.BindJSON(&user); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-			return
-		}
-
-		validationErr := validate.Struct(user)
-		if validationErr != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": validationErr.Error()})
-			return
-		}
-
-		count, err := userCollection.CountDocuments(ctx, bson.M{"username": user.Username})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "error occured while checking for the username"})
-			log.Panic(err)
-			return
-		}
-
-		if count > 0 {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "username already exists"})
-			return
-		}
-
-		password := HashPassword(*user.Password)
-		user.Password = &password
-		now := time.Now()
-
-		user.Created_at = primitive.NewDateTimeFromTime(now)
-		user.Updated_at = primitive.NewDateTimeFromTime(now)
-		user.ID = primitive.NewObjectID()
-		user.User_id = user.ID.Hex()
-		user.Groups = []string{}
-		token, refreshToken, _ := GenerateAllTokens(*user.Email, *user.Username, user.User_id, user.Groups)
-		user.Token = &token
-		user.Refresh_token = &refreshToken
-
-		resultInsertionNumber, insertErr := userCollection.InsertOne(ctx, user)
-		if insertErr != nil {
-			msg := "User item was not created"
-			c.JSON(http.StatusInternalServerError, gin.H{"message": msg})
-			return
-		}
-
-		c.JSON(http.StatusOK, resultInsertionNumber)
-	}
-}
-
-func (userDB *DBHandler) Login() gin.HandlerFunc {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("user")
-	return func(c *gin.Context) {
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		defer cancel()
-		var user models.User
-		var foundUser models.User
-
-		if err := c.BindJSON(&user); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-			return
-		}
-
-		err := userCollection.FindOne(ctx, bson.M{"username": user.Username}).Decode(&foundUser)
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "username or password is incorrect"})
-			return
-		}
-
-		passwordIsValid, msg := VerifyPassword(*foundUser.Password, *user.Password)
-
-		if !passwordIsValid {
-			c.JSON(http.StatusBadRequest, gin.H{"message": msg})
-			return
-		}
-
-		token, refreshToken, _ := GenerateAllTokens(*foundUser.Email, *foundUser.Username, foundUser.User_id, foundUser.Groups)
-
-		foundUser.Token = &token
-		foundUser.Refresh_token = &refreshToken
-
-		UpdateAllTokens(userDB, token, refreshToken, foundUser.User_id)
-
-		c.JSON(http.StatusOK, foundUser)
-	}
-}
-
-func (userDB *DBHandler) Logout() gin.HandlerFunc {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("user")
-	return func(c *gin.Context) {
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		defer cancel()
-
-		userId, ok := c.Get("user_id")
-		if !ok {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "Could not retrieve user id"})
-			c.Abort()
-			return
-		}
-
-		filter := bson.M{"user_id": userId}
-		update := bson.M{
-			"$unset": bson.M{
-				"token":         "",
-				"refresh_token": "",
-			},
-		}
-
-		_, err := userCollection.UpdateOne(ctx, filter, update)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "Failed to logout"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
-	}
-}
-
-func (userDB *DBHandler) Refresh() gin.HandlerFunc {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("user")
-	return func(c *gin.Context) {
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		defer cancel()
-		var token models.User
-
-		if err := c.BindJSON(&token); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-			return
-		}
-
-		var foundUser models.User
-		err := userCollection.FindOne(ctx, bson.M{"refresh-token": token.Refresh_token}).Decode(&foundUser)
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "invalid refresh token"})
-			return
-		}
-
-		signedToken, signedRefreshToken, _ := GenerateAllTokens(*foundUser.Email, *foundUser.Username, foundUser.User_id, foundUser.Groups)
-		UpdateAllTokens(userDB, signedToken, signedRefreshToken, foundUser.User_id)
-
-		c.JSON(http.StatusOK, gin.H{
-			"token":         signedToken,
-			"refresh_token": signedRefreshToken,
-		})
-	}
-}
-
-func GenerateAllTokens(email string, Username string, user_id string, groups []string) (signedToken string, signedRefreshToken string, err error) {
-	claims := &SignedDetails{
-		Email:    email,
-		Username: Username,
-		UserId:   user_id,
-		Groups:   groups,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Minute * time.Duration(60)).Unix(),
-		},
-	}
-
-	refreshClaims := &SignedDetails{
-		Email:    email,
-		Username: Username,
-		UserId:   user_id,
-		Groups:   groups,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(168)).Unix(),
-		},
-	}
-
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SECRET_KEY))
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SECRET_KEY))
-
-	if err != nil {
-		log.Panic(err)
-		return
-	}
-
-	return token, refreshToken, err
-}
-
-func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
+func ValidateToken(signedToken string) (claims *models.SignedDetails, msg string) {
 	token, err := jwt.ParseWithClaims(
 		signedToken,
-		&SignedDetails{},
+		&models.SignedDetails{},
 		func(token *jwt.Token) (interface{}, error) {
-			return []byte(SECRET_KEY), nil
+			return []byte(helper.SECRET_KEY), nil
 		},
 	)
 
@@ -266,7 +58,7 @@ func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
 		return
 	}
 
-	claims, ok := token.Claims.(*SignedDetails)
+	claims, ok := token.Claims.(*models.SignedDetails)
 	if !ok {
 		msg = "the token is invalid"
 		return
@@ -281,7 +73,7 @@ func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
 }
 
 func UpdateAllTokens(userDB *DBHandler, signedToken string, signedRefreshToken string, userId string) {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("user")
+	var userCollection *mongo.Collection = userDB.DB.Client.Collection("users")
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 	var updateObj primitive.D
@@ -314,25 +106,29 @@ func UpdateAllTokens(userDB *DBHandler, signedToken string, signedRefreshToken s
 	}
 }
 
-func ValidateRefreshToken(tokenString string) (SignedDetails, error) {
+func ValidateRefreshToken(tokenString string) (models.SignedDetails, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
-		&SignedDetails{},
+		&models.SignedDetails{},
 		func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return []byte(os.Getenv(SECRET_KEY)), nil
+			return []byte(os.Getenv(helper.SECRET_KEY)), nil
 		},
 	)
 	if err != nil {
-		return SignedDetails{}, fmt.Errorf("could not parse refresh token: %w", err)
+		return models.SignedDetails{}, fmt.Errorf("could not parse refresh token: %w", err)
 	}
 
-	claims, ok := token.Claims.(*SignedDetails)
+	claims, ok := token.Claims.(*models.SignedDetails)
 	if !ok || !token.Valid {
-		return SignedDetails{}, fmt.Errorf("invalid refresh token")
+		return models.SignedDetails{}, fmt.Errorf("invalid refresh token")
 	}
 
 	return *claims, nil
+}
+
+func respondWithJSON(c *gin.Context, status int, msg, userOrGroupID string) {
+	c.JSON(status, gin.H{"message": msg, "id": userOrGroupID})
 }

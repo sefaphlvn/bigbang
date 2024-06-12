@@ -6,9 +6,11 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func Contains(s []string, str string) bool {
@@ -18,48 +20,6 @@ func Contains(s []string, str string) bool {
 		}
 	}
 	return false
-}
-
-func GetString(m bson.M, key string) string {
-	if m != nil {
-		if str, ok := m[key].(string); ok {
-			return str
-		}
-	}
-	return "None"
-}
-
-func GetBool(m bson.M, key string) bool {
-	b, ok := m[key].(bool)
-	if !ok {
-		b = false
-	}
-
-	return b
-}
-
-func GetDateTime(m bson.M, key string) primitive.DateTime {
-	dt, _ := m[key].(primitive.DateTime)
-	return dt
-}
-
-func ToMapStringInterface(data []byte) map[string]interface{} {
-	var typedData map[string]interface{}
-	err := json.Unmarshal(data, &typedData)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return typedData
-}
-
-func ItoGenericTypeConvert[T any](data interface{}) T {
-	typedData, ok := data.(T)
-	if !ok {
-		log.Fatal("invalid type")
-	}
-
-	return typedData
 }
 
 func PrettyPrinter(data interface{}) {
@@ -88,9 +48,74 @@ func ToBool(strBool string) bool {
 func ToInt(strInt string) int {
 	number, err := strconv.Atoi(strInt)
 	if err != nil {
-		fmt.Println("Hata: MongoDB_Timeout değeri integer'a çevrilemiyor.")
+		fmt.Printf("Cannot convert to int: %s", err)
 		return 0
 	}
 
 	return number
+}
+
+func HashPassword(password string) string {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return string(bytes)
+}
+
+func GenerateAllTokens(email string, Username string, user_id string, groups []string, base_group *string, adminGroup bool, role string) (signedToken string, signedRefreshToken string, err error) {
+	claims := &models.SignedDetails{
+		Email:      email,
+		Username:   Username,
+		UserId:     user_id,
+		Groups:     RemoveDuplicates(groups),
+		BaseGroup:  base_group,
+		AdminGroup: adminGroup,
+		Role:       role,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Local().Add(time.Minute * time.Duration(60)).Unix(),
+		},
+	}
+
+	refreshClaims := &models.SignedDetails{
+		Email:      email,
+		Username:   Username,
+		UserId:     user_id,
+		Groups:     RemoveDuplicates(groups),
+		BaseGroup:  base_group,
+		AdminGroup: adminGroup,
+		Role:       role,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(168)).Unix(),
+		},
+	}
+
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SECRET_KEY))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SECRET_KEY))
+
+	if err != nil {
+		log.Panic(err)
+		return
+	}
+
+	return token, refreshToken, err
+}
+
+func RemoveDuplicates(strings []string) []string {
+	uniqueStrings := make(map[string]bool)
+	result := []string{}
+
+	for _, str := range strings {
+		if _, exists := uniqueStrings[str]; !exists {
+			uniqueStrings[str] = true
+			result = append(result, str)
+		}
+	}
+
+	return result
 }
