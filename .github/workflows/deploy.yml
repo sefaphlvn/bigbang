@@ -15,11 +15,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t bigbang-rest .
-
-      - name: Tag Docker image
-        run: |
-          docker tag bigbang-rest ${{ secrets.DOCKER_USERNAME }}/bigbang-rest:latest
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/bigbang:latest .
 
       - name: Log in to Docker Hub
         run: |
@@ -27,7 +23,7 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/bigbang-rest:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/bigbang:latest
 
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.5.3
@@ -41,8 +37,12 @@ jobs:
       - name: Pull Docker image on DigitalOcean
         run: |
           ssh root@68.183.216.216 "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}"
-          ssh root@68.183.216.216 "docker pull ${{ secrets.DOCKER_USERNAME }}/bigbang-rest:latest"
+          ssh root@68.183.216.216 "docker pull ${{ secrets.DOCKER_USERNAME }}/bigbang:latest"
 
-      - name: Run Docker container on DigitalOcean
+      - name: Run REST container on DigitalOcean
         run: |
-          ssh root@68.183.216.216 "docker run -d -p 8080:80 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang-rest:latest server-rest"
+          ssh root@68.183.216.216 "docker run -d -p 8080:80 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang:latest ./main server-rest"
+
+      - name: Run gRPC container on DigitalOcean
+        run: |
+          ssh root@68.183.216.216 "docker run -d -p 8090:8080 --name bigbang-grpc-container ${{ secrets.DOCKER_USERNAME }}/bigbang:latest ./main server-grpc"
