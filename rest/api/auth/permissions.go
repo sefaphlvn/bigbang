@@ -76,6 +76,7 @@ func (wtf *DBHandler) SetPermission(permissions models.Permission, userOrGroupID
 		"endpoints":  permissions.Endpoints,
 		"secrets":    permissions.Secrets,
 		"extensions": permissions.Extensions,
+		"bootstrap":  permissions.Bootstrap,
 	}
 
 	for name, field := range fields {

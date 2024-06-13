@@ -61,4 +61,5 @@ type Permission struct {
 	Endpoints  *InnerPermission `json:"endpoints,omitempty"`
 	Secrets    *InnerPermission `json:"secrets,omitempty"`
 	Extensions *InnerPermission `json:"extensions,omitempty"`
+	Bootstrap  *InnerPermission `json:"bootstrap,omitempty"`
 }
