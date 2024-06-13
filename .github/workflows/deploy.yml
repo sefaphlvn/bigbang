@@ -34,14 +34,17 @@ jobs:
         run: |
           ssh-keyscan -H 68.183.216.216 >> ~/.ssh/known_hosts
 
-      - name: Pull Docker image on DigitalOcean
+      - name: Remove existing REST container if exists
         run: |
-          ssh root@68.183.216.216 "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}"
-          ssh root@68.183.216.216 "docker pull ${{ secrets.DOCKER_USERNAME }}/bigbang:latest"
+          ssh root@68.183.216.216 "docker stop bigbang-rest-container || true && docker rm bigbang-rest-container || true"
 
       - name: Run REST container on DigitalOcean
         run: |
           ssh root@68.183.216.216 "docker run -d -p 8080:80 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang:latest ./main server-rest"
+
+      - name: Remove existing gRPC container if exists
+        run: |
+          ssh root@68.183.216.216 "docker stop bigbang-grpc-container || true && docker rm bigbang-grpc-container || true"
 
       - name: Run gRPC container on DigitalOcean
         run: |
