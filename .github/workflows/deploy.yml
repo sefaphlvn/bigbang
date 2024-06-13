@@ -13,6 +13,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Build Docker image
+        run: |
+          docker build -t bigbang-rest .
+
+      - name: Tag Docker image
+        run: |
+          docker tag bigbang-rest ${{ secrets.DOCKER_USERNAME }}/bigbang-rest:latest
+
+      - name: Log in to Docker Hub
+        run: |
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Push Docker image to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/bigbang-rest:latest
+
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
@@ -22,20 +38,11 @@ jobs:
         run: |
           ssh-keyscan -H 68.183.216.216 >> ~/.ssh/known_hosts
 
-      - name: Build REST Docker image
+      - name: Pull Docker image on DigitalOcean
         run: |
-          docker build --build-arg MODE=server-rest -t bigbang-rest .
+          ssh root@68.183.216.216 "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}"
+          ssh root@68.183.216.216 "docker pull ${{ secrets.DOCKER_USERNAME }}/bigbang-rest:latest"
 
-      - name: Build gRPC Docker image
+      - name: Run Docker container on DigitalOcean
         run: |
-          docker build --build-arg MODE=server-grpc -t bigbang-grpc .
-
-      - name: Deploy REST application to DigitalOcean
-        run: |
-          scp bigbang-rest root@68.183.216.216:/root/
-          ssh root@68.183.216.216 "docker run -d -p 8080:80 --name bigbang-rest-container /root/bigbang-rest server-rest"
-
-      - name: Deploy gRPC application to DigitalOcean
-        run: |
-          scp bigbang-grpc root@68.183.216.216:/root/
-          ssh root@68.183.216.216 "docker run -d -p 9090:8080 --name bigbang-grpc-container /root/bigbang-grpc server-grpc"
+          ssh root@68.183.216.216 "docker run -d -p 8080:80 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang-rest:latest server-rest"
