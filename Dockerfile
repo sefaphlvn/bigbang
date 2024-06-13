@@ -32,3 +32,4 @@ EXPOSE 8080
 
 # Command to run the executable, no specific mode specified
 CMD ["./main"]
+CMD ["server-rest"] 

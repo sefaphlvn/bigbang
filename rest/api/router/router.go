@@ -8,9 +8,7 @@ import (
 )
 
 func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
-
 	gin.SetMode(gin.ReleaseMode)
-
 	e := gin.New()
 
 	e.HandleMethodNotAllowed = true
@@ -24,15 +22,18 @@ func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
 	e.POST("/refresh", middleware.Refresh(), h.Auth.Refresh())
 
 	apiAuth := e.Group("/auth")
+	apiSettings := e.Group("/api/v3/setting")
 	apiCustom := e.Group("/api/v3/custom")
 	apiExtension := e.Group("/api/v3/extensions")
 	apiResource := e.Group("/api/v3/xds")
 
+	apiSettings.Use(middleware.Authentication())
 	apiCustom.Use(middleware.Authentication())
 	apiExtension.Use(middleware.Authentication())
 	apiResource.Use(middleware.Authentication())
 
 	initAuthRoutes(apiAuth, h)
+	initSettingRoutes(apiSettings, h)
 	initCustomRoutes(apiCustom, h)
 	initExtensionRoutes(apiExtension, h)
 	initResourceRoutes(apiResource, h)
@@ -46,8 +47,25 @@ func initAuthRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		path    string
 		handler gin.HandlerFunc
 	}{
-		{"POST", "/signup", h.Auth.SignUp()},
 		{"POST", "/login", h.Auth.Login()},
+	}
+
+	initRoutes(rg, routes)
+}
+
+func initSettingRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
+	routes := []struct {
+		method  string
+		path    string
+		handler gin.HandlerFunc
+	}{
+		{"GET", "/user_list", h.Auth.ListUsers},
+		{"GET", "/user/:user_id", h.Auth.GetUser},
+		{"PUT", "/user/:user_id", h.Auth.SetUpdateUser},
+		{"GET", "/group_list", h.Auth.ListGroups},
+		{"GET", "/group/:group_id", h.Auth.GetGroup},
+		{"PUT", "/group/:group_id", h.Auth.SetUpdateGroup},
+		{"GET", "/permissions/:kind/:type/:id", h.Auth.GetPermissions},
 	}
 
 	initRoutes(rg, routes)
