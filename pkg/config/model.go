@@ -1,8 +1,8 @@
 package config
 
 type AppConfig struct {
-	ServerPort  string `mapstructure:"SERVERPORT" yaml:"ServerPort"`
-	GrpcService string `mapstructure:"GRPCSERVICE" yaml:"GrpcService"`
+	ServerPort         string `mapstructure:"SERVERPORT" yaml:"ServerPort"`
+	PokePort string `mapstructure:"POKEPORT" yaml:"PokePort"`
 
 	MongoDB_Hosts          string `mapstructure:"MONGODB_HOSTS" yaml:"MongoDB_Hosts"`
 	MongoDB_Username       string `mapstructure:"MONGODB_USERNAME" yaml:"MongoDB_Username"`

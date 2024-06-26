@@ -10,9 +10,9 @@ import (
 func PokerTLS(wtf *db.WTF, name string, gType models.GTypes) {
 	switch gType {
 	case models.DownstreamTlsContext:
-		pDownstreamTLS(wtf, name)
+		pStreamTLS(wtf, name)
 	case models.UpstreamTlsContext:
-		pDownstreamTLS(wtf, name)
+		pStreamTLS(wtf, name)
 	case models.TlsCertificate:
 		pTlsCertificate(wtf, name)
 	case models.CertificateValidationContext:
@@ -20,7 +20,7 @@ func PokerTLS(wtf *db.WTF, name string, gType models.GTypes) {
 	}
 }
 
-func pDownstreamTLS(wtf *db.WTF, name string) {
+func pStreamTLS(wtf *db.WTF, name string) {
 	filter := bson.D{{Key: "general.typed_config.name", Value: name}}
 
 	rGeneral, err := resources.GetGenerals(wtf, "listeners", filter)

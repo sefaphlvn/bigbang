@@ -19,18 +19,39 @@ type Processed struct {
 var processed = Processed{Listeners: []string{}, Depends: []string{}}
 
 func ReSnapshot(listenerName string, wtf *db.WTF) {
-	baseURL := fmt.Sprintf("http://%s/poke", wtf.Config.GrpcService)
+	baseURL := "http://localhost/poke"
 
 	params := url.Values{}
 	params.Add("service", listenerName)
-
 	fullURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
-	resp, err := http.Get(fullURL)
+
+	// Yeni bir HTTP isteği oluşturun
+	req, err := http.NewRequest("GET", fullURL, nil)
+	if err != nil {
+		wtf.Logger.Debugf("Creating request failed: %s\n", err)
+		return
+	}
+
+	// İstek nesnesine header ekleyin
+	req.Header.Set("bigbang-controller", "1")
+
+	// Bir HTTP client kullanarak isteği gönderin
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		wtf.Logger.Debugf("HTTP request failed: %s\n", err)
+		return
 	}
-	if resp != nil {
-		defer resp.Body.Close()
+
+	defer resp.Body.Close()
+
+	// İsteğin yanıtını işleyin
+	if resp.StatusCode == http.StatusOK {
+		// İşlem başarılı, yanıtı okuyun veya loglayın
+		wtf.Logger.Debugf("Request successful: %s\n", resp.Status)
+	} else {
+		// Yanıttaki hata durumlarını ele alın
+		wtf.Logger.Debugf("HTTP request returned status code: %d\n", resp.StatusCode)
 	}
 }
 

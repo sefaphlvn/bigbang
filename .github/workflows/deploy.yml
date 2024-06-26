@@ -40,7 +40,7 @@ jobs:
 
       - name: Run REST container on DigitalOcean
         run: |
-          ssh root@68.183.216.216 "docker run -d -p 8080:80 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang:latest ./main server-rest"
+          ssh root@68.183.216.216 "docker run -d -p 8080:8099 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang:latest ./main server-rest"
 
       - name: Remove existing gRPC container if exists
         run: |
