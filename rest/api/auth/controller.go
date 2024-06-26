@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
@@ -64,7 +64,7 @@ func ValidateToken(signedToken string) (claims *models.SignedDetails, msg string
 		return
 	}
 
-	if claims.ExpiresAt < time.Now().Local().Unix() {
+	if claims.ExpiresAt.Unix() < time.Now().Local().Unix() {
 		msg = "token is expired"
 		return
 	}

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -73,8 +73,8 @@ func GenerateAllTokens(email string, Username string, user_id string, groups []s
 		BaseGroup:  base_group,
 		AdminGroup: adminGroup,
 		Role:       role,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Minute * time.Duration(60)).Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 60)),
 		},
 	}
 
@@ -86,8 +86,8 @@ func GenerateAllTokens(email string, Username string, user_id string, groups []s
 		BaseGroup:  base_group,
 		AdminGroup: adminGroup,
 		Role:       role,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(168)).Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 60)),
 		},
 	}
 

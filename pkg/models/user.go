@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -46,7 +46,7 @@ type SignedDetails struct {
 	Role       string
 	BaseGroup  *string
 	AdminGroup bool
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 type InnerPermission struct {
