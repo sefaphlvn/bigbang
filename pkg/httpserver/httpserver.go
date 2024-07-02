@@ -27,7 +27,7 @@ func NewHttpServer(router *gin.Engine) *Server {
 
 func (s *Server) Run(config *config.AppConfig, log *logrus.Logger) error {
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%s", config.ServerPort),
+		Addr:    fmt.Sprintf(":%s", config.BIGBANG_REST_SERVER_PORT),
 		Handler: s.Router,
 	}
 	done := make(chan os.Signal, 1)
@@ -38,7 +38,7 @@ func (s *Server) Run(config *config.AppConfig, log *logrus.Logger) error {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
-	log.Infof("Starting http web server [::]:%s", config.ServerPort)
+	log.Infof("Starting http web server [::]:%s", config.BIGBANG_REST_SERVER_PORT)
 	<-done
 	log.Info("Http web server stop signal recived")
 

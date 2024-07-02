@@ -6,13 +6,13 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 )
 
-func (ar *Resources) GetEndpoints(ep string, wtf *db.WTF) {
-	doc, _ := resources.GetResource(wtf, "endpoints", ep)
+func (ar *Resources) GetEndpoints(ep string, context *db.AppContext) {
+	doc, _ := resources.GetResource(context, "endpoints", ep)
 	singleEndpoint := &endpoint.ClusterLoadAssignment{}
 	err := resources.GetResourceWithType(doc.GetResource(), singleEndpoint)
 
 	if err != nil {
-		wtf.Logger.Debug(err)
+		context.Logger.Debug(err)
 	}
 
 	ar.Endpoint = append(ar.Endpoint, singleEndpoint)

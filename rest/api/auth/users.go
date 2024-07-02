@@ -22,9 +22,9 @@ type UserWithGroups struct {
 	Permissions *models.Permission `json:"permissions"`
 }
 
-func (userDB *DBHandler) SetUpdateUser(c *gin.Context) {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("users")
-	var ctx, cancel = context.WithTimeout(userDB.DB.Ctx, 100*time.Second)
+func (handler *AppHandler) SetUpdateUser(c *gin.Context) {
+	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
+	var ctx, cancel = context.WithTimeout(handler.Context.Ctx, 100*time.Second)
 	var status int
 	var msg, userID string
 	var userWG UserWithGroups
@@ -36,20 +36,20 @@ func (userDB *DBHandler) SetUpdateUser(c *gin.Context) {
 	}
 
 	if userWG.IsCreate {
-		status, msg, userID = userDB.CreateUser(ctx, userCollection, userWG)
+		status, msg, userID = handler.CreateUser(ctx, userCollection, userWG)
 	} else {
-		status, msg = userDB.UpdateUser(ctx, userCollection, userWG, c.Param("user_id"))
+		status, msg = handler.UpdateUser(ctx, userCollection, userWG, c.Param("user_id"))
 		userID = c.Param("user_id")
 	}
 
 	if userWG.Permissions != nil {
-		userDB.SetPermission(*userWG.Permissions, userID, "users")
+		handler.SetPermission(*userWG.Permissions, userID, "users")
 	}
 
 	respondWithJSON(c, status, msg, userID)
 }
 
-func (userDB *DBHandler) CreateUser(ctx context.Context, userCollection *mongo.Collection, userWG UserWithGroups) (int, string, string) {
+func (handler *AppHandler) CreateUser(ctx context.Context, userCollection *mongo.Collection, userWG UserWithGroups) (int, string, string) {
 	count, err := userCollection.CountDocuments(ctx, bson.M{"username": userWG.Username})
 	if err != nil {
 		return http.StatusBadRequest, "error occured while checking for the username", "0"
@@ -89,7 +89,7 @@ func (userDB *DBHandler) CreateUser(ctx context.Context, userCollection *mongo.C
 	return http.StatusOK, "Successfully created user", userWG.User_id
 }
 
-func (userDB *DBHandler) UpdateUser(ctx context.Context, userCollection *mongo.Collection, userWG UserWithGroups, userID string) (int, string) {
+func (handler *AppHandler) UpdateUser(ctx context.Context, userCollection *mongo.Collection, userWG UserWithGroups, userID string) (int, string) {
 	filter := bson.M{"user_id": userID}
 	update := bson.M{
 		"$set": bson.M{},
@@ -133,8 +133,8 @@ func (userDB *DBHandler) UpdateUser(ctx context.Context, userCollection *mongo.C
 	return http.StatusOK, "user successfully updated"
 }
 
-func (userDB *DBHandler) Login() gin.HandlerFunc {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("users")
+func (handler *AppHandler) Login() gin.HandlerFunc {
+	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
@@ -160,56 +160,56 @@ func (userDB *DBHandler) Login() gin.HandlerFunc {
 			return
 		}
 
-		groups, base_group, adminGroup := userDB.GetUserGroups(foundUser.User_id)
+		groups, base_group, adminGroup := handler.GetUserGroups(foundUser.User_id)
 
 		token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email, *foundUser.Username, foundUser.User_id, groups, base_group, adminGroup, *foundUser.Role)
 
 		foundUser.Token = &token
 		foundUser.Refresh_token = &refreshToken
 
-		UpdateAllTokens(userDB, token, refreshToken, foundUser.User_id)
+		UpdateAllTokens(handler, token, refreshToken, foundUser.User_id)
 
 		c.JSON(http.StatusOK, foundUser)
 	}
 }
 
-func (userDB *DBHandler) ListUsers(c *gin.Context) {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("users")
+func (handler *AppHandler) ListUsers(c *gin.Context) {
+	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
 	filter := bson.M{}
 
 	opts := options.Find().SetProjection(bson.M{"username": 1, "email": 1, "created_at": 1, "updated_at": 1, "user_id": 1, "groups": 1})
-	cursor, err := userCollection.Find(userDB.DB.Ctx, filter, opts)
+	cursor, err := userCollection.Find(handler.Context.Ctx, filter, opts)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not find records"})
 	}
 
 	var records []bson.M
-	if err = cursor.All(userDB.DB.Ctx, &records); err != nil {
+	if err = cursor.All(handler.Context.Ctx, &records); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not decode records"})
 	}
 
 	c.JSON(http.StatusOK, records)
 }
 
-func (userDB *DBHandler) GetUser(c *gin.Context) {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("users")
+func (handler *AppHandler) GetUser(c *gin.Context) {
+	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
 	filter := bson.M{"user_id": c.Param("user_id")}
 
 	opts := options.FindOne().SetProjection(bson.M{"username": 1, "email": 1, "created_at": 1, "updated_at": 1, "user_id": 1, "groups": 1, "role": 1, "base_group": 1, "active": 1})
 	var record bson.M
-	err := userCollection.FindOne(userDB.DB.Ctx, filter, opts).Decode(&record)
+	err := userCollection.FindOne(handler.Context.Ctx, filter, opts).Decode(&record)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not find records"})
 	}
 
-	groups, _, _ := userDB.GetUserGroups(record["user_id"].(string))
+	groups, _, _ := handler.GetUserGroups(record["user_id"].(string))
 	record["groups"] = groups
 
 	c.JSON(http.StatusOK, record)
 }
 
-func (userDB *DBHandler) Logout() gin.HandlerFunc {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("users")
+func (handler *AppHandler) Logout() gin.HandlerFunc {
+	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
@@ -239,8 +239,8 @@ func (userDB *DBHandler) Logout() gin.HandlerFunc {
 	}
 }
 
-func (userDB *DBHandler) Refresh() gin.HandlerFunc {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("users")
+func (handler *AppHandler) Refresh() gin.HandlerFunc {
+	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
@@ -259,10 +259,10 @@ func (userDB *DBHandler) Refresh() gin.HandlerFunc {
 			return
 		}
 
-		groups, base_group, admin_group := userDB.GetUserGroups(foundUser.User_id)
+		groups, base_group, admin_group := handler.GetUserGroups(foundUser.User_id)
 
 		signedToken, signedRefreshToken, _ := helper.GenerateAllTokens(*foundUser.Email, *foundUser.Username, foundUser.User_id, groups, base_group, admin_group, *foundUser.Role)
-		UpdateAllTokens(userDB, signedToken, signedRefreshToken, foundUser.User_id)
+		UpdateAllTokens(handler, signedToken, signedRefreshToken, foundUser.User_id)
 
 		c.JSON(http.StatusOK, gin.H{
 			"token":         signedToken,

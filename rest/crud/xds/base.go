@@ -5,10 +5,10 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud"
 )
 
-type DBHandler crud.DbHandler
+type AppHandler crud.Application
 
-func NewXDSHandler(db *db.WTF) *DBHandler {
-	return &DBHandler{
-		DB: db,
+func NewXDSHandler(context *db.AppContext) *AppHandler {
+	return &AppHandler{
+		Context: context,
 	}
 }

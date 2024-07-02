@@ -6,17 +6,17 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 )
 
-func (ar *Resources) GetClusters(clusters []string, wtf *db.WTF) {
+func (ar *Resources) GetClusters(clusters []string, context *db.AppContext) {
 	for _, cls := range clusters {
-		doc, _ := resources.GetResource(wtf, "clusters", cls)
+		doc, _ := resources.GetResource(context, "clusters", cls)
 		singleCluster := &cluster.Cluster{}
 		err := resources.GetResourceWithType(doc.GetResource(), singleCluster)
 		if err != nil {
-			wtf.Logger.Debug(err)
+			context.Logger.Debug(err)
 		}
 
 		cc := singleCluster.GetEdsClusterConfig()
-		ar.GetEndpoints(cc.ServiceName, wtf)
+		ar.GetEndpoints(cc.ServiceName, context)
 		ar.Cluster = append(ar.Cluster, singleCluster)
 	}
 }

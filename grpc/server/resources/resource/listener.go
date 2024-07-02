@@ -22,7 +22,7 @@ var unmarshaler = protojson.UnmarshalOptions{
 	// DiscardUnknown: true, // Bilinmeyen alanları yok say
 }
 
-func (ar *AllResources) DecodeListener(rawListenerResource *models.DBResource, wtf *db.WTF, logger *logrus.Logger) {
+func (ar *AllResources) DecodeListener(rawListenerResource *models.DBResource, context *db.AppContext, logger *logrus.Logger) {
 	resArray, ok := rawListenerResource.Resource.Resource.(primitive.A)
 	if !ok {
 		logger.Fatal("Unexpected resource format")
@@ -32,7 +32,7 @@ func (ar *AllResources) DecodeListener(rawListenerResource *models.DBResource, w
 
 	var lstnr []types.Resource
 	for _, singleListener := range resArray {
-		listenerWithTransportSocket := ar.GetTransportSockets(models.TransportSocketPath, singleListener, wtf, logger)
+		listenerWithTransportSocket := ar.GetTransportSockets(models.TransportSocketPath, singleListener, context, logger)
 		data, err := json.Marshal(listenerWithTransportSocket)
 		if err != nil {
 			logger.Error(err)
@@ -48,10 +48,10 @@ func (ar *AllResources) DecodeListener(rawListenerResource *models.DBResource, w
 		ar.SetListener(lstnr)
 	}
 
-	ar.CollectExtensions(rawListenerResource.General.ConfigDiscovery, wtf, logger)
+	ar.CollectExtensions(rawListenerResource.General.ConfigDiscovery, context, logger)
 }
 
-func (ar *AllResources) GetTransportSockets(pathd models.TypedPaths, jsonData interface{}, wtf *db.WTF, logger *logrus.Logger) interface{} {
+func (ar *AllResources) GetTransportSockets(pathd models.TypedPaths, jsonData interface{}, context *db.AppContext, logger *logrus.Logger) interface{} {
 	jsonString, err := json.Marshal(jsonData)
 	if err != nil {
 		logger.Debugf("Error marshalling JSON: %v", err)
@@ -66,14 +66,14 @@ func (ar *AllResources) GetTransportSockets(pathd models.TypedPaths, jsonData in
 			continue
 		}
 
-		conf, err := resources.GetResource(wtf, tempTypedConfig.Type, tempTypedConfig.Name)
+		conf, err := resources.GetResource(context, tempTypedConfig.Type, tempTypedConfig.Name)
 		if err != nil {
 			logger.Debugf("Error getting resource from DB: %v", err)
 			continue
 		}
 
 		resource := conf.GetResource()
-		ar.DecodeDownstreamTLS(conf, wtf)
+		ar.DecodeDownstreamTLS(conf, context)
 		typed_config, ok := resource.(primitive.M)
 		if !ok {
 			logger.Debugf("Resource is not a map[string]interface{}")

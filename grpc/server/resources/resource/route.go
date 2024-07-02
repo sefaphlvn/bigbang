@@ -6,8 +6,8 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 )
 
-func (ar *AllResources) GetRoutes(rdsName string, wtf *db.WTF) error {
-	route, err := resources.GetResource(wtf, "routes", rdsName)
+func (ar *AllResources) GetRoutes(rdsName string, context *db.AppContext) error {
+	route, err := resources.GetResource(context, "routes", rdsName)
 	if err != nil {
 		return err
 	}
@@ -19,24 +19,24 @@ func (ar *AllResources) GetRoutes(rdsName string, wtf *db.WTF) error {
 	}
 
 	ar.AppendRoute(singleRoute)
-	ar.GetClustersFromRequestMirrorPolicies(singleRoute.RequestMirrorPolicies, wtf)
-	ar.SetClustersFromVirtualHosts(singleRoute.VirtualHosts, wtf)
+	ar.GetClustersFromRequestMirrorPolicies(singleRoute.RequestMirrorPolicies, context)
+	ar.SetClustersFromVirtualHosts(singleRoute.VirtualHosts, context)
 
 	return nil
 }
 
-func (ar *AllResources) SetClustersFromVirtualHosts(virtualHosts []*routev3.VirtualHost, wtf *db.WTF) {
+func (ar *AllResources) SetClustersFromVirtualHosts(virtualHosts []*routev3.VirtualHost, context *db.AppContext) {
 	var clusters []string
 	for _, vh := range virtualHosts {
-		ar.GetClustersFromRequestMirrorPolicies(vh.RequestMirrorPolicies, wtf)
+		ar.GetClustersFromRequestMirrorPolicies(vh.RequestMirrorPolicies, context)
 		for _, r := range vh.Routes {
-			clusters = ar.GetClustersFromAction(r.GetAction(), wtf)
-			ar.GetClusters(clusters, wtf)
+			clusters = ar.GetClustersFromAction(r.GetAction(), context)
+			ar.GetClusters(clusters, context)
 		}
 	}
 }
 
-func (ar *AllResources) GetClustersFromAction(action interface{}, db *db.WTF) []string {
+func (ar *AllResources) GetClustersFromAction(action interface{}, db *db.AppContext) []string {
 	var clusters []string
 	switch action := action.(type) {
 	case *routev3.Route_Route:

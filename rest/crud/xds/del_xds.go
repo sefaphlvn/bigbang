@@ -9,8 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (xds *DBHandler) DelResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	collection := xds.DB.Client.Collection(resourceDetails.Type.String())
+func (xds *AppHandler) DelResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+	collection := xds.Context.Client.Collection(resourceDetails.Type.String())
 
 	var filter bson.M
 	if resourceDetails.User.IsAdmin {
@@ -24,7 +24,7 @@ func (xds *DBHandler) DelResource(resource models.DBResourceClass, resourceDetai
 		}
 	}
 
-	result := collection.FindOne(xds.DB.Ctx, filter)
+	result := collection.FindOne(xds.Context.Ctx, filter)
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
 			return nil, errors.New("document not found or no permission to delete")
@@ -33,7 +33,7 @@ func (xds *DBHandler) DelResource(resource models.DBResourceClass, resourceDetai
 		}
 	}
 
-	res, err := collection.DeleteOne(xds.DB.Ctx, filter)
+	res, err := collection.DeleteOne(xds.Context.Ctx, filter)
 	if err != nil {
 		return nil, errors.New("unknown db error")
 	}

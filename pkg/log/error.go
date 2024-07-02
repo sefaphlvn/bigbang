@@ -13,13 +13,13 @@ func NewLogger(appConfig *config.AppConfig) *logrus.Logger {
 
 	var formatter logrus.Formatter
 
-	if appConfig.Log_Formatter == "text" {
+	if appConfig.LOG_FORMATTER == "text" {
 		formatter = &logrus.TextFormatter{FullTimestamp: true}
 	} else {
 		formatter = &logrus.JSONFormatter{}
 	}
 
-	logLevel, err := logrus.ParseLevel(appConfig.Log_Level)
+	logLevel, err := logrus.ParseLevel(appConfig.LOG_LEVEL)
 	if err != nil {
 		fmt.Println(appConfig)
 		panic(err)
@@ -28,7 +28,7 @@ func NewLogger(appConfig *config.AppConfig) *logrus.Logger {
 	return &logrus.Logger{
 		Out:          os.Stdout,
 		Formatter:    formatter,
-		ReportCaller: helper.ToBool(appConfig.Log_ReportCaller),
+		ReportCaller: helper.ToBool(appConfig.LOG_REPORTCALLER),
 		Level:        logLevel,
 	}
 }

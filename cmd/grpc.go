@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/sefaphlvn/bigbang/grpc/poke"
@@ -30,7 +31,8 @@ var grpcCmd = &cobra.Command{
 
 		var ctxCache = grpcserver.GetContext(logger)
 
-		var pokeServer = poke.NewPokeServer(ctxCache, db, logger)
+		var pokeServer = poke.NewPokeServer(ctxCache, db, logger, appConfig)
+		fmt.Println(appConfig)
 		go pokeServer.Run(pokeServer)
 
 		var callbacks = grpcserver.NewCallbacks(logger)

@@ -16,11 +16,11 @@ import (
 
 func NewClient(appConfig *config.AppConfig, log *logrus.Logger) DBClient {
 
-	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", appConfig.MongoDB_Scheme, appConfig.MongoDB_Username, appConfig.MongoDB_Password, appConfig.MongoDB_Hosts, appConfig.MongoDB_Port)
+	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", appConfig.MONGODB_SCHEME, appConfig.MONGODB_USERNAME, appConfig.MONGODB_PASSWORD, appConfig.MONGODB_HOSTS, appConfig.MONGODB_PORT)
 
 	clientOptions := options.Client().ApplyURI(connectionString)
 
-	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), time.Duration(helper.ToInt(appConfig.MongoDB_TimeoutSeconds))*time.Second)
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), time.Duration(helper.ToInt(appConfig.MONGODB_TIMEOUTSECONDS))*time.Second)
 	defer cancel()
 
 	client, err := mongo.Connect(ctxWithTimeout, clientOptions)

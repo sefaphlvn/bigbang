@@ -7,54 +7,54 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func PokerTLS(wtf *db.WTF, name string, gType models.GTypes) {
+func PokerTLS(context *db.AppContext, name string, gType models.GTypes) {
 	switch gType {
 	case models.DownstreamTlsContext:
-		pStreamTLS(wtf, name)
+		pStreamTLS(context, name)
 	case models.UpstreamTlsContext:
-		pStreamTLS(wtf, name)
+		pStreamTLS(context, name)
 	case models.TlsCertificate:
-		pTlsCertificate(wtf, name)
+		pTlsCertificate(context, name)
 	case models.CertificateValidationContext:
-		pCertValidContext(wtf, name)
+		pCertValidContext(context, name)
 	}
 }
 
-func pStreamTLS(wtf *db.WTF, name string) {
+func pStreamTLS(context *db.AppContext, name string) {
 	filter := bson.D{{Key: "general.typed_config.name", Value: name}}
 
-	rGeneral, err := resources.GetGenerals(wtf, "listeners", filter)
+	rGeneral, err := resources.GetGenerals(context, "listeners", filter)
 	if err != nil {
-		wtf.Logger.Debug(err)
+		context.Logger.Debug(err)
 	}
 
 	for _, general := range rGeneral {
-		DetectChangedResource(general.GType, general.Name, wtf)
+		DetectChangedResource(general.GType, general.Name, context)
 	}
 }
 
-func pTlsCertificate(wtf *db.WTF, name string) {
+func pTlsCertificate(context *db.AppContext, name string) {
 	filter := bson.D{{Key: "resource.resource.common_tls_context.tls_certificate_sds_secret_configs.name", Value: name}}
 
-	rGeneral, err := resources.GetGenerals(wtf, "secrets", filter)
+	rGeneral, err := resources.GetGenerals(context, "secrets", filter)
 	if err != nil {
-		wtf.Logger.Debug(err)
+		context.Logger.Debug(err)
 	}
 
 	for _, general := range rGeneral {
-		DetectChangedResource(general.GType, general.Name, wtf)
+		DetectChangedResource(general.GType, general.Name, context)
 	}
 }
 
-func pCertValidContext(wtf *db.WTF, name string) {
+func pCertValidContext(context *db.AppContext, name string) {
 	filter := bson.D{{Key: "resource.resource.common_tls_context.validation_context_sds_secret_config.name", Value: name}}
 
-	rGeneral, err := resources.GetGenerals(wtf, "secrets", filter)
+	rGeneral, err := resources.GetGenerals(context, "secrets", filter)
 	if err != nil {
-		wtf.Logger.Debug(err)
+		context.Logger.Debug(err)
 	}
 
 	for _, general := range rGeneral {
-		DetectChangedResource(general.GType, general.Name, wtf)
+		DetectChangedResource(general.GType, general.Name, context)
 	}
 }

@@ -5,8 +5,8 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/db"
 )
 
-func (ar *Resources) GetClustersFromRequestMirrorPolicies(rmps []*routev3.RouteAction_RequestMirrorPolicy, wtf *db.WTF) {
+func (ar *Resources) GetClustersFromRequestMirrorPolicies(rmps []*routev3.RouteAction_RequestMirrorPolicy, context *db.AppContext) {
 	for _, rmp := range rmps {
-		ar.GetClusters([]string{rmp.GetCluster()}, wtf)
+		ar.GetClusters([]string{rmp.GetCluster()}, context)
 	}
 }

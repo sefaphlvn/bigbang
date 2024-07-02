@@ -15,10 +15,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (xds *DBHandler) UpdateResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
 	filter := bson.M{"general.name": resourceDetails.Name}
 	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
-	result := xds.DB.Client.Collection(resourceDetails.Type.String()).FindOne(xds.DB.Ctx, filterWithRestriction)
+	result := xds.Context.Client.Collection(resourceDetails.Type.String()).FindOne(xds.Context.Ctx, filterWithRestriction)
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
@@ -30,7 +30,7 @@ func (xds *DBHandler) UpdateResource(resource models.DBResourceClass, resourceDe
 
 	version, _ := strconv.Atoi(resource.GetVersion().(string))
 	resource.SetVersion(strconv.Itoa(version + 1))
-	resource.SetTypedConfig(typed_configs.DecodeSetTypedConfigs(resource, xds.DB.Logger))
+	resource.SetTypedConfig(typed_configs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
 
 	update := bson.M{
 		"$set": bson.M{
@@ -42,14 +42,14 @@ func (xds *DBHandler) UpdateResource(resource models.DBResourceClass, resourceDe
 		},
 	}
 
-	collection := xds.DB.Client.Collection(resourceDetails.Type.String())
-	_, err := collection.UpdateOne(xds.DB.Ctx, filterWithRestriction, update)
+	collection := xds.Context.Client.Collection(resourceDetails.Type.String())
+	_, err := collection.UpdateOne(xds.Context.Ctx, filterWithRestriction, update)
 	if err != nil {
 		return nil, err
 	}
 
 	if resourceDetails.SaveOrPublish == "publish" {
-		poker.DetectChangedResource(resource.GetGeneral().GType, resourceDetails.Name, xds.DB)
+		poker.DetectChangedResource(resource.GetGeneral().GType, resourceDetails.Name, xds.Context)
 		poker.ResetProcessedResources()
 	}
 

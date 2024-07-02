@@ -21,13 +21,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type DBHandler crud.DbHandler
+type AppHandler crud.Application
 
 var validate = validator.New()
 
-func NewUserHandler(db *db.WTF) *DBHandler {
-	return &DBHandler{
-		DB: db,
+func NewUserHandler(context *db.AppContext) *AppHandler {
+	return &AppHandler{
+		Context: context,
 	}
 }
 
@@ -72,8 +72,8 @@ func ValidateToken(signedToken string) (claims *models.SignedDetails, msg string
 	return claims, msg
 }
 
-func UpdateAllTokens(userDB *DBHandler, signedToken string, signedRefreshToken string, userId string) {
-	var userCollection *mongo.Collection = userDB.DB.Client.Collection("users")
+func UpdateAllTokens(handler *AppHandler, signedToken string, signedRefreshToken string, userId string) {
+	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 	var updateObj primitive.D

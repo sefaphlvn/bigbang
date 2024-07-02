@@ -6,15 +6,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func PokerRoute(wtf *db.WTF, name string) {
+func PokerRoute(context *db.AppContext, name string) {
 	filter := bson.D{{Key: "resource.resource.rds.route_config_name", Value: name}}
 
-	rGeneral, err := resources.GetGenerals(wtf, "extensions", filter)
+	rGeneral, err := resources.GetGenerals(context, "extensions", filter)
 	if err != nil {
-		wtf.Logger.Debug(err)
+		context.Logger.Debug(err)
 	}
 
 	for _, general := range rGeneral {
-		DetectChangedResource(general.GType, general.Name, wtf)
+		DetectChangedResource(general.GType, general.Name, context)
 	}
 }

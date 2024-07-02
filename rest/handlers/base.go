@@ -16,13 +16,13 @@ import (
 type DBFunc func(resource models.DBResourceClass, resourceType models.ResourceDetails) (interface{}, error)
 
 type Handler struct {
-	XDS       *xds.DBHandler
-	Extension *extension.DBHandler
-	Custom    *custom.DBHandler
-	Auth      *auth.DBHandler
+	XDS       *xds.AppHandler
+	Extension *extension.AppHandler
+	Custom    *custom.AppHandler
+	Auth      *auth.AppHandler
 }
 
-func NewHandler(XDS *xds.DBHandler, extension *extension.DBHandler, custom *custom.DBHandler, auth *auth.DBHandler) *Handler {
+func NewHandler(XDS *xds.AppHandler, extension *extension.AppHandler, custom *custom.AppHandler, auth *auth.AppHandler) *Handler {
 	return &Handler{
 		XDS:       XDS,
 		Extension: extension,

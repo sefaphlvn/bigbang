@@ -20,7 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type WTF struct {
+type AppContext struct {
 	Client *mongo.Database
 	Ctx    context.Context
 	Logger *logrus.Logger
@@ -35,9 +35,9 @@ var (
 	admin_baseGroup = ""
 )
 
-func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *WTF {
+func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *AppContext {
 	// connectionString := fmt.Sprintf("%s://%s%s", config.MongoDB.Scheme, hosts, config.MongoDB.Port)
-	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", config.MongoDB_Scheme, config.MongoDB_Username, config.MongoDB_Password, config.MongoDB_Hosts, config.MongoDB_Port)
+	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", config.MONGODB_SCHEME, config.MONGODB_USERNAME, config.MONGODB_PASSWORD, config.MONGODB_HOSTS, config.MONGODB_PORT)
 
 	tM := reflect.TypeOf(bson.M{})
 	reg := bson.NewRegistryBuilder().RegisterTypeMapEntry(bsontype.EmbeddedDocument, tM).Build()
@@ -47,32 +47,32 @@ func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *WTF {
 		logger.Fatalf("%s", err)
 	}
 
-	database := client.Database(config.MongoDB_Database)
+	database := client.Database(config.MONGODB_DATABASE)
 	_, err = collectCreateIndex(database, ctx, logger)
 	if err != nil {
 		logger.Fatalf("%s", err)
 	}
 
-	wtf := &WTF{
+	context := &AppContext{
 		Client: database,
 		Ctx:    ctx,
 		Logger: logger,
 		Config: config,
 	}
 
-	userID, err := createAdminUser(wtf)
+	userID, err := createAdminUser(context)
 	if err != nil {
 		logger.Infof("Admin user not created: %s", err)
 	}
 
-	if err := createAdminGroup(wtf, userID); err != nil {
+	if err := createAdminGroup(context, userID); err != nil {
 		logger.Infof("Admin group not created: %s", err)
 	}
 
-	return wtf
+	return context
 }
 
-func (db *WTF) GetGenerals(collectionName string) (*mongo.Cursor, error) {
+func (db *AppContext) GetGenerals(collectionName string) (*mongo.Cursor, error) {
 	collection := db.Client.Collection(collectionName)
 	findOptions := options.Find()
 	findOptions.SetProjection(bson.D{{Key: "general", Value: 1}})
@@ -172,7 +172,7 @@ func getIndexName(index mongo.IndexModel) string {
 	return strings.Join(nameParts, "_")
 }
 
-func createAdminUser(db *WTF) (string, error) {
+func createAdminUser(db *AppContext) (string, error) {
 	collection := db.Client.Collection("users")
 	var user models.User
 	err := collection.FindOne(db.Ctx, bson.M{"username": "admin"}).Decode(&user)
@@ -203,7 +203,7 @@ func createAdminUser(db *WTF) (string, error) {
 	return user.User_id, nil
 }
 
-func createAdminGroup(db *WTF, userID string) error {
+func createAdminGroup(db *AppContext, userID string) error {
 	collection := db.Client.Collection("groups")
 	var group models.Group
 	err := collection.FindOne(db.Ctx, bson.M{"groupname": userID}).Decode(&group)

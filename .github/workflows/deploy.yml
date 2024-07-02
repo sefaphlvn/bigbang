@@ -13,6 +13,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Fill config-prod.yaml with environment variables
+        run: |
+          export BIGBANG_ADDRESS=${{ vars.BIGBANG_ADDRESS }}
+          export BIGBANG_TLS_ENABLED=${{ vars.BIGBANG_TLS_ENABLED }}
+          export BIGBANG_REST_SERVER_PORT=${{ vars.BIGBANG_REST_SERVER_PORT }}
+          export BIGBANG_GRPC_POKE_PORT=${{ vars.BIGBANG_GRPC_POKE_PORT }}
+          export MONGODB_HOSTS=${{ vars.MONGODB_HOSTS }}
+          export MONGODB_USERNAME=${{ secrets.MONGODB_USERNAME }}
+          export MONGODB_PASSWORD=${{ secrets.MONGODB_PASSWORD }}
+          export MONGODB_DATABASE=${{ secrets.MONGODB_DATABASE }}
+          export MONGODB_SCHEME=${{ vars.MONGODB_SCHEME }}
+          export MONGODB_PORT=${{ vars.MONGODB_PORT }}
+          export MONGODB_REPLICASET=${{ vars.MONGODB_REPLICASET }}
+          export MONGODB_TIMEOUTSECONDS=${{ vars.MONGODB_TIMEOUTSECONDS }}
+          export LOG_LEVEL=${{ vars.LOG_LEVEL }}
+          export LOG_FORMATTER=${{ vars.LOG_FORMATTER }}
+          export LOG_REPORTCALLER=${{ vars.LOG_REPORTCALLER }}
+          
+          envsubst < .configs/config-prod.yaml > .configs/config-prod.yaml.filled
+          mv .configs/config-prod.yaml.filled .configs/config-prod.yaml
+
       - name: Build Docker image
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/bigbang:latest .
@@ -40,7 +61,7 @@ jobs:
 
       - name: Run REST container on DigitalOcean
         run: |
-          ssh root@68.183.216.216 "docker run -d -p 8080:8099 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang:latest ./main server-rest"
+          ssh root@68.183.216.216 "docker run -d -p 8099:8099 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang:latest ./main server-rest"
 
       - name: Remove existing gRPC container if exists
         run: |
@@ -48,4 +69,4 @@ jobs:
 
       - name: Run gRPC container on DigitalOcean
         run: |
-          ssh root@68.183.216.216 "docker run -d -p 8090:8080 --name bigbang-grpc-container ${{ secrets.DOCKER_USERNAME }}/bigbang:latest ./main server-grpc"
+          ssh root@68.183.216.216 "docker run -d -p 18000:18000 -p 8098:8098 --name bigbang-grpc-container ${{ secrets.DOCKER_USERNAME }}/bigbang:latest ./main server-grpc"

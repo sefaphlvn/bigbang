@@ -12,9 +12,8 @@ func Read(cfgFile string) *AppConfig {
 	var appConfig AppConfig
 	viper.SetConfigType("yaml")
 
-	if _, found := os.LookupEnv("isProd"); found {
-		// viper.AutomaticEnv()
-		BindEnvs(&appConfig, "")
+	if _, found := os.LookupEnv("isKBs"); found {
+		BindEnvs(&appConfig)
 	} else {
 		viper.SetConfigFile(cfgFile)
 		if err := viper.ReadInConfig(); err != nil {
@@ -29,18 +28,14 @@ func Read(cfgFile string) *AppConfig {
 	return &appConfig
 }
 
-func BindEnvs(iface interface{}, prefix string) {
+func BindEnvs(iface interface{}) {
 	val := reflect.ValueOf(iface).Elem()
 	typ := val.Type()
 
 	for i := 0; i < val.NumField(); i++ {
 		field := typ.Field(i)
 		if mapstructureTag, ok := field.Tag.Lookup("mapstructure"); ok {
-			envVar := mapstructureTag
-			if prefix != "" {
-				envVar = prefix + "_" + envVar
-			}
-			envVar = strings.ToUpper(envVar)
+			envVar := strings.ToUpper(mapstructureTag)
 			viper.BindEnv(field.Name, envVar)
 		}
 	}

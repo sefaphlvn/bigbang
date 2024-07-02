@@ -10,11 +10,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (extension *DBHandler) GetExtension(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	collection := extension.DB.Client.Collection("extensions")
+func (extension *AppHandler) GetExtension(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+	collection := extension.Context.Client.Collection("extensions")
 	filter := bson.M{"general.name": resourceDetails.Name, "general.canonical_name": resourceDetails.CanonicalName}
 	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
-	result := collection.FindOne(extension.DB.Ctx, filterWithRestriction)
+	result := collection.FindOne(extension.Context.Ctx, filterWithRestriction)
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
@@ -32,10 +32,10 @@ func (extension *DBHandler) GetExtension(resource models.DBResourceClass, resour
 	return resource, nil
 }
 
-func (extension *DBHandler) GetExtensions(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	collection := extension.DB.Client.Collection("extensions")
+func (extension *AppHandler) GetExtensions(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+	collection := extension.Context.Client.Collection("extensions")
 	filter := bson.M{"general.name": resourceDetails.Name}
-	result := collection.FindOne(extension.DB.Ctx, filter)
+	result := collection.FindOne(extension.Context.Ctx, filter)
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
 			return nil, errors.New("not found: (" + resourceDetails.Name + ")")

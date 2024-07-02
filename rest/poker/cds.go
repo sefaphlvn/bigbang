@@ -38,17 +38,17 @@ func CreateCdsFilters(clusterName string) []CdsFilters {
 	}
 }
 
-func PokerCds(wtf *db.WTF, clusterName string) {
+func PokerCds(context *db.AppContext, clusterName string) {
 	cdsFilters := CreateCdsFilters(clusterName)
 
 	for _, filter := range cdsFilters {
-		resourceGeneral, err := resources.GetGenerals(wtf, filter.Collection, filter.Filter)
+		resourceGeneral, err := resources.GetGenerals(context, filter.Collection, filter.Filter)
 		if err != nil {
-			wtf.Logger.Debug(err)
+			context.Logger.Debug(err)
 		}
 
 		for _, general := range resourceGeneral {
-			DetectChangedResource(general.GType, general.Name, wtf)
+			DetectChangedResource(general.GType, general.Name, context)
 		}
 	}
 }

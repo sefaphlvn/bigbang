@@ -18,8 +18,8 @@ type Processed struct {
 
 var processed = Processed{Listeners: []string{}, Depends: []string{}}
 
-func ReSnapshot(listenerName string, wtf *db.WTF) {
-	baseURL := "http://localhost/poke"
+func ReSnapshot(listenerName string, context *db.AppContext) {
+	baseURL := fmt.Sprintf("http://%s/poke", context.Config.BIGBANG_ADDRESS)
 
 	params := url.Values{}
 	params.Add("service", listenerName)
@@ -28,7 +28,7 @@ func ReSnapshot(listenerName string, wtf *db.WTF) {
 	// Yeni bir HTTP isteği oluşturun
 	req, err := http.NewRequest("GET", fullURL, nil)
 	if err != nil {
-		wtf.Logger.Debugf("Creating request failed: %s\n", err)
+		context.Logger.Debugf("Creating request failed: %s\n", err)
 		return
 	}
 
@@ -39,7 +39,7 @@ func ReSnapshot(listenerName string, wtf *db.WTF) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		wtf.Logger.Debugf("HTTP request failed: %s\n", err)
+		context.Logger.Debugf("HTTP request failed: %s\n", err)
 		return
 	}
 
@@ -48,14 +48,14 @@ func ReSnapshot(listenerName string, wtf *db.WTF) {
 	// İsteğin yanıtını işleyin
 	if resp.StatusCode == http.StatusOK {
 		// İşlem başarılı, yanıtı okuyun veya loglayın
-		wtf.Logger.Debugf("Request successful: %s\n", resp.Status)
+		context.Logger.Debugf("Request successful: %s\n", resp.Status)
 	} else {
 		// Yanıttaki hata durumlarını ele alın
-		wtf.Logger.Debugf("HTTP request returned status code: %d\n", resp.StatusCode)
+		context.Logger.Debugf("HTTP request returned status code: %d\n", resp.StatusCode)
 	}
 }
 
-func DetectChangedResource(gType models.GTypes, resourceName string, wtf *db.WTF) {
+func DetectChangedResource(gType models.GTypes, resourceName string, context *db.AppContext) {
 	if gType != models.Listener {
 		pathWithGtype := gType.String() + "===" + resourceName
 		processed.Depends = append(processed.Depends, pathWithGtype)
@@ -63,28 +63,28 @@ func DetectChangedResource(gType models.GTypes, resourceName string, wtf *db.WTF
 
 	switch gType {
 	case models.Endpoint:
-		PokerEds(wtf, resourceName)
+		PokerEds(context, resourceName)
 	case models.Cluster:
-		PokerCds(wtf, resourceName)
+		PokerCds(context, resourceName)
 	case models.Router:
-		PokerRouter(wtf, resourceName)
+		PokerRouter(context, resourceName)
 	case models.Route:
-		PokerRoute(wtf, resourceName)
+		PokerRoute(context, resourceName)
 	case models.HTTPConnectionManager:
-		PokerHCM(wtf, resourceName)
+		PokerHCM(context, resourceName)
 	case models.TcpProxy:
-		PokerTcpProxy(wtf, resourceName)
+		PokerTcpProxy(context, resourceName)
 	case models.DownstreamTlsContext, models.UpstreamTlsContext, models.TlsCertificate, models.CertificateValidationContext:
-		PokerTLS(wtf, resourceName, gType)
+		PokerTLS(context, resourceName, gType)
 	case models.Listener:
 		if !helper.Contains(processed.Listeners, resourceName) {
-			ReSnapshot(resourceName, wtf)
+			ReSnapshot(resourceName, context)
 			processed.Listeners = append(processed.Listeners, resourceName)
 			result := strings.Join(processed.Depends, " \n ")
-			wtf.Logger.Infof("new version added to snapshot for (%s) processed resource paths: \n %s", resourceName, result)
+			context.Logger.Infof("new version added to snapshot for (%s) processed resource paths: \n %s", resourceName, result)
 		}
 	default:
-		wtf.Logger.Infof("not covered gtype: %s", gType)
+		context.Logger.Infof("not covered gtype: %s", gType)
 	}
 }
 

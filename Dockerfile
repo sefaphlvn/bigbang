@@ -27,8 +27,8 @@ WORKDIR /root/
 COPY --from=builder /app/main .
 COPY --from=builder /app/.configs/config-prod.yaml .configs/config-prod.yaml
 
-# Expose port 8080 to the outside world
-EXPOSE 8080
+# Expose port 8099 to the outside world
+EXPOSE 8099
 
 # Command to run the executable, no specific mode specified
 CMD ["./main"]

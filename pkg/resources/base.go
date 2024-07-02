@@ -19,7 +19,7 @@ type GeneralResponse struct {
 	General models.General `bson:"general"`
 }
 
-func GetResource(db *db.WTF, collectionName string, name string) (*models.DBResource, error) {
+func GetResource(db *db.AppContext, collectionName string, name string) (*models.DBResource, error) {
 	var doc models.DBResource
 
 	collection := db.Client.Collection(collectionName)
@@ -40,25 +40,25 @@ func GetResource(db *db.WTF, collectionName string, name string) (*models.DBReso
 	return &doc, nil
 }
 
-func GetGenerals(wtf *db.WTF, collectionName string, filter primitive.D) ([]*models.General, error) {
-	collection := wtf.Client.Collection(collectionName)
+func GetGenerals(context *db.AppContext, collectionName string, filter primitive.D) ([]*models.General, error) {
+	collection := context.Client.Collection(collectionName)
 
 	pipeline := mongo.Pipeline{
 		bson.D{{Key: "$match", Value: filter}},
 		bson.D{{Key: "$project", Value: bson.D{{Key: "general", Value: 1}, {Key: "_id", Value: 0}}}},
 	}
 
-	cursor, err := collection.Aggregate(wtf.Ctx, pipeline)
+	cursor, err := collection.Aggregate(context.Ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(wtf.Ctx)
+	defer cursor.Close(context.Ctx)
 
 	var results []*models.General
-	for cursor.Next(wtf.Ctx) {
+	for cursor.Next(context.Ctx) {
 		var resp GeneralResponse
 		if err = cursor.Decode(&resp); err != nil {
-			wtf.Logger.Debug(err)
+			context.Logger.Debug(err)
 			return nil, err
 		}
 		results = append(results, &resp.General)

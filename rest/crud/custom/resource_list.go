@@ -16,8 +16,8 @@ type Record struct {
 	Category      string `json:"category" bson:"category"`
 }
 
-func (custom *DBHandler) GetCustomResourceList(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	collection := custom.DB.Client.Collection(resourceDetails.Collection)
+func (custom *AppHandler) GetCustomResourceList(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+	collection := custom.Context.Client.Collection(resourceDetails.Collection)
 	opts := options.Find()
 	opts.SetProjection(bson.M{
 		"general.name":           1,
@@ -36,13 +36,13 @@ func (custom *DBHandler) GetCustomResourceList(resource models.DBResourceClass, 
 	if resourceDetails.Category != "" {
 		filters["general.category"] = resourceDetails.Category
 	}
-	cursor, err := collection.Find(custom.DB.Ctx, filters, opts)
+	cursor, err := collection.Find(custom.Context.Ctx, filters, opts)
 	if err != nil {
 		return nil, errors.New("unknown db error")
 	}
 
 	var results []Record
-	for cursor.Next(custom.DB.Ctx) {
+	for cursor.Next(custom.Context.Ctx) {
 		var doc struct {
 			General struct {
 				Name          string `bson:"name"`
@@ -66,7 +66,7 @@ func (custom *DBHandler) GetCustomResourceList(resource models.DBResourceClass, 
 	}
 
 	if err := cursor.Err(); err != nil {
-		custom.DB.Logger.Debug(err)
+		custom.Context.Logger.Debug(err)
 	}
 
 	return results, nil

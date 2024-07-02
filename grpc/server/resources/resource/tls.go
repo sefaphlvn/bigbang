@@ -8,22 +8,22 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (ar *AllResources) DecodeDownstreamTLS(data *models.DBResource, wtf *db.WTF) {
+func (ar *AllResources) DecodeDownstreamTLS(data *models.DBResource, context *db.AppContext) {
 	dtc := &tls.DownstreamTlsContext{}
 	err := resources.GetResourceWithType(data.GetResource(), dtc)
 	if err != nil {
-		wtf.Logger.Debug(err)
+		context.Logger.Debug(err)
 	}
 
-	ar.AppendSecret(getValiDationContext(dtc.CommonTlsContext.GetValidationContextSdsSecretConfig().GetName(), wtf))
-	ar.getTlsCertificate(dtc.CommonTlsContext.TlsCertificateSdsSecretConfigs, wtf)
+	ar.AppendSecret(getValiDationContext(dtc.CommonTlsContext.GetValidationContextSdsSecretConfig().GetName(), context))
+	ar.getTlsCertificate(dtc.CommonTlsContext.TlsCertificateSdsSecretConfigs, context)
 }
 
-func (ar *AllResources) getTlsCertificate(sdsSecretConfig []*tls.SdsSecretConfig, wtf *db.WTF) {
+func (ar *AllResources) getTlsCertificate(sdsSecretConfig []*tls.SdsSecretConfig, context *db.AppContext) {
 	for _, secretConf := range sdsSecretConfig {
-		resource, err := resources.GetResource(wtf, "secrets", secretConf.GetName())
+		resource, err := resources.GetResource(context, "secrets", secretConf.GetName())
 		if err != nil {
-			wtf.Logger.Debugf("tls certificate empty resource err: %v", err)
+			context.Logger.Debugf("tls certificate empty resource err: %v", err)
 		}
 
 		certResources, _ := resource.Resource.Resource.(primitive.A)
@@ -31,7 +31,7 @@ func (ar *AllResources) getTlsCertificate(sdsSecretConfig []*tls.SdsSecretConfig
 			tlsCert := &tls.TlsCertificate{}
 			err = resources.GetResourceWithType(certResource, tlsCert)
 			if err != nil {
-				wtf.Logger.Debugf("tls certificate decode err: %v", err)
+				context.Logger.Debugf("tls certificate decode err: %v", err)
 			}
 
 			singleResource := GetSecret(secretConf.GetName(), &tls.Secret_TlsCertificate{TlsCertificate: tlsCert})
@@ -40,19 +40,19 @@ func (ar *AllResources) getTlsCertificate(sdsSecretConfig []*tls.SdsSecretConfig
 	}
 }
 
-func getValiDationContext(vcName string, wtf *db.WTF) *tls.Secret {
+func getValiDationContext(vcName string, context *db.AppContext) *tls.Secret {
 	if vcName == "" {
 		return nil
 	}
-	validationContext, err := resources.GetResource(wtf, "secrets", vcName)
+	validationContext, err := resources.GetResource(context, "secrets", vcName)
 	if err != nil {
-		wtf.Logger.Debugf("validation context empty resource err: %v", err)
+		context.Logger.Debugf("validation context empty resource err: %v", err)
 	}
 
 	cvc := &tls.CertificateValidationContext{}
 	err = resources.GetResourceWithType(validationContext.Resource.Resource, cvc)
 	if err != nil {
-		wtf.Logger.Debugf("validation context decode err: %v", err)
+		context.Logger.Debugf("validation context decode err: %v", err)
 	}
 
 	singleResource := GetSecret(vcName, &tls.Secret_ValidationContext{ValidationContext: cvc})

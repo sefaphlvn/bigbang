@@ -17,7 +17,7 @@ func NewResources() *AllResources {
 	}
 }
 
-func SetSnapshot(rawListenerResource *models.DBResource, nodeID string, db *db.WTF, logger *logrus.Logger) (*AllResources, error) {
+func SetSnapshot(rawListenerResource *models.DBResource, nodeID string, db *db.AppContext, logger *logrus.Logger) (*AllResources, error) {
 	resourceAll := NewResources()
 	resourceAll.SetNodeID(nodeID)
 	resourceAll.DecodeListener(rawListenerResource, db, logger)

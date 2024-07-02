@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func (ar *AllResources) CollectExtensions(resource []*models.ConfigDiscovery, db *db.WTF, logger *logrus.Logger) {
+func (ar *AllResources) CollectExtensions(resource []*models.ConfigDiscovery, db *db.AppContext, logger *logrus.Logger) {
 	var typedExtensionConfig types.Resource
 	for _, configDiscovery := range resource {
 		for _, extension := range configDiscovery.Extensions {
@@ -34,14 +34,14 @@ func (ar *AllResources) CollectExtensions(resource []*models.ConfigDiscovery, db
 
 }
 
-func (ar *AllResources) CreateDynamicFilter(typeUrl models.GTypes, resourceName string, wtf *db.WTF) (*anypb.Any, []*models.ConfigDiscovery, error) {
+func (ar *AllResources) CreateDynamicFilter(typeUrl models.GTypes, resourceName string, context *db.AppContext) (*anypb.Any, []*models.ConfigDiscovery, error) {
 	switch typeUrl {
 	case models.HTTPConnectionManager:
-		return ar.DecodeHTTPConnectionManager(ar.Resources, resourceName, wtf)
+		return ar.DecodeHTTPConnectionManager(ar.Resources, resourceName, context)
 	case models.Router:
-		return ar.DecodeRouter(resourceName, wtf)
+		return ar.DecodeRouter(resourceName, context)
 	case models.TcpProxy:
-		return ar.DecodeTcpProxy(resourceName, wtf)
+		return ar.DecodeTcpProxy(resourceName, context)
 	default:
 		return nil, nil, fmt.Errorf("unknown type URL: %s", typeUrl)
 	}

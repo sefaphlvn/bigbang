@@ -9,11 +9,11 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func (ar *AllResources) DecodeHTTPConnectionManager(arp *common.Resources, resourceName string, wtf *db.WTF) (*anypb.Any, []*models.ConfigDiscovery, error) {
+func (ar *AllResources) DecodeHTTPConnectionManager(arp *common.Resources, resourceName string, context *db.AppContext) (*anypb.Any, []*models.ConfigDiscovery, error) {
 	var message *anypb.Any
 	var configDiscovery []*models.ConfigDiscovery
 
-	resource, err := resources.GetResource(wtf, "extensions", resourceName)
+	resource, err := resources.GetResource(context, "extensions", resourceName)
 	configDiscovery = resource.GetGeneral().ConfigDiscovery
 	if err != nil {
 		return nil, nil, err
@@ -27,7 +27,7 @@ func (ar *AllResources) DecodeHTTPConnectionManager(arp *common.Resources, resou
 
 	rds := httpConnectionManager.GetRds()
 	if rds != nil {
-		err = ar.GetRoutes(rds.RouteConfigName, wtf)
+		err = ar.GetRoutes(rds.RouteConfigName, context)
 		if err != nil {
 			return nil, nil, err
 		}

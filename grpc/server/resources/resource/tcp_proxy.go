@@ -8,9 +8,9 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func (ar *AllResources) DecodeTcpProxy(resourceName string, wtf *db.WTF) (*anypb.Any, []*models.ConfigDiscovery, error) {
+func (ar *AllResources) DecodeTcpProxy(resourceName string, context *db.AppContext) (*anypb.Any, []*models.ConfigDiscovery, error) {
 	var message *anypb.Any
-	resource, err := resources.GetResource(wtf, "extensions", resourceName)
+	resource, err := resources.GetResource(context, "extensions", resourceName)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -21,13 +21,13 @@ func (ar *AllResources) DecodeTcpProxy(resourceName string, wtf *db.WTF) (*anypb
 		return nil, nil, err
 	}
 
-	ar.GetClustersFromClusterOrWeightedCluster(singleResource.GetClusterSpecifier(), wtf)
+	ar.GetClustersFromClusterOrWeightedCluster(singleResource.GetClusterSpecifier(), context)
 	message, _ = anypb.New(singleResource)
 
 	return message, nil, nil
 }
 
-func (ar *AllResources) GetClustersFromClusterOrWeightedCluster(clusterType interface{}, wtf *db.WTF) {
+func (ar *AllResources) GetClustersFromClusterOrWeightedCluster(clusterType interface{}, context *db.AppContext) {
 	var clusters []string
 	switch clusterType := clusterType.(type) {
 	case *tcpProxy.TcpProxy_Cluster:
@@ -44,5 +44,5 @@ func (ar *AllResources) GetClustersFromClusterOrWeightedCluster(clusterType inte
 		}
 	}
 
-	ar.GetClusters(clusters, wtf)
+	ar.GetClusters(clusters, context)
 }

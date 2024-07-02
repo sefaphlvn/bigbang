@@ -16,9 +16,9 @@ type Field struct {
 
 type ResourceSchema map[string][]Field
 
-func (xds *DBHandler) ListResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+func (xds *AppHandler) ListResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
 	filter := bson.M{}
-	collection := xds.DB.Client.Collection(resourceDetails.Type.String())
+	collection := xds.Context.Client.Collection(resourceDetails.Type.String())
 	opts := options.Find().SetProjection(bson.M{"resource": 0})
 
 	if resourceDetails.GType != "" {
@@ -26,13 +26,13 @@ func (xds *DBHandler) ListResource(resource models.DBResourceClass, resourceDeta
 	}
 
 	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
-	cursor, err := collection.Find(xds.DB.Ctx, filterWithRestriction, opts)
+	cursor, err := collection.Find(xds.Context.Ctx, filterWithRestriction, opts)
 	if err != nil {
 		return nil, fmt.Errorf("could not find records: %v", err)
 	}
 
 	var records []bson.M
-	if err = cursor.All(xds.DB.Ctx, &records); err != nil {
+	if err = cursor.All(xds.Context.Ctx, &records); err != nil {
 		return nil, fmt.Errorf("could not decode records: %v", err)
 	}
 

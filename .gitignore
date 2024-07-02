@@ -22,3 +22,5 @@
 # Go workspace file
 go.work
 .scannerwork
+.env
+.configs/config-local.yaml

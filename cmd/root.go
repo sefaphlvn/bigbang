@@ -1,8 +1,11 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
+	"log"
 	"os"
+
+	"github.com/joho/godotenv"
+	"github.com/spf13/cobra"
 )
 
 // cfgFile config file variable
@@ -11,7 +14,7 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "bigbang",
-	Short: "A brief description of your application",
+	Short: "controller grpc & rest server",
 	Long:  ``,
 }
 
@@ -24,5 +27,15 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", ".configs/config-prod.yaml", "config file")
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file, using default values")
+	}
+
+	env := os.Getenv("ENV")
+	if env == "local" {
+		rootCmd.PersistentFlags().StringVar(&cfgFile, "config", ".configs/config-local.yaml", "config file")
+	} else {
+		rootCmd.PersistentFlags().StringVar(&cfgFile, "config", ".configs/config-prod.yaml", "config file")
+	}
 }

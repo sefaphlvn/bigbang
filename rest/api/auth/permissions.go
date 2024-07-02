@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (wtf *DBHandler) GetPermissions(c *gin.Context) {
+func (appHandler *AppHandler) GetPermissions(c *gin.Context) {
 	var userOrGroup = c.Param("kind")
 	var filter bson.M
 
@@ -22,13 +22,13 @@ func (wtf *DBHandler) GetPermissions(c *gin.Context) {
 		filter = bson.M{"general.permissions.groups": c.Param("id")}
 	}
 
-	all, err := wtf.GetData(bson.M{}, c.Param("type"))
+	all, err := appHandler.GetData(bson.M{}, c.Param("type"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
 
-	selected, err := wtf.GetData(filter, c.Param("type"))
+	selected, err := appHandler.GetData(filter, c.Param("type"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -38,11 +38,11 @@ func (wtf *DBHandler) GetPermissions(c *gin.Context) {
 	c.JSON(http.StatusOK, records)
 }
 
-func (wtf *DBHandler) SetPermission(permissions models.Permission, userOrGroupID string, kind string) {
+func (appHandler *AppHandler) SetPermission(permissions models.Permission, userOrGroupID string, kind string) {
 	checkAndAct := func(name string, p *models.InnerPermission) {
 		if p != nil {
 			if len(p.Added) > 0 || len(p.Removed) > 0 {
-				collection := wtf.DB.Client.Collection(name)
+				collection := appHandler.Context.Client.Collection(name)
 				for _, addedName := range p.Added {
 					filter := bson.M{"general.name": addedName}
 					update := bson.M{
@@ -50,7 +50,7 @@ func (wtf *DBHandler) SetPermission(permissions models.Permission, userOrGroupID
 					}
 					_, err := collection.UpdateMany(context.TODO(), filter, update)
 					if err != nil {
-						wtf.DB.Logger.Warnf("failed to add user/group to %s: %v", name, err)
+						appHandler.Context.Logger.Warnf("failed to add user/group to %s: %v", name, err)
 					}
 					fmt.Printf("User/Group %s added to %s: %v\n", userOrGroupID, name, addedName)
 				}
@@ -61,7 +61,7 @@ func (wtf *DBHandler) SetPermission(permissions models.Permission, userOrGroupID
 					}
 					_, err := collection.UpdateMany(context.TODO(), filter, update)
 					if err != nil {
-						wtf.DB.Logger.Warnf("failed to remove user/group from %s: %v", name, err)
+						appHandler.Context.Logger.Warnf("failed to remove user/group from %s: %v", name, err)
 					}
 					fmt.Printf("User/Group %s removed from %s: %v\n", userOrGroupID, name, removedName)
 				}
@@ -84,17 +84,17 @@ func (wtf *DBHandler) SetPermission(permissions models.Permission, userOrGroupID
 	}
 }
 
-func (wtf *DBHandler) GetData(filter bson.M, typ string) ([]bson.M, error) {
-	var resourceCollection *mongo.Collection = wtf.DB.Client.Collection(typ)
+func (appHandler *AppHandler) GetData(filter bson.M, typ string) ([]bson.M, error) {
+	var resourceCollection *mongo.Collection = appHandler.Context.Client.Collection(typ)
 	opts := options.Find().SetProjection(bson.M{"general.name": 1})
 
-	cursor, err := resourceCollection.Find(wtf.DB.Ctx, filter, opts)
+	cursor, err := resourceCollection.Find(appHandler.Context.Ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
 
 	var records []bson.M
-	if err = cursor.All(wtf.DB.Ctx, &records); err != nil {
+	if err = cursor.All(appHandler.Context.Ctx, &records); err != nil {
 		return nil, err
 	}
 

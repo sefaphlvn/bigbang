@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (extension *DBHandler) UpdateExtensions(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+func (extension *AppHandler) UpdateExtensions(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
 	filter := bson.M{"general.name": resourceDetails.Name, "general.canonical_name": resourceDetails.CanonicalName}
 	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
 
@@ -27,15 +27,15 @@ func (extension *DBHandler) UpdateExtensions(resource models.DBResourceClass, re
 		},
 	}
 
-	collection := extension.DB.Client.Collection("extensions")
-	_, err := collection.UpdateOne(extension.DB.Ctx, filterWithRestriction, update)
+	collection := extension.Context.Client.Collection("extensions")
+	_, err := collection.UpdateOne(extension.Context.Ctx, filterWithRestriction, update)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if resourceDetails.SaveOrPublish == "publish" {
-		poker.DetectChangedResource(resource.GetGeneral().GType, resourceDetails.Name, extension.DB)
+		poker.DetectChangedResource(resource.GetGeneral().GType, resourceDetails.Name, extension.Context)
 		poker.ResetProcessedResources()
 	}
 

@@ -9,21 +9,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (extension *DBHandler) ListExtensions(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+func (extension *AppHandler) ListExtensions(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
 	var records []bson.M
-	collection := extension.DB.Client.Collection("extensions")
+	collection := extension.Context.Client.Collection("extensions")
 
 	filter := bson.M{"general.canonical_name": resourceDetails.CanonicalName}
 	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
 
 	opts := options.Find().SetProjection(bson.M{"resource": 0})
 
-	cursor, err := collection.Find(extension.DB.Ctx, filterWithRestriction, opts)
+	cursor, err := collection.Find(extension.Context.Ctx, filterWithRestriction, opts)
 	if err != nil {
 		return nil, errors.New("unknown db error")
 	}
 
-	if err = cursor.All(extension.DB.Ctx, &records); err != nil {
+	if err = cursor.All(extension.Context.Ctx, &records); err != nil {
 		return nil, errors.New("unknown db error")
 	}
 

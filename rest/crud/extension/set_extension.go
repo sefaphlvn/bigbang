@@ -10,15 +10,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (extension *DBHandler) SetExtension(resource models.DBResourceClass, collectionName models.ResourceDetails) (interface{}, error) {
+func (extension *AppHandler) SetExtension(resource models.DBResourceClass, collectionName models.ResourceDetails) (interface{}, error) {
 	general := resource.GetGeneral()
 	now := time.Now()
 	general.CreatedAt = primitive.NewDateTimeFromTime(now)
 	general.UpdatedAt = primitive.NewDateTimeFromTime(now)
 	resource.SetGeneral(&general)
 
-	collection := extension.DB.Client.Collection("extensions")
-	_, err := collection.InsertOne(extension.DB.Ctx, resource)
+	collection := extension.Context.Client.Collection("extensions")
+	_, err := collection.InsertOne(extension.Context.Ctx, resource)
 	if err != nil {
 		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
 			return nil, errors.New("name already exists")

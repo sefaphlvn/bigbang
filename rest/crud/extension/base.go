@@ -5,10 +5,10 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud"
 )
 
-type DBHandler crud.DbHandler
+type AppHandler crud.Application
 
-func NewExtensionHandler(db *db.WTF) *DBHandler {
-	return &DBHandler{
-		DB: db,
+func NewExtensionHandler(context *db.AppContext) *AppHandler {
+	return &AppHandler{
+		Context: context,
 	}
 }

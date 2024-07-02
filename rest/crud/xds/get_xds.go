@@ -9,11 +9,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (xds *DBHandler) GetResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	collection := xds.DB.Client.Collection(resourceDetails.Type.String())
+func (xds *AppHandler) GetResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+	collection := xds.Context.Client.Collection(resourceDetails.Type.String())
 	filter := bson.M{"general.name": resourceDetails.Name}
 	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
-	result := collection.FindOne(xds.DB.Ctx, filterWithRestriction)
+	result := collection.FindOne(xds.Context.Ctx, filterWithRestriction)
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {

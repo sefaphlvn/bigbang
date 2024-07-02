@@ -1,10 +1,12 @@
 package poke
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/sefaphlvn/bigbang/grpc/server"
 	"github.com/sefaphlvn/bigbang/grpc/server/resources/resource"
+	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 	"github.com/sirupsen/logrus"
@@ -15,22 +17,25 @@ import (
 
 type Poke struct {
 	ctx    *server.Context
-	db     *db.WTF
+	db     *db.AppContext
 	logger *logrus.Logger
+	config *config.AppConfig
 }
 
-func NewPokeServer(ctx *server.Context, db *db.WTF, logger *logrus.Logger) *Poke {
+func NewPokeServer(ctx *server.Context, db *db.AppContext, logger *logrus.Logger, config *config.AppConfig) *Poke {
 	return &Poke{
 		ctx:    ctx,
 		db:     db,
 		logger: logger,
+		config: config,
 	}
 }
 
 func (p *Poke) Run(pokeHandler *Poke) {
 	p.initialSnapshots()
-	p.logger.Infof("Poke server listening on :8080")
-	if err := http.ListenAndServe(":8080", pokeHandler); err != nil {
+	p.logger.Infof("Poke server listening on :%s", p.config.BIGBANG_GRPC_POKE_PORT)
+	address := fmt.Sprintf(":%s", p.config.BIGBANG_GRPC_POKE_PORT)
+	if err := http.ListenAndServe(address, pokeHandler); err != nil {
 		p.logger.Fatalf("failed to start HTTP server: %v", err)
 	}
 }
