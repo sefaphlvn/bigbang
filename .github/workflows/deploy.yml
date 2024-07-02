@@ -13,6 +13,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Set unique tag
+        id: vars
+        run: echo "TAG=${GITHUB_SHA}" >> $GITHUB_ENV
+
       - name: Fill config-prod.yaml with environment variables
         run: |
           export BIGBANG_ADDRESS=${{ vars.BIGBANG_ADDRESS }}
@@ -36,7 +40,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/bigbang:latest .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/bigbang:${{ env.TAG }} .
 
       - name: Log in to Docker Hub
         run: |
@@ -44,7 +48,7 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/bigbang:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/bigbang:${{ env.TAG }}
 
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.5.3
@@ -61,7 +65,7 @@ jobs:
 
       - name: Run REST container on DigitalOcean
         run: |
-          ssh root@68.183.216.216 "docker run -d -p 8099:8099 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang:latest ./main server-rest"
+          ssh root@68.183.216.216 "docker run -d -p 8099:8099 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang:${{ env.TAG }} ./main server-rest"
 
       - name: Remove existing gRPC container if exists
         run: |
@@ -69,4 +73,4 @@ jobs:
 
       - name: Run gRPC container on DigitalOcean
         run: |
-          ssh root@68.183.216.216 "docker run -d -p 18000:18000 -p 8098:8098 --name bigbang-grpc-container ${{ secrets.DOCKER_USERNAME }}/bigbang:latest ./main server-grpc"
+          ssh root@68.183.216.216 "docker run -d -p 18000:18000 -p 8098:8098 --name bigbang-grpc-container ${{ secrets.DOCKER_USERNAME }}/bigbang:${{ env.TAG }} ./main server-grpc"
