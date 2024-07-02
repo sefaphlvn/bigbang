@@ -59,18 +59,18 @@ jobs:
         run: |
           ssh-keyscan -H 68.183.216.216 >> ~/.ssh/known_hosts
 
-      - name: Remove existing REST container if exists
+      - name: Deploy gRPC container on DigitalOcean
         run: |
-          ssh root@68.183.216.216 "docker stop bigbang-rest-container || true && docker rm bigbang-rest-container || true"
+          ssh root@68.183.216.216 "\
+            echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin && \
+            docker stop bigbang-grpc-container || true && \
+            docker rm bigbang-grpc-container || true && \
+            docker run -d -p 18000:18000 -p 8098:8098 --name bigbang-grpc-container ${{ secrets.DOCKER_USERNAME }}/bigbang:${{ env.TAG }} ./main server-grpc"
 
-      - name: Run REST container on DigitalOcean
+      - name: Deploy Rest container on DigitalOcean
         run: |
-          ssh root@68.183.216.216 "docker run -d -p 8099:8099 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang:${{ env.TAG }} ./main server-rest"
-
-      - name: Remove existing gRPC container if exists
-        run: |
-          ssh root@68.183.216.216 "docker stop bigbang-grpc-container || true && docker rm bigbang-grpc-container || true"
-
-      - name: Run gRPC container on DigitalOcean
-        run: |
-          ssh root@68.183.216.216 "docker run -d -p 18000:18000 -p 8098:8098 --name bigbang-grpc-container ${{ secrets.DOCKER_USERNAME }}/bigbang:${{ env.TAG }} ./main server-grpc"
+          ssh root@68.183.216.216 "\
+            echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin && \
+            docker stop bigbang-rest-container || true && \
+            docker rm bigbang-rest-container || true && \
+            docker run -d -p 8099:8099 --name bigbang-rest-container ${{ secrets.DOCKER_USERNAME }}/bigbang:${{ env.TAG }} ./main server-rest"
