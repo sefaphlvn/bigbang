@@ -13,7 +13,7 @@ func (ar *AllResources) GetRoutes(rdsName string, context *db.AppContext) error 
 	}
 
 	singleRoute := &routev3.RouteConfiguration{}
-	err = resources.GetResourceWithType(route.GetResource(), singleRoute)
+	err = resources.MarshalUnmarshalWithType(route.GetResource(), singleRoute)
 	if err != nil {
 		return err
 	}

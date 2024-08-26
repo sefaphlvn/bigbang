@@ -10,7 +10,7 @@ func (ar *Resources) GetClusters(clusters []string, context *db.AppContext) {
 	for _, cls := range clusters {
 		doc, _ := resources.GetResource(context, "clusters", cls)
 		singleCluster := &cluster.Cluster{}
-		err := resources.GetResourceWithType(doc.GetResource(), singleCluster)
+		err := resources.MarshalUnmarshalWithType(doc.GetResource(), singleCluster)
 		if err != nil {
 			context.Logger.Debug(err)
 		}

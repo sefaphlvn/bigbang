@@ -18,27 +18,40 @@ import (
 type UserWithGroups struct {
 	models.User
 	Groups      []string           `json:"groups"`
+	Projects    []string           `json:"projects"`
 	IsCreate    bool               `json:"is_create"`
 	Permissions *models.Permission `json:"permissions"`
 }
 
 func (handler *AppHandler) SetUpdateUser(c *gin.Context) {
 	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
-	var ctx, cancel = context.WithTimeout(handler.Context.Ctx, 100*time.Second)
 	var status int
 	var msg, userID string
 	var userWG UserWithGroups
-	defer cancel()
+
+	if !handler.CheckUserProjectPermission(c) {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "user does not have permission to update of user"})
+		return
+	}
 
 	if err := c.BindJSON(&userWG); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
+	if role, exists := c.Get("role"); exists {
+		if currentUserRole, ok := role.(*models.Role); ok && *currentUserRole == models.RoleAdmin {
+			if userWG.Role != nil && *userWG.Role == models.RoleOwner {
+				respondWithJSON(c, http.StatusForbidden, "admin users cannot create a user with the owner role", userID)
+				return
+			}
+		}
+	}
+
 	if userWG.IsCreate {
-		status, msg, userID = handler.CreateUser(ctx, userCollection, userWG)
+		status, msg, userID = handler.CreateUser(handler.Context.Ctx, userCollection, userWG)
 	} else {
-		status, msg = handler.UpdateUser(ctx, userCollection, userWG, c.Param("user_id"))
+		status, msg = handler.UpdateUser(c, userCollection, userWG, c.Param("user_id"))
 		userID = c.Param("user_id")
 	}
 
@@ -72,7 +85,7 @@ func (handler *AppHandler) CreateUser(ctx context.Context, userCollection *mongo
 	userWG.Updated_at = primitive.NewDateTimeFromTime(now)
 	userWG.ID = primitive.NewObjectID()
 	userWG.User_id = userWG.ID.Hex()
-	token, refreshToken, _ := helper.GenerateAllTokens(*userWG.Email, *userWG.Username, userWG.User_id, []string{}, nil, false, *userWG.Role)
+	token, refreshToken, _ := helper.GenerateAllTokens(userWG.Email, userWG.Username, userWG.User_id, nil, nil, nil, nil, false, userWG.Role)
 	userWG.Token = &token
 	userWG.Refresh_token = &refreshToken
 
@@ -89,8 +102,14 @@ func (handler *AppHandler) CreateUser(ctx context.Context, userCollection *mongo
 	return http.StatusOK, "Successfully created user", userWG.User_id
 }
 
-func (handler *AppHandler) UpdateUser(ctx context.Context, userCollection *mongo.Collection, userWG UserWithGroups, userID string) (int, string) {
-	filter := bson.M{"user_id": userID}
+func (handler *AppHandler) UpdateUser(c *gin.Context, userCollection *mongo.Collection, userWG UserWithGroups, userID string) (int, string) {
+	if !handler.OwnerGuard(c, userID) {
+		return http.StatusUnauthorized, "user does not have permission to update of user"
+	}
+
+	filter := handler.GetProjectFiltersByUser(c, "base_project")
+	filter["user_id"] = userID
+
 	update := bson.M{
 		"$set": bson.M{},
 	}
@@ -115,13 +134,20 @@ func (handler *AppHandler) UpdateUser(ctx context.Context, userCollection *mongo
 			update["$set"].(bson.M)["base_group"] = userWG.BaseGroup
 		}
 	}
+	if userWG.BaseProject != nil {
+		if *userWG.BaseProject == "xremove" {
+			update["$set"].(bson.M)["base_project"] = nil
+		} else {
+			update["$set"].(bson.M)["base_project"] = userWG.BaseProject
+		}
+	}
 
 	if userWG.Active != nil {
 		update["$set"].(bson.M)["active"] = userWG.Active
 	}
 
 	update["$set"].(bson.M)["updated_at"] = primitive.NewDateTimeFromTime(time.Now())
-	result, err := userCollection.UpdateOne(ctx, filter, update)
+	result, err := userCollection.UpdateOne(handler.Context.Ctx, filter, update)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Sprintf("error updating user: %v", err)
 	}
@@ -131,6 +157,57 @@ func (handler *AppHandler) UpdateUser(ctx context.Context, userCollection *mongo
 	}
 
 	return http.StatusOK, "user successfully updated"
+}
+
+func (handler *AppHandler) ListUsers(c *gin.Context) {
+	fmt.Println("ListUsers")
+	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
+
+	filter := handler.GetProjectFiltersByUser(c, "base_project")
+
+	helper.PrettyPrint(filter)
+	if !handler.CheckUserProjectPermission(c) {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "user does not have permission to list of users"})
+		return
+	}
+
+	opts := options.Find().SetProjection(bson.M{"username": 1, "email": 1, "created_at": 1, "updated_at": 1, "user_id": 1, "groups": 1})
+	cursor, err := userCollection.Find(handler.Context.Ctx, filter, opts)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "could not find records"})
+	}
+
+	var records []bson.M
+	if err = cursor.All(handler.Context.Ctx, &records); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "could not decode records"})
+	}
+
+	c.JSON(http.StatusOK, records)
+}
+
+func (handler *AppHandler) GetUser(c *gin.Context) {
+	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
+	filter := handler.GetProjectFiltersByUser(c, "base_project")
+	filter["user_id"] = c.Param("user_id")
+
+	if !handler.CheckUserProjectPermission(c) {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "user does not have permission to view of user"})
+		return
+	}
+
+	opts := options.FindOne().SetProjection(bson.M{"username": 1, "email": 1, "created_at": 1, "updated_at": 1, "user_id": 1, "groups": 1, "role": 1, "base_group": 1, "base_project": 1, "active": 1})
+	var record bson.M
+	err := userCollection.FindOne(handler.Context.Ctx, filter, opts).Decode(&record)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "could not find records"})
+	}
+
+	groups, _, _ := handler.GetUserGroups(record["user_id"].(string))
+	projects, _ := handler.GetUserProject(record["user_id"].(string))
+	record["groups"] = groups
+	record["projects"] = projects
+
+	c.JSON(http.StatusOK, record)
 }
 
 func (handler *AppHandler) Login() gin.HandlerFunc {
@@ -161,8 +238,9 @@ func (handler *AppHandler) Login() gin.HandlerFunc {
 		}
 
 		groups, base_group, adminGroup := handler.GetUserGroups(foundUser.User_id)
+		projects, base_project := handler.GetUserProject(foundUser.User_id)
 
-		token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email, *foundUser.Username, foundUser.User_id, groups, base_group, adminGroup, *foundUser.Role)
+		token, refreshToken, _ := helper.GenerateAllTokens(foundUser.Email, foundUser.Username, foundUser.User_id, groups, projects, base_group, base_project, adminGroup, foundUser.Role)
 
 		foundUser.Token = &token
 		foundUser.Refresh_token = &refreshToken
@@ -171,41 +249,6 @@ func (handler *AppHandler) Login() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, foundUser)
 	}
-}
-
-func (handler *AppHandler) ListUsers(c *gin.Context) {
-	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
-	filter := bson.M{}
-
-	opts := options.Find().SetProjection(bson.M{"username": 1, "email": 1, "created_at": 1, "updated_at": 1, "user_id": 1, "groups": 1})
-	cursor, err := userCollection.Find(handler.Context.Ctx, filter, opts)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "could not find records"})
-	}
-
-	var records []bson.M
-	if err = cursor.All(handler.Context.Ctx, &records); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "could not decode records"})
-	}
-
-	c.JSON(http.StatusOK, records)
-}
-
-func (handler *AppHandler) GetUser(c *gin.Context) {
-	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
-	filter := bson.M{"user_id": c.Param("user_id")}
-
-	opts := options.FindOne().SetProjection(bson.M{"username": 1, "email": 1, "created_at": 1, "updated_at": 1, "user_id": 1, "groups": 1, "role": 1, "base_group": 1, "active": 1})
-	var record bson.M
-	err := userCollection.FindOne(handler.Context.Ctx, filter, opts).Decode(&record)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "could not find records"})
-	}
-
-	groups, _, _ := handler.GetUserGroups(record["user_id"].(string))
-	record["groups"] = groups
-
-	c.JSON(http.StatusOK, record)
 }
 
 func (handler *AppHandler) Logout() gin.HandlerFunc {
@@ -260,8 +303,9 @@ func (handler *AppHandler) Refresh() gin.HandlerFunc {
 		}
 
 		groups, base_group, admin_group := handler.GetUserGroups(foundUser.User_id)
+		projects, base_project := handler.GetUserProject(foundUser.User_id)
 
-		signedToken, signedRefreshToken, _ := helper.GenerateAllTokens(*foundUser.Email, *foundUser.Username, foundUser.User_id, groups, base_group, admin_group, *foundUser.Role)
+		signedToken, signedRefreshToken, _ := helper.GenerateAllTokens(foundUser.Email, foundUser.Username, foundUser.User_id, groups, projects, base_group, base_project, admin_group, foundUser.Role)
 		UpdateAllTokens(handler, signedToken, signedRefreshToken, foundUser.User_id)
 
 		c.JSON(http.StatusOK, gin.H{
@@ -269,4 +313,130 @@ func (handler *AppHandler) Refresh() gin.HandlerFunc {
 			"refresh_token": signedRefreshToken,
 		})
 	}
+}
+
+func (handler *AppHandler) CheckUserProjectPermission(c *gin.Context) bool {
+	roleAny, _ := c.Get("isOwner")
+	role, _ := roleAny.(bool)
+	if role {
+		return true
+	}
+
+	userID, _ := c.Get("user_id")
+	userId, ok := userID.(string)
+	if !ok {
+		userId = ""
+	}
+	projects, _ := handler.GetUserProject(userId)
+
+	for _, project := range *projects {
+		if project.ProjectID == c.Query("project") {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (handler *AppHandler) GetProjectFiltersByUser(c *gin.Context, filterKey string) bson.M {
+	if c.Query("isProjectPage") == "yes" {
+		isOwner, ok := helper.GetFromContext[bool](c, "isOwner")
+		if ok && isOwner {
+			return bson.M{}
+		}
+	}
+
+	projectIDStr := c.Query("project")
+	if projectIDStr == "" {
+		return bson.M{filterKey: ""}
+	}
+
+	projectID, err := primitive.ObjectIDFromHex(projectIDStr)
+	if err != nil {
+		return bson.M{filterKey: ""}
+	}
+
+	projectCollection := handler.Context.Client.Collection("projects")
+
+	var project bson.M
+	err = projectCollection.FindOne(handler.Context.Ctx, bson.M{"_id": projectID}).Decode(&project)
+	if err != nil {
+		return bson.M{filterKey: projectIDStr}
+	}
+
+	members, ok := project["members"].(primitive.A)
+	if !ok || len(members) == 0 {
+		return bson.M{filterKey: projectIDStr}
+	}
+
+	memberIDs := make([]primitive.ObjectID, len(members))
+	for i, member := range members {
+		memberStr, ok := member.(string)
+		if !ok {
+			return bson.M{filterKey: projectIDStr}
+		}
+
+		memberID, err := primitive.ObjectIDFromHex(memberStr)
+		if err != nil {
+			return bson.M{filterKey: projectIDStr}
+		}
+		memberIDs[i] = memberID
+	}
+
+	filter := bson.M{
+		"$or": []bson.M{
+			{filterKey: projectIDStr},
+			{"_id": bson.M{"$in": memberIDs}},
+		},
+	}
+
+	return filter
+}
+
+func (handler *AppHandler) OwnerGuard(c *gin.Context, userID string) bool {
+	var user models.User
+	userCollection := handler.Context.Client.Collection("users")
+	err := userCollection.FindOne(handler.Context.Ctx, bson.M{"user_id": userID}).Decode(&user)
+
+	if err != nil {
+		return false
+	}
+
+	role, exists := c.Get("role")
+	if !exists {
+		return false
+	}
+
+	currentUserRole, ok := role.(*models.Role)
+	if !ok {
+		return false
+	}
+
+	if isSelfUpdatingAdmin(user, c) {
+		return true
+	}
+
+	if isOwnerUpdatingNonOwner(*currentUserRole, user) {
+		return true
+	}
+
+	if isAdminUpdatingNonOwner(*currentUserRole, user) {
+		return true
+	}
+
+	return false
+}
+
+func isSelfUpdatingAdmin(user models.User, c *gin.Context) bool {
+	return *user.Username == "admin" && c.GetString("user_id") == user.User_id
+}
+
+func isOwnerUpdatingNonOwner(currentUserRole models.Role, user models.User) bool {
+	return currentUserRole == models.RoleOwner &&
+		(*user.Role == models.RoleAdmin || *user.Role == models.RoleViewer || *user.Role == models.RoleEditor)
+}
+
+func isAdminUpdatingNonOwner(currentUserRole models.Role, user models.User) bool {
+	return currentUserRole == models.RoleAdmin &&
+		(*user.Role == models.RoleAdmin || *user.Role == models.RoleViewer || *user.Role == models.RoleEditor)
 }

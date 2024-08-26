@@ -2,6 +2,7 @@ package custom
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,10 +15,11 @@ type Record struct {
 	GType         string `json:"gtype" bson:"gtype"`
 	Type          string `json:"type" bson:"type"`
 	Category      string `json:"category" bson:"category"`
+	Collection    string `json:"collection" bson:"collection"`
 }
 
-func (custom *AppHandler) GetCustomResourceList(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	collection := custom.Context.Client.Collection(resourceDetails.Collection)
+func (custom *AppHandler) GetCustomResourceList(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+	collection := custom.Context.Client.Collection(requestDetails.Collection)
 	opts := options.Find()
 	opts.SetProjection(bson.M{
 		"general.name":           1,
@@ -27,14 +29,15 @@ func (custom *AppHandler) GetCustomResourceList(resource models.DBResourceClass,
 		"general.category":       1,
 	})
 
-	var filters = bson.M{"general.version": resourceDetails.Version}
+	fmt.Println(requestDetails.Project)
+	var filters = bson.M{"general.version": requestDetails.Version, "general.project": requestDetails.Project}
 
-	if resourceDetails.GType != "" {
-		filters["general.gtype"] = resourceDetails.GType
+	if requestDetails.GType != "" {
+		filters["general.gtype"] = requestDetails.GType
 	}
 
-	if resourceDetails.Category != "" {
-		filters["general.category"] = resourceDetails.Category
+	if requestDetails.Category != "" {
+		filters["general.category"] = requestDetails.Category
 	}
 	cursor, err := collection.Find(custom.Context.Ctx, filters, opts)
 	if err != nil {
@@ -50,6 +53,7 @@ func (custom *AppHandler) GetCustomResourceList(resource models.DBResourceClass,
 				GType         string `bson:"gtype"`
 				Type          string `bson:"type"`
 				Category      string `bson:"category"`
+				Collection    string `bson:"collection"`
 			} `bson:"general"`
 		}
 		cursor.Decode(&doc)
@@ -61,6 +65,7 @@ func (custom *AppHandler) GetCustomResourceList(resource models.DBResourceClass,
 				GType:         doc.General.GType,
 				Type:          doc.General.Type,
 				Category:      doc.General.Category,
+				Collection:    requestDetails.Collection,
 			},
 		)
 	}

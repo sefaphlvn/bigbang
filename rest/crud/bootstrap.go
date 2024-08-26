@@ -1,44 +1,73 @@
 package crud
 
-func GetBootstrap(listenerName string) map[string]interface{} {
-	authority := "bigbang.elchi.io"
-	port_value := 80
-	availableController := "1"
+import (
+	"time"
 
-	data := map[string]interface{}{
-		"node": map[string]interface{}{
-			"id":      listenerName,
-			"cluster": "aaasdasdsadsadasdsa",
-		},
-		"static_resources": map[string]interface{}{
-			"clusters": []interface{}{
+	"github.com/sefaphlvn/bigbang/pkg/config"
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[string]interface{} {
+	now := time.Now()
+	CreatedAt := primitive.NewDateTimeFromTime(now)
+	UpdatedAt := primitive.NewDateTimeFromTime(now)
+	authority := config.BIGBANG_ADDRESS
+	portValue := 80
+	if config.BIGBANG_TLS_ENABLED == "true" {
+		portValue = 443
+	}
+
+	cluster := map[string]interface{}{
+		"name":            "bigbang-controller",
+		"type":            "STRICT_DNS",
+		"connect_timeout": "0.50s",
+		"lb_policy":       "ROUND_ROBIN",
+		"load_assignment": map[string]interface{}{
+			"cluster_name": "bigbang-controller",
+			"endpoints": []interface{}{
 				map[string]interface{}{
-					"name":            "bigbang-controller",
-					"type":            "STRICT_DNS",
-					"connect_timeout": "0.50s",
-					"lb_policy":       "ROUND_ROBIN",
-					"load_assignment": map[string]interface{}{
-						"cluster_name": "bigbang-controller",
-						"endpoints": []interface{}{
-							map[string]interface{}{
-								"lb_endpoints": []interface{}{
-									map[string]interface{}{
-										"endpoint": map[string]interface{}{
-											"address": map[string]interface{}{
-												"socket_address": map[string]interface{}{
-													"address":    authority,
-													"port_value": port_value,
-												},
-											},
-										},
+					"lb_endpoints": []interface{}{
+						map[string]interface{}{
+							"endpoint": map[string]interface{}{
+								"address": map[string]interface{}{
+									"socket_address": map[string]interface{}{
+										"address":    authority,
+										"port_value": portValue,
 									},
 								},
 							},
 						},
 					},
-					"http2_protocol_options": map[string]interface{}{},
 				},
 			},
+		},
+		"http2_protocol_options": map[string]interface{}{},
+	}
+
+	if config.BIGBANG_TLS_ENABLED == "true" {
+		cluster["transport_socket"] = map[string]interface{}{
+			"name": "envoy.transport_sockets.tls",
+			"typed_config": map[string]interface{}{
+				"@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext",
+				"common_tls_context": map[string]interface{}{
+					"validation_context": map[string]interface{}{
+						"trusted_ca": map[string]interface{}{
+							"filename": "/etc/ssl/certs/ca-certificates.crt",
+						},
+					},
+				},
+			},
+		}
+	}
+
+	data := map[string]interface{}{
+		"node": map[string]interface{}{
+			"id":      listenerGeneral.Name,
+			"cluster": "aadsa",
+		},
+		"static_resources": map[string]interface{}{
+			"clusters": []interface{}{cluster},
 		},
 		"dynamic_resources": map[string]interface{}{
 			"ads_config": map[string]interface{}{
@@ -53,7 +82,7 @@ func GetBootstrap(listenerName string) map[string]interface{} {
 						"initial_metadata": []interface{}{
 							map[string]interface{}{
 								"key":   "bigbang-controller",
-								"value": availableController,
+								"value": "1",
 							},
 						},
 					},
@@ -79,5 +108,25 @@ func GetBootstrap(listenerName string) map[string]interface{} {
 		},
 	}
 
-	return data
+	general := map[string]interface{}{
+		"name":                 listenerGeneral.Name,
+		"version":              listenerGeneral.Version,
+		"type":                 "bootstrap",
+		"gtype":                "envoy.config.bootstrap.v3.Bootstrap",
+		"canonical_name":       "config.bootstrap.v3.Bootstrap",
+		"category":             "",
+		"permissions":          map[string]interface{}{"users": []interface{}{}, "groups": []interface{}{}},
+		"additional_resources": []interface{}{},
+		"created_at":           CreatedAt,
+		"updated_at":           UpdatedAt,
+		"config_discovery":     []interface{}{},
+		"typed_config":         []interface{}{},
+	}
+
+	result := map[string]interface{}{
+		"general":  general,
+		"resource": map[string]interface{}{"version": "1", "resource": data},
+	}
+
+	return result
 }

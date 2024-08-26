@@ -9,12 +9,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (extension *AppHandler) ListExtensions(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
+func (extension *AppHandler) ListExtensions(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	var records []bson.M
-	collection := extension.Context.Client.Collection("extensions")
-
-	filter := bson.M{"general.canonical_name": resourceDetails.CanonicalName}
-	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
+	collection := extension.Context.Client.Collection(requestDetails.Collection)
+	filter := bson.M{"general.canonical_name": requestDetails.CanonicalName, "general.project": requestDetails.Project}
+	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
 
 	opts := options.Find().SetProjection(bson.M{"resource": 0})
 

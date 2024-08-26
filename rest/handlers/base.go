@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/sefaphlvn/bigbang/pkg/models"
@@ -13,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type DBFunc func(resource models.DBResourceClass, resourceType models.ResourceDetails) (interface{}, error)
+type DBFunc func(resource models.DBResourceClass, resourceType models.RequestDetails) (interface{}, error)
 
 type Handler struct {
 	XDS       *xds.AppHandler
@@ -43,21 +44,27 @@ func decodeResource(c *gin.Context) (models.DBResourceClass, error) {
 }
 
 // This function handles a request in the Handler struct.
-// It retrieves the necessary data from the context, including the groups and isAdmin parameters.
-// It then sets the resourceDetails struct with the given parameters and decodes the resource.
-// It then calls the dbFunc with the resource and resourceDetails, and stores the response in the response variable.
+// It retrieves the necessary data from the context, including the groups and isOwner parameters.
+// It then sets the requestDetails struct with the given parameters and decodes the resource.
+// It then calls the dbFunc with the resource and requestDetails, and stores the response in the response variable.
 // Finally, it returns the response as a JSON object with the status OK.
 func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
-	userDetails, _ := getUserDetails(c)
+	userDetails, _ := GetUserDetails(c)
 
-	resourceDetails := models.ResourceDetails{
+	collection := c.Param("collection")
+	if collection == "" {
+		collection = c.Query("collection")
+	}
+
+	requestDetails := models.RequestDetails{
 		CanonicalName: c.Param("canonical_name"),
 		GType:         models.GTypes(c.Query("gtype")),
 		Category:      c.Query("category"),
 		Name:          c.Param("name"),
-		Collection:    c.Query("collection"),
+		Collection:    collection,
 		SaveOrPublish: c.Query("save_or_publish"),
 		User:          userDetails,
+		Project:       c.Query("project"),
 	}
 
 	err := checkRole(c, userDetails)
@@ -68,16 +75,16 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 
 	// Check for a version parameter in the path and query parameters
 	if version := c.Param("version"); version != "" {
-		resourceDetails.Version = version
+		requestDetails.Version = version
 	} else if version := c.Query("version"); version != "" {
-		resourceDetails.Version = version
+		requestDetails.Version = version
 	}
 
 	// Check for a type parameter in the path and query parameters
 	if ltype := c.Param("type"); ltype != "" {
-		resourceDetails.Type = models.KnownTYPES(ltype)
+		requestDetails.Type = models.KnownTYPES(ltype)
 	} else if ltype := c.Query("type"); ltype != "" {
-		resourceDetails.Type = models.KnownTYPES(ltype)
+		requestDetails.Type = models.KnownTYPES(ltype)
 	}
 
 	// Decode the resource from the request
@@ -86,8 +93,8 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	// Call the dbFunc with the resource and resourceDetails
-	response, err := dbFunc(resource, resourceDetails)
+	// Call the dbFunc with the resource and requestDetails
+	response, err := dbFunc(resource, requestDetails)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -96,37 +103,61 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 	c.JSON(http.StatusOK, response)
 }
 
-func getUserDetails(c *gin.Context) (models.UserDetails, error) {
+func GetUserDetails(c *gin.Context) (models.UserDetails, error) {
 	groups, _ := c.Get("groups")
-	isAdmin, _ := c.Get("isAdmin")
+	isOwner, _ := c.Get("isOwner")
 	userRole, _ := c.Get("role")
 	UserID, _ := c.Get("user_id")
+	projects, _ := c.Get("projects")
+	userName, _ := c.Get("user_name")
+	BaseGroup, _ := c.Get("base_group")
 
 	userGroup, ok := groups.([]string)
 	if !ok {
 		userGroup = []string{}
 	}
 
-	userIsAdmin, ok := isAdmin.(bool)
+	userProjects, ok := projects.([]string)
 	if !ok {
-		isAdmin = false
+		userProjects = []string{}
 	}
 
-	userRoleIs, ok := userRole.(string)
+	userIsOwner, ok := isOwner.(bool)
 	if !ok {
-		userRole = ""
+		userIsOwner = false
+	}
+
+	userRolePtr, ok := userRole.(*models.Role)
+	var userRoleIs models.Role
+	if ok && userRolePtr != nil {
+		userRoleIs = *userRolePtr
+	} else {
+		userRoleIs = models.RoleViewer
 	}
 
 	userId, ok := UserID.(string)
 	if !ok {
-		userRole = ""
+		userId = ""
+	}
+
+	user, ok := userName.(string)
+	if !ok {
+		user = ""
+	}
+
+	userBaseGroup, ok := BaseGroup.(string)
+	if !ok {
+		userBaseGroup = ""
 	}
 
 	userDetails := models.UserDetails{
-		Groups:  userGroup,
-		Role:    userRoleIs,
-		IsAdmin: userIsAdmin,
-		UserID:  userId,
+		Groups:    userGroup,
+		Role:      userRoleIs,
+		IsOwner:   userIsOwner,
+		UserID:    userId,
+		Projects:  userProjects,
+		UserName:  user,
+		BaseGroup: userBaseGroup,
 	}
 
 	return userDetails, nil
@@ -135,14 +166,15 @@ func getUserDetails(c *gin.Context) (models.UserDetails, error) {
 func checkRole(c *gin.Context, userDetail models.UserDetails) (err error) {
 	method := c.Request.Method
 	switch userDetail.Role {
-	case "admin":
+	case models.RoleAdmin, models.RoleOwner:
 		return nil
-	case "editor":
+	case models.RoleEditor:
 		if method == "GET" || method == "POST" || method == "PUT" || method == "DELETE" {
 			return nil
 		}
 		return errors.New("you are not authorized to perform this action")
-	case "readonly":
+	case models.RoleViewer:
+		fmt.Println("Viewer")
 		if method == "GET" {
 			return nil
 		}

@@ -5,14 +5,29 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type Role string
+
+const (
+	RoleAdmin  Role = "admin"
+	RoleEditor Role = "editor"
+	RoleViewer Role = "viewer"
+	RoleOwner  Role = "owner"
+)
+
+type CombinedProjects struct {
+	ProjectID   string `json:"project_id"`
+	ProjectName string `json:"projectname"`
+}
+
 type User struct {
 	ID            primitive.ObjectID `bson:"_id"`
 	Username      *string            `json:"username" validate:"required,min=2,max=100"`
 	Password      *string            `json:"password" validate:"required,min=6"`
 	Email         *string            `json:"email" bson:"email" validate:"email,required"`
-	Role          *string            `json:"role" bson:"role"`
+	Role          *Role              `json:"role" bson:"role"`
 	Token         *string            `json:"token" bson:"token"`
 	BaseGroup     *string            `json:"base_group" bson:"base_group"`
+	BaseProject   *string            `json:"base_project" bson:"base_project"`
 	Active        *bool              `json:"active" bson:"active"`
 	Refresh_token *string            `json:"refresh_token" bson:"refresh_token"`
 	Created_at    primitive.DateTime `json:"created_at" bson:"created_at"`
@@ -24,8 +39,17 @@ type Group struct {
 	ID         primitive.ObjectID `bson:"_id"`
 	GroupName  *string            `json:"groupname" bson:"groupname" validate:"required,min=2,max=100"`
 	Members    []string           `json:"members" bson:"members"`
+	Project    *string            `json:"project" bson:"project" validate:"required,min=2,max=100"`
 	Created_at primitive.DateTime `json:"created_at" bson:"created_at"`
 	Updated_at primitive.DateTime `json:"updated_at" bson:"updated_at"`
+}
+
+type Project struct {
+	ID          primitive.ObjectID `bson:"_id"`
+	ProjectName *string            `json:"projectname" bson:"projectname" validate:"required,min=2,max=100"`
+	Members     []string           `json:"members" bson:"members"`
+	Created_at  primitive.DateTime `json:"created_at" bson:"created_at"`
+	Updated_at  primitive.DateTime `json:"updated_at" bson:"updated_at"`
 }
 
 type UserList struct {
@@ -39,13 +63,15 @@ type UserList struct {
 }
 
 type SignedDetails struct {
-	Email      string
-	Username   string
-	UserId     string
-	Groups     []string
-	Role       string
-	BaseGroup  *string
-	AdminGroup bool
+	Email       *string
+	Username    *string
+	UserId      string
+	Groups      *[]string
+	Projects    *[]CombinedProjects
+	Role        *Role
+	BaseGroup   *string
+	BaseProject *string
+	AdminGroup  bool
 	jwt.RegisteredClaims
 }
 

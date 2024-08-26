@@ -3,6 +3,7 @@ package resources
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sirupsen/logrus"
@@ -47,4 +48,24 @@ func GetTypedConfigValue(jsonStringStr string, path string, logger *logrus.Logge
 	}
 
 	return typedConfig
+}
+
+func ProcessTypedConfigs(jsonStringStr string, jsonPath string, pathTemplate string, logger *logrus.Logger) ([]*models.TypedConfig, map[string]*models.TypedConfig) {
+	var typedConfigs []*models.TypedConfig
+	typedConfigsMap := make(map[string]*models.TypedConfig)
+
+	for i := range gjson.Get(jsonStringStr, jsonPath).Array() {
+		path := fmt.Sprintf(pathTemplate, i)
+
+		singleTypedConfig := GetTypedConfigValue(jsonStringStr, path+".value", logger)
+
+		if singleTypedConfig == nil {
+			continue
+		}
+
+		typedConfigs = append(typedConfigs, singleTypedConfig)
+		typedConfigsMap[path] = singleTypedConfig
+	}
+
+	return typedConfigs, typedConfigsMap
 }

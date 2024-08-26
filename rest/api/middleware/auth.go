@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sefaphlvn/bigbang/pkg/helper"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/api/auth"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +13,9 @@ import (
 
 func Authentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		isOwner := false
 		clientToken := c.Request.Header.Get("token")
+
 		if clientToken == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "No Authorization header provided"})
 			c.Abort()
@@ -30,14 +33,22 @@ func Authentication() gin.HandlerFunc {
 		c.Set("username", claims.Username)
 		c.Set("user_id", claims.UserId)
 		c.Set("groups", claims.Groups)
+		c.Set("projects", claims.Projects)
 		c.Set("role", claims.Role)
-		isAdmin := false
-		if claims.Role == "admin" {
-			isAdmin = true
+		c.Set("user_name", claims.Username)
+		c.Set("base_group", func() string {
+			if claims.BaseGroup != nil {
+				return *claims.BaseGroup
+			}
+			return ""
+		}())
+
+		if claims.Role != nil && *claims.Role == models.RoleOwner {
+			isOwner = true
 		} else if claims.AdminGroup {
-			isAdmin = true
+			isOwner = true
 		}
-		c.Set("isAdmin", isAdmin)
+		c.Set("isOwner", isOwner)
 		c.Next()
 	}
 }
@@ -62,6 +73,9 @@ func Refresh() gin.HandlerFunc {
 		c.Set("username", claims.Username)
 		c.Set("email", claims.Email)
 		c.Set("groups", claims.Groups)
+		c.Set("projects", claims.Projects)
+		c.Set("role", claims.Role)
+		c.Set("user_name", claims.Username)
 
 		c.Next()
 	}

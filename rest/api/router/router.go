@@ -24,7 +24,7 @@ func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
 	apiAuth := e.Group("/auth")
 	apiSettings := e.Group("/api/v3/setting")
 	apiCustom := e.Group("/api/v3/custom")
-	apiExtension := e.Group("/api/v3/extensions")
+	apiExtension := e.Group("/api/v3/eo")
 	apiResource := e.Group("/api/v3/xds")
 
 	apiSettings.Use(middleware.Authentication())
@@ -54,6 +54,8 @@ func initAuthRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 }
 
 func initSettingRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
+	rg.Use(middleware.InitSettingMiddleware())
+
 	routes := []struct {
 		method  string
 		path    string
@@ -62,9 +64,15 @@ func initSettingRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		{"GET", "/user_list", h.Auth.ListUsers},
 		{"GET", "/user/:user_id", h.Auth.GetUser},
 		{"PUT", "/user/:user_id", h.Auth.SetUpdateUser},
+
 		{"GET", "/group_list", h.Auth.ListGroups},
 		{"GET", "/group/:group_id", h.Auth.GetGroup},
 		{"PUT", "/group/:group_id", h.Auth.SetUpdateGroup},
+
+		{"GET", "/project_list", h.Auth.ListProjects},
+		{"GET", "/project/:project_id", h.Auth.GetProject},
+		{"PUT", "/project/:project_id", h.Auth.SetUpdateProject},
+
 		{"GET", "/permissions/:kind/:type/:id", h.Auth.GetPermissions},
 	}
 
@@ -89,12 +97,18 @@ func initExtensionRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		path    string
 		handler gin.HandlerFunc
 	}{
-		{"GET", "/:type", h.GetExtensions},
-		{"GET", "/:type/:canonical_name", h.ListExtensions},
-		{"POST", "/:type/:canonical_name", h.SetExtension},
-		{"GET", "/:type/:canonical_name/:name", h.GetExtension},
-		{"PUT", "/:type/:canonical_name/:name", h.UpdateExtension},
-		{"DELETE", "/:type/:canonical_name/:name", h.GetExtension},
+		{"GET", "/:collection/others/:type", h.GetExtensions},
+		{"POST", "/:collection/others/:type", h.SetExtension},
+		{"GET", "/:collection/others/:type/:name", h.GetOtherExtension},
+		{"PUT", "/:collection/others/:type/:name", h.UpdateOtherExtensions},
+		{"DELETE", "/:collection/others/:type/:canonical_name/:name", h.GetExtension},
+
+		{"GET", "/:collection/:type", h.GetExtensions},
+		{"GET", "/:collection/:type/:canonical_name", h.ListExtensions},
+		{"POST", "/:collection/:type/:canonical_name", h.SetExtension},
+		{"GET", "/:collection/:type/:canonical_name/:name", h.GetExtension},
+		{"PUT", "/:collection/:type/:canonical_name/:name", h.UpdateExtension},
+		{"DELETE", "/:collection/:type/:canonical_name/:name", h.GetExtension},
 	}
 
 	initRoutes(rg, routes)
@@ -106,11 +120,11 @@ func initResourceRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		path    string
 		handler gin.HandlerFunc
 	}{
-		{"GET", "/:type", h.ListResource},
-		{"POST", "/:type", h.SetResource},
-		{"GET", "/:type/:name", h.GetResource},
-		{"PUT", "/:type/:name", h.UpdateResource},
-		{"DELETE", "/:type/:name", h.DelResource},
+		{"GET", "/:collection", h.ListResource},
+		{"POST", "/:collection", h.SetResource},
+		{"GET", "/:collection/:name", h.GetResource},
+		{"PUT", "/:collection/:name", h.UpdateResource},
+		{"DELETE", "/:collection/:name", h.DelResource},
 	}
 
 	initRoutes(rg, routes)

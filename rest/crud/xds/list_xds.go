@@ -16,16 +16,16 @@ type Field struct {
 
 type ResourceSchema map[string][]Field
 
-func (xds *AppHandler) ListResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	filter := bson.M{}
-	collection := xds.Context.Client.Collection(resourceDetails.Type.String())
+func (xds *AppHandler) ListResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+	filter := bson.M{"general.project": requestDetails.Project}
+	collection := xds.Context.Client.Collection(requestDetails.Collection)
 	opts := options.Find().SetProjection(bson.M{"resource": 0})
 
-	if resourceDetails.GType != "" {
-		filter = bson.M{"general.gtype": resourceDetails.GType.String()}
+	if requestDetails.GType != "" {
+		filter["general.gtype"] = requestDetails.GType.String()
 	}
 
-	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
+	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
 	cursor, err := collection.Find(xds.Context.Ctx, filterWithRestriction, opts)
 	if err != nil {
 		return nil, fmt.Errorf("could not find records: %v", err)

@@ -6,7 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func PokerRoute(context *db.AppContext, name string) {
+func PokerRoute(context *db.AppContext, name string, processed *Processed) {
 	filter := bson.D{{Key: "resource.resource.rds.route_config_name", Value: name}}
 
 	rGeneral, err := resources.GetGenerals(context, "extensions", filter)
@@ -15,6 +15,6 @@ func PokerRoute(context *db.AppContext, name string) {
 	}
 
 	for _, general := range rGeneral {
-		DetectChangedResource(general.GType, general.Name, context)
+		DetectChangedResource(general.GType, general.Name, context, processed)
 	}
 }

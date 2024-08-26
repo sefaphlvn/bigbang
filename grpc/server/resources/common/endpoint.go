@@ -9,7 +9,7 @@ import (
 func (ar *Resources) GetEndpoints(ep string, context *db.AppContext) {
 	doc, _ := resources.GetResource(context, "endpoints", ep)
 	singleEndpoint := &endpoint.ClusterLoadAssignment{}
-	err := resources.GetResourceWithType(doc.GetResource(), singleEndpoint)
+	err := resources.MarshalUnmarshalWithType(doc.GetResource(), singleEndpoint)
 
 	if err != nil {
 		context.Logger.Debug(err)

@@ -37,7 +37,7 @@ var grpcCmd = &cobra.Command{
 
 		var callbacks = grpcserver.NewCallbacks(logger)
 		var srv = server.NewServer(context.Background(), ctxCache.Cache.Cache, callbacks)
-		var grpcServer = grpcserver.NewServer(srv, port, logger)
+		var grpcServer = grpcserver.NewServer(srv, port, logger, ctxCache)
 
 		grpcServer.Run()
 	},

@@ -6,13 +6,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-type CdsFilters struct {
-	Collection string
-	Filter     bson.D
-}
-
-func CreateCdsFilters(clusterName string) []CdsFilters {
-	return []CdsFilters{
+func CreateCdsFilters(clusterName string) []MongoFilters {
+	return []MongoFilters{
 		{
 			Collection: "routes",
 			Filter: bson.D{
@@ -23,7 +18,8 @@ func CreateCdsFilters(clusterName string) []CdsFilters {
 					bson.D{{Key: "resource.resource.request_mirror_policies.cluster", Value: clusterName}},
 				}},
 			},
-		}, {
+		},
+		{
 			Collection: "extensions",
 			Filter: bson.D{
 				{Key: "$and", Value: bson.A{
@@ -35,10 +31,18 @@ func CreateCdsFilters(clusterName string) []CdsFilters {
 				}},
 			},
 		},
+		{
+			Collection: "others",
+			Filter: bson.D{
+				{Key: "$or", Value: bson.A{
+					bson.D{{Key: "resource.resource.cluster", Value: clusterName}},
+				}},
+			},
+		},
 	}
 }
 
-func PokerCds(context *db.AppContext, clusterName string) {
+func PokerCds(context *db.AppContext, clusterName string, processed *Processed) {
 	cdsFilters := CreateCdsFilters(clusterName)
 
 	for _, filter := range cdsFilters {
@@ -48,7 +52,7 @@ func PokerCds(context *db.AppContext, clusterName string) {
 		}
 
 		for _, general := range resourceGeneral {
-			DetectChangedResource(general.GType, general.Name, context)
+			DetectChangedResource(general.GType, general.Name, context, processed)
 		}
 	}
 }

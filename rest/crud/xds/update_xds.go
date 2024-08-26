@@ -7,18 +7,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/rest/crud"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 	"github.com/sefaphlvn/bigbang/rest/crud/typed_configs"
-	"github.com/sefaphlvn/bigbang/rest/poker"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, resourceDetails models.ResourceDetails) (interface{}, error) {
-	filter := bson.M{"general.name": resourceDetails.Name}
-	filterWithRestriction := common.AddUserFilter(resourceDetails, filter)
-	result := xds.Context.Client.Collection(resourceDetails.Type.String()).FindOne(xds.Context.Ctx, filterWithRestriction)
+func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+	filter := bson.M{"general.name": requestDetails.Name}
+	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
+	result := xds.Context.Client.Collection(requestDetails.Collection).FindOne(xds.Context.Ctx, filterWithRestriction)
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
@@ -42,16 +42,13 @@ func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, resourceD
 		},
 	}
 
-	collection := xds.Context.Client.Collection(resourceDetails.Type.String())
+	collection := xds.Context.Client.Collection(requestDetails.Collection)
 	_, err := collection.UpdateOne(xds.Context.Ctx, filterWithRestriction, update)
 	if err != nil {
 		return nil, err
 	}
 
-	if resourceDetails.SaveOrPublish == "publish" {
-		poker.DetectChangedResource(resource.GetGeneral().GType, resourceDetails.Name, xds.Context)
-		poker.ResetProcessedResources()
-	}
+	changedResources := crud.HandleResourceChange(resource, requestDetails, xds.Context)
 
-	return gin.H{"message": "Success"}, nil
+	return gin.H{"message": "Success", "data": changedResources}, nil
 }

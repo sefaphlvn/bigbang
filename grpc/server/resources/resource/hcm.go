@@ -19,8 +19,11 @@ func (ar *AllResources) DecodeHTTPConnectionManager(arp *common.Resources, resou
 		return nil, nil, err
 	}
 
+	hcmResource := resource.GetResource()
+	hcmWithAccessLog, _ := ar.GetTypedConfigs(models.GeneralAccessLogTypedConfigPaths, hcmResource, context)
+
 	httpConnectionManager := &hcm.HttpConnectionManager{}
-	err = resources.GetResourceWithType(resource.GetResource(), httpConnectionManager)
+	err = resources.MarshalUnmarshalWithType(hcmWithAccessLog, httpConnectionManager)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -33,7 +36,11 @@ func (ar *AllResources) DecodeHTTPConnectionManager(arp *common.Resources, resou
 		}
 	}
 
-	message, _ = anypb.New(httpConnectionManager)
+	message, err = anypb.New(httpConnectionManager)
+
+	if err != nil {
+		return nil, nil, err
+	}
 
 	return message, configDiscovery, nil
 }

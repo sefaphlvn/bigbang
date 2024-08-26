@@ -19,6 +19,11 @@ type GeneralResponse struct {
 	General models.General `bson:"general"`
 }
 
+var unmarshaler = protojson.UnmarshalOptions{
+	AllowPartial:   true,
+	DiscardUnknown: true,
+}
+
 func GetResource(db *db.AppContext, collectionName string, name string) (*models.DBResource, error) {
 	var doc models.DBResource
 
@@ -71,25 +76,17 @@ func GetGenerals(context *db.AppContext, collectionName string, filter primitive
 	return results, nil
 }
 
-func GetResourceWithType(data interface{}, msg proto.Message) error {
+func MarshalUnmarshalWithType(data interface{}, msg proto.Message) error {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 
-	err = protojson.Unmarshal(jsonData, msg)
+	err = unmarshaler.Unmarshal(jsonData, msg)
 	if err != nil {
+		fmt.Println("proto unmarshall error: ", err)
 		return err
 	}
 
 	return nil
-}
-
-func InterfaceToJSON(data interface{}) string {
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	return string(jsonData)
 }

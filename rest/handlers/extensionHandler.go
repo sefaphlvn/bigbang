@@ -23,3 +23,11 @@ func (h *Handler) ListExtensions(c *gin.Context) {
 func (h *Handler) UpdateExtension(c *gin.Context) {
 	h.handleRequest(c, h.Extension.UpdateExtensions)
 }
+
+func (h *Handler) GetOtherExtension(c *gin.Context) {
+	h.handleRequest(c, h.Extension.GetOtherExtension)
+}
+
+func (h *Handler) UpdateOtherExtensions(c *gin.Context) {
+	h.handleRequest(c, h.Extension.UpdateOtherExtensions)
+}

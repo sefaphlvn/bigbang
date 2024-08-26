@@ -19,26 +19,31 @@ import (
 	runtimeservice "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	secretservice "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	snapshotStats "github.com/sefaphlvn/bigbang/pkg/stats"
 )
 
 const (
 	grpcKeepaliveTime        = 30 * time.Second
-	grpcKeepaliveTimeout     = 5 * time.Second
-	grpcKeepaliveMinTime     = 30 * time.Second
+	grpcKeepaliveTimeout     = 10 * time.Second
+	grpcKeepaliveMinTime     = 15 * time.Second
 	grpcMaxConcurrentStreams = 1000000
+	grpcMaxRecvMsgSize       = 1024 * 1024 * 50 // 50MB
+	grpcMaxSendMsgSize       = 1024 * 1024 * 50 // 50MB
 )
 
 type Server struct {
 	xdsServer server.Server
 	port      uint
 	logger    *logrus.Logger
+	context   *Context
 }
 
-func NewServer(xdsServer server.Server, port uint, logger *logrus.Logger) *Server {
+func NewServer(xdsServer server.Server, port uint, logger *logrus.Logger, context *Context) *Server {
 	return &Server{
 		xdsServer: xdsServer,
 		port:      port,
 		logger:    logger,
+		context:   context,
 	}
 }
 
@@ -55,6 +60,8 @@ func (s *Server) Run() {
 			MinTime:             grpcKeepaliveMinTime,
 			PermitWithoutStream: true,
 		}),
+		grpc.MaxRecvMsgSize(grpcMaxRecvMsgSize),
+		grpc.MaxSendMsgSize(grpcMaxSendMsgSize),
 	)
 	grpcServer := grpc.NewServer(grpcOptions...)
 
@@ -81,4 +88,8 @@ func (s *Server) registerServer(grpcServer *grpc.Server) {
 	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, s.xdsServer)
 	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, s.xdsServer)
 	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(grpcServer, s.xdsServer)
+
+	// custom grpc services
+	snapshotStats.RegisterSnapshotKeyServiceServer(grpcServer, NewSnapshotKeyServiceServer(s.context))
+	snapshotStats.RegisterSnapshotResourceServiceServer(grpcServer, NewSnapshotResourceServiceServer(s.context))
 }

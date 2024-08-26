@@ -12,6 +12,7 @@ const (
 	LDS        KnownTYPES = "listeners"
 	ROUTE      KnownTYPES = "routes"
 	EXTENSIONS KnownTYPES = "extensions"
+	ACCESSLOG  KnownTYPES = "access_log"
 )
 
 func (kt KnownTYPES) String() string {
@@ -28,9 +29,10 @@ type DBResourceClass interface {
 	GetTypedConfig() []*TypedConfig
 	SetTypedConfig([]*TypedConfig)
 	SetVersion(interface{})
+	SetPermissions(*Permissions)
 }
 
-type ResourceDetails struct {
+type RequestDetails struct {
 	Collection    string
 	Type          KnownTYPES
 	GType         GTypes
@@ -40,13 +42,17 @@ type ResourceDetails struct {
 	Version       string
 	User          UserDetails
 	SaveOrPublish string
+	Project       string
 }
 
 type UserDetails struct {
-	Groups  []string
-	Role    string
-	IsAdmin bool
-	UserID  string
+	Groups    []string
+	Projects  []string
+	BaseGroup string
+	Role      Role
+	IsOwner   bool
+	UserID    string
+	UserName  string
 }
 
 type Service struct {
@@ -65,9 +71,10 @@ type General struct {
 	Version         string                 `json:"version" bson:"version"`
 	Type            KnownTYPES             `json:"type" bson:"type"`
 	GType           GTypes                 `json:"gtype" bson:"gtype"`
+	Project         string                 `json:"project" bson:"project"`
 	CanonicalName   string                 `json:"canonical_name" bson:"canonical_name"`
 	Category        string                 `json:"category" bson:"category"`
-	Service         GeneralService         `json:"service,omitempty" bson:"service,omitempty"`
+	Managed         bool                   `json:"managed,omitempty" bson:"managed,omitempty"`
 	Metadata        map[string]interface{} `json:"metadata,omitempty" bson:"metadata,omitempty"`
 	Permissions     Permissions            `json:"permissions" bson:"permissions"`
 	ConfigDiscovery []*ConfigDiscovery     `json:"config_discovery,omitempty" bson:"config_discovery,omitempty"`
@@ -79,11 +86,6 @@ type General struct {
 type Permissions struct {
 	Users  []string `json:"users" bson:"users"`
 	Groups []string `json:"groups" bson:"groups"`
-}
-
-type GeneralService struct {
-	Name    string `json:"name" bson:"name"`
-	Enabled bool   `json:"enabled" bson:"enabled"`
 }
 
 type Extensions struct {
@@ -106,6 +108,7 @@ type TypedConfig struct {
 	Gtype         string `json:"gtype" bson:"gtype"`
 	Type          string `json:"type" bson:"type"`
 	Category      string `json:"category" bson:"category"`
+	Collection    string `json:"collection" bson:"collection"`
 }
 
 type DBResource struct {
@@ -153,4 +156,8 @@ func (d *DBResource) SetResource(res interface{}) {
 
 func (d *DBResource) SetGeneral(g *General) {
 	d.General = *g
+}
+
+func (d *DBResource) SetPermissions(p *Permissions) {
+	d.General.Permissions = *p
 }

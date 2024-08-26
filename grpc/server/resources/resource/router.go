@@ -16,7 +16,7 @@ func (ar *AllResources) DecodeRouter(resourceName string, db *db.AppContext) (*a
 	}
 
 	singleRouter := &router.Router{}
-	err = resources.GetResourceWithType(resource.GetResource(), singleRouter)
+	err = resources.MarshalUnmarshalWithType(resource.GetResource(), singleRouter)
 	if err != nil {
 		return nil, nil, err
 	}
