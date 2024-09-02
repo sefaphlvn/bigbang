@@ -8,7 +8,7 @@ import (
 
 func (ar *Resources) GetClusters(clusters []string, context *db.AppContext) {
 	for _, cls := range clusters {
-		doc, _ := resources.GetResource(context, "clusters", cls)
+		doc, _ := resources.GetResourceNGeneral(context, "clusters", cls, ar.Project)
 		singleCluster := &cluster.Cluster{}
 		err := resources.MarshalUnmarshalWithType(doc.GetResource(), singleCluster)
 		if err != nil {

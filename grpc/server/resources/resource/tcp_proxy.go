@@ -10,7 +10,7 @@ import (
 
 func (ar *AllResources) DecodeTcpProxy(resourceName string, context *db.AppContext) (*anypb.Any, []*models.ConfigDiscovery, error) {
 	var message *anypb.Any
-	resource, err := resources.GetResource(context, "extensions", resourceName)
+	resource, err := resources.GetResourceNGeneral(context, "extensions", resourceName, ar.Project)
 	if err != nil {
 		return nil, nil, err
 	}

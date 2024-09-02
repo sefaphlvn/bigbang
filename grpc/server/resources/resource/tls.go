@@ -15,13 +15,13 @@ func (ar *AllResources) DecodeDownstreamTLS(data *models.DBResource, context *db
 		context.Logger.Debug(err)
 	}
 
-	ar.AppendSecret(getValiDationContext(dtc.CommonTlsContext.GetValidationContextSdsSecretConfig().GetName(), context))
+	ar.AppendSecret(getValiDationContext(dtc.CommonTlsContext.GetValidationContextSdsSecretConfig().GetName(), context, ar.Project))
 	ar.getTlsCertificate(dtc.CommonTlsContext.TlsCertificateSdsSecretConfigs, context)
 }
 
 func (ar *AllResources) getTlsCertificate(sdsSecretConfig []*tls.SdsSecretConfig, context *db.AppContext) {
 	for _, secretConf := range sdsSecretConfig {
-		resource, err := resources.GetResource(context, "secrets", secretConf.GetName())
+		resource, err := resources.GetResourceNGeneral(context, "secrets", secretConf.GetName(), ar.Project)
 		if err != nil {
 			context.Logger.Debugf("tls certificate empty resource err: %v", err)
 		}
@@ -40,11 +40,11 @@ func (ar *AllResources) getTlsCertificate(sdsSecretConfig []*tls.SdsSecretConfig
 	}
 }
 
-func getValiDationContext(vcName string, context *db.AppContext) *tls.Secret {
+func getValiDationContext(vcName string, context *db.AppContext, project string) *tls.Secret {
 	if vcName == "" {
 		return nil
 	}
-	validationContext, err := resources.GetResource(context, "secrets", vcName)
+	validationContext, err := resources.GetResourceNGeneral(context, "secrets", vcName, project)
 	if err != nil {
 		context.Logger.Debugf("validation context empty resource err: %v", err)
 	}

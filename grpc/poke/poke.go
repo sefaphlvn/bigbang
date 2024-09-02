@@ -22,6 +22,11 @@ type Poke struct {
 	config *config.AppConfig
 }
 
+type ProjectServices struct {
+	Project string
+	Service string
+}
+
 func NewPokeServer(ctx *server.Context, db *db.AppContext, logger *logrus.Logger, config *config.AppConfig) *Poke {
 	return &Poke{
 		ctx:    ctx,
@@ -43,11 +48,11 @@ func (p *Poke) Run(pokeHandler *Poke) {
 func (p *Poke) initialSnapshots() {
 	serviceNames := p.getListenerList()
 	for _, serviceName := range serviceNames {
-		p.logger.Debugf("start serve snapshot: (%s)", serviceName)
+		p.logger.Debugf("start serve snapshot: (%s) Project: (%s)", serviceName.Service, serviceName.Project)
 
-		allResource, err := p.getAllResourcesFromListener(serviceName)
+		allResource, err := p.getAllResourcesFromListener(serviceName.Service, serviceName.Project)
 		if err != nil {
-			p.logger.Errorf("BULK GetConfigurationFromListener(%v): %v", serviceName, err)
+			p.logger.Errorf("BULK GetConfigurationFromListener(%v): %v", serviceName.Service, err)
 		}
 
 		err = p.ctx.SetSnapshot(allResource, p.logger)
@@ -58,8 +63,8 @@ func (p *Poke) initialSnapshots() {
 	p.logger.Infof("All snapshots are loaded")
 }
 
-func (p *Poke) getListenerList() []string {
-	var serviceNames []string
+func (p *Poke) getListenerList() []ProjectServices {
+	var serviceNamesWithProject []ProjectServices
 	cur, err := p.db.GetGenerals("listeners")
 	if err != nil {
 		p.logger.Fatal(err)
@@ -81,13 +86,13 @@ func (p *Poke) getListenerList() []string {
 			return nil
 		}
 
-		serviceNames = append(serviceNames, general.Name)
+		serviceNamesWithProject = append(serviceNamesWithProject, ProjectServices{Project: general.Project, Service: general.Name})
 	}
-	return serviceNames
+	return serviceNamesWithProject
 }
 
-func (p *Poke) getAllResourcesFromListener(serviceName string) (*resource.AllResources, error) {
-	rawListenerResource, err := resources.GetResource(p.db, "listeners", serviceName)
+func (p *Poke) getAllResourcesFromListener(serviceName string, project string) (*resource.AllResources, error) {
+	rawListenerResource, err := resources.GetResourceNGeneral(p.db, "listeners", serviceName, project)
 	if err != nil {
 		return nil, err
 	}

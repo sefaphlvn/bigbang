@@ -19,7 +19,6 @@ func (xds *AppHandler) GetResource(resource models.DBResourceClass, requestDetai
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
 	filter := bson.M{"general.name": requestDetails.Name}
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
-	fmt.Println(filterWithRestriction)
 	result := collection.FindOne(xds.Context.Ctx, filterWithRestriction)
 
 	if result.Err() != nil {

@@ -10,10 +10,10 @@ type Application struct {
 	Context *db.AppContext
 }
 
-func HandleResourceChange(resource models.DBResourceClass, requestDetails models.RequestDetails, context *db.AppContext) *poker.Processed {
+func HandleResourceChange(resource models.DBResourceClass, requestDetails models.RequestDetails, context *db.AppContext, project string) *poker.Processed {
 	if requestDetails.SaveOrPublish == "publish" {
 		initialProcessed := poker.Processed{Listeners: []string{}, Depends: []string{}}
-		changedResources := poker.DetectChangedResource(resource.GetGeneral().GType, requestDetails.Name, context, &initialProcessed)
+		changedResources := poker.DetectChangedResource(resource.GetGeneral().GType, requestDetails.Name, project, context, &initialProcessed)
 		return changedResources
 	}
 	return nil

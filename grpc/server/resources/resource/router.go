@@ -10,7 +10,7 @@ import (
 
 func (ar *AllResources) DecodeRouter(resourceName string, db *db.AppContext) (*anypb.Any, []*models.ConfigDiscovery, error) {
 	var message *anypb.Any
-	resource, err := resources.GetResource(db, "extensions", resourceName)
+	resource, err := resources.GetResourceNGeneral(db, "extensions", resourceName, ar.Project)
 	if err != nil {
 		return nil, nil, err
 	}

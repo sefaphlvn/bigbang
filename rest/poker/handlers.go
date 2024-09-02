@@ -19,47 +19,47 @@ type PokerTLSHandler struct {
 }
 
 type ResourceHandler interface {
-	Handle(context *db.AppContext, resourceName string, processed *Processed)
+	Handle(context *db.AppContext, resourceName string, project string, processed *Processed)
 }
 
 // CDS
-func (h *PokerCdsHandler) Handle(context *db.AppContext, resourceName string, processed *Processed) {
-	PokerCds(context, resourceName, processed)
+func (h *PokerCdsHandler) Handle(context *db.AppContext, resourceName string, project string, processed *Processed) {
+	PokerCds(context, resourceName, project, processed)
 }
 
 // EDS
-func (h *PokerEdsHandler) Handle(context *db.AppContext, resourceName string, processed *Processed) {
-	PokerEds(context, resourceName, processed)
+func (h *PokerEdsHandler) Handle(context *db.AppContext, resourceName string, project string, processed *Processed) {
+	PokerEds(context, resourceName, project, processed)
 }
 
 // ROUTER
-func (h *PokerRouterHandler) Handle(context *db.AppContext, resourceName string, processed *Processed) {
-	PokerRouter(context, resourceName, processed)
+func (h *PokerRouterHandler) Handle(context *db.AppContext, resourceName string, project string, processed *Processed) {
+	PokerRouter(context, resourceName, project, processed)
 }
 
 // ROUTE
-func (h *PokerRouteHandler) Handle(context *db.AppContext, resourceName string, processed *Processed) {
-	PokerRoute(context, resourceName, processed)
+func (h *PokerRouteHandler) Handle(context *db.AppContext, resourceName string, project string, processed *Processed) {
+	PokerRoute(context, resourceName, project, processed)
 }
 
 // HCM
-func (h *PokerHCMHandler) Handle(context *db.AppContext, resourceName string, processed *Processed) {
-	PokerHCM(context, resourceName, processed)
+func (h *PokerHCMHandler) Handle(context *db.AppContext, resourceName string, project string, processed *Processed) {
+	PokerHCM(context, resourceName, project, processed)
 }
 
 // TCP PROXY
-func (h *PokerTcpProxyHandler) Handle(context *db.AppContext, resourceName string, processed *Processed) {
-	PokerTcpProxy(context, resourceName, processed)
+func (h *PokerTcpProxyHandler) Handle(context *db.AppContext, resourceName string, project string, processed *Processed) {
+	PokerTcpProxy(context, resourceName, project, processed)
 }
 
 // TCP PROXY
-func (h *PokerAccessLogHandler) Handle(context *db.AppContext, resourceName string, processed *Processed) {
-	PokerAccessLog(context, resourceName, processed)
+func (h *PokerAccessLogHandler) Handle(context *db.AppContext, resourceName string, project string, processed *Processed) {
+	PokerAccessLog(context, resourceName, project, processed)
 }
 
 // TLS
-func (h *PokerTLSHandler) Handle(context *db.AppContext, resourceName string, processed *Processed) {
-	PokerTLS(context, resourceName, h.gType, processed)
+func (h *PokerTLSHandler) Handle(context *db.AppContext, resourceName string, project string, processed *Processed) {
+	PokerTLS(context, resourceName, project, h.gType, processed)
 }
 
 func init() {

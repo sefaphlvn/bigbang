@@ -24,6 +24,7 @@ func (ar *AllResources) DecodeListener(rawListenerResource *models.DBResource, c
 	}
 
 	ar.SetVersion(rawListenerResource.Resource.Version)
+	ar.SetProject(rawListenerResource.General.Project)
 
 	var lstnrs []types.Resource
 	for _, lstnr := range resArray {

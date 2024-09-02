@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/sefaphlvn/bigbang/pkg/models"
@@ -10,25 +9,29 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/custom"
 	"github.com/sefaphlvn/bigbang/rest/crud/extension"
 	"github.com/sefaphlvn/bigbang/rest/crud/xds"
+	"github.com/sefaphlvn/bigbang/rest/dependency"
 
 	"github.com/gin-gonic/gin"
 )
 
-type DBFunc func(resource models.DBResourceClass, resourceType models.RequestDetails) (interface{}, error)
+type DBFunc func(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error)
+type DepFunc func(requestDetails models.RequestDetails) (*dependency.DependencyGraph, error)
 
 type Handler struct {
-	XDS       *xds.AppHandler
-	Extension *extension.AppHandler
-	Custom    *custom.AppHandler
-	Auth      *auth.AppHandler
+	XDS        *xds.AppHandler
+	Extension  *extension.AppHandler
+	Custom     *custom.AppHandler
+	Auth       *auth.AppHandler
+	dependency *dependency.AppHandler
 }
 
-func NewHandler(XDS *xds.AppHandler, extension *extension.AppHandler, custom *custom.AppHandler, auth *auth.AppHandler) *Handler {
+func NewHandler(XDS *xds.AppHandler, extension *extension.AppHandler, custom *custom.AppHandler, auth *auth.AppHandler, dependency *dependency.AppHandler) *Handler {
 	return &Handler{
-		XDS:       XDS,
-		Extension: extension,
-		Custom:    custom,
-		Auth:      auth,
+		XDS:        XDS,
+		Extension:  extension,
+		Custom:     custom,
+		Auth:       auth,
+		dependency: dependency,
 	}
 }
 
@@ -174,7 +177,6 @@ func checkRole(c *gin.Context, userDetail models.UserDetails) (err error) {
 		}
 		return errors.New("you are not authorized to perform this action")
 	case models.RoleViewer:
-		fmt.Println("Viewer")
 		if method == "GET" {
 			return nil
 		}
@@ -182,4 +184,29 @@ func checkRole(c *gin.Context, userDetail models.UserDetails) (err error) {
 	default:
 		return errors.New("you are not authorized to perform this action")
 	}
+}
+
+func (h *Handler) handleDepRequest(c *gin.Context, depFunc DepFunc) {
+	userDetails, _ := GetUserDetails(c)
+	requestDetails := models.RequestDetails{
+		GType:      models.GTypes(c.Query("gtype")),
+		Name:       c.Param("name"),
+		Collection: c.Query("collection"),
+		Project:    c.Query("project"),
+		User:       userDetails,
+	}
+
+	err := checkRole(c, userDetails)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	response, err := depFunc(requestDetails)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
 }

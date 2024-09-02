@@ -25,13 +25,14 @@ func (p *Poke) handlePoke(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 
 	serviceValue := queryParams.Get("service")
+	projectValue := queryParams.Get("project")
 
-	if serviceValue == "" {
-		http.Error(w, "Service query parameter is required", http.StatusBadRequest)
+	if serviceValue == "" || projectValue == "" {
+		http.Error(w, "Service or Project query parameter is required!", http.StatusBadRequest)
 		return
 	}
 
-	allResources, err := p.getAllResourcesFromListener(serviceValue)
+	allResources, err := p.getAllResourcesFromListener(serviceValue, projectValue)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		p.logger.Error(err)

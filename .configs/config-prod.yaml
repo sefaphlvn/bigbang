@@ -13,6 +13,6 @@ MONGODB_PORT:
 MONGODB_REPLICASET: ""
 MONGODB_TIMEOUTSECONDS: "${MONGODB_TIMEOUTSECONDS}"
 
-LOG_LEVEL: debug          # debug, info, warn, error
+LOG_LEVEL: error          # debug, info, warn, error
 LOG_FORMATTER: text       # json, text
 LOG_REPORTCALLER: "false"

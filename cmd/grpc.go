@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/sefaphlvn/bigbang/grpc/poke"
@@ -21,7 +20,7 @@ var (
 // grpcCmd represents the grpc command
 var grpcCmd = &cobra.Command{
 	Use:   "server-grpc",
-	Short: "Start GRPC Server",
+	Short: "Start Bigbang GRPC Server",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -32,7 +31,6 @@ var grpcCmd = &cobra.Command{
 		var ctxCache = grpcserver.GetContext(logger)
 
 		var pokeServer = poke.NewPokeServer(ctxCache, db, logger, appConfig)
-		fmt.Println(appConfig)
 		go pokeServer.Run(pokeServer)
 
 		var callbacks = grpcserver.NewCallbacks(logger)

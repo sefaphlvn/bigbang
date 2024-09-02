@@ -1,16 +1,10 @@
 package models
 
 import (
-	accessLog "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stream/v3"
-	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	"google.golang.org/protobuf/proto"
+	"github.com/sefaphlvn/bigbang/pkg/filters"
 )
 
 type GTypes string
-
-func (kt GTypes) String() string {
-	return string(kt)
-}
 
 const (
 	APITypePrefix                GTypes = "type.googleapis.com/"
@@ -32,27 +26,128 @@ const (
 	CertificateValidationContext GTypes = "envoy.extensions.transport_sockets.tls.v3.CertificateValidationContext"
 )
 
-type TypedConfigPath struct {
-	JsonPath     string
-	PathTemplate string
-	Kind         string
+func (gt GTypes) CollectionString() string {
+	if str, exists := gTypeMappings[gt]; exists {
+		return str.Collection
+	}
+	return "unknown"
 }
 
-var BootstrapTypedConfigPaths = []TypedConfigPath{
-	{JsonPath: "admin.access_log", PathTemplate: "admin.access_log.%d.typed_config", Kind: "access_log"},
+func (gt GTypes) URL() string {
+	if str, exists := gTypeMappings[gt]; exists {
+		return str.URL
+	}
+	return "unknown"
 }
 
-var ListenerTypedConfigPaths = []TypedConfigPath{
-	{JsonPath: "filter_chains", PathTemplate: "filter_chains.%d.transport_socket.typed_config", Kind: "downstream_tls"},
-	{JsonPath: "access_log", PathTemplate: "access_log.%d.typed_config", Kind: "access_log"},
+func (gt GTypes) String() string {
+	return string(gt)
 }
 
-var GeneralAccessLogTypedConfigPaths = []TypedConfigPath{
-	{JsonPath: "access_log", PathTemplate: "access_log.%d.typed_config", Kind: "access_log"},
+type GTypeMapping struct {
+	Collection string
+	URL        string
 }
 
-// TypedConfigMap is a map of string to proto.Message type
-var TypedConfigMap = map[string]proto.Message{
-	"envoy.extensions.access_loggers.stream.v3.StdoutAccessLog":      &accessLog.StdoutAccessLog{},
-	"envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext": &tls.DownstreamTlsContext{},
+var gTypeMappings = map[GTypes]GTypeMapping{
+	BootStrap:                    {Collection: "bootstrap", URL: "/resource/bootstrap/"},
+	HTTPConnectionManager:        {Collection: "extensions", URL: "/filters/network/hcm/"},
+	Router:                       {Collection: "extensions", URL: "/filters/http/http_router/"},
+	Cluster:                      {Collection: "clusters", URL: "/resource/cluster/"},
+	Listener:                     {Collection: "listeners", URL: "/resource/listener/"},
+	Endpoint:                     {Collection: "endpoints", URL: "/resource/endpoint"},
+	Route:                        {Collection: "routes", URL: "/resource/route"},
+	TcpProxy:                     {Collection: "extensions", URL: "/filters/network/tcp_proxy/"},
+	FluentdAccessLog:             {Collection: "others", URL: "/others/access_log/"},
+	FileAccessLog:                {Collection: "others", URL: "/others/access_log/"},
+	StdoutAccessLog:              {Collection: "others", URL: "/others/access_log/"},
+	StdErrAccessLog:              {Collection: "others", URL: "/others/access_log/"},
+	DownstreamTlsContext:         {Collection: "secrets", URL: "/resource/secret/"},
+	UpstreamTlsContext:           {Collection: "secrets", URL: "/resource/secret/"},
+	TlsCertificate:               {Collection: "secrets", URL: "/resource/secret/"},
+	CertificateValidationContext: {Collection: "secrets", URL: "/resource/secret/"},
+}
+
+func (gt GTypes) GetUpstreamPaths() map[string]GTypes {
+	switch gt {
+	case Cluster:
+		return map[string]GTypes{
+			"resource.resource.eds_cluster_config.service_name": Endpoint,
+		}
+	case TcpProxy:
+		return map[string]GTypes{
+			"resource.resource.cluster":                           Cluster,
+			"resource.resource.weighted_clusters.clusters.#.name": Cluster,
+		}
+	case HTTPConnectionManager:
+		return map[string]GTypes{
+			"resource.resource.rds.route_config_name": Route,
+		}
+	case Route:
+		return map[string]GTypes{
+			"resource.resource.virtual_hosts.#.routes.#.route.cluster":                           Cluster,
+			"resource.resource.virtual_hosts.#.routes.#.route.weighted_clusters.clusters.#.name": Cluster,
+			"resource.resource.virtual_hosts.#.request_mirror_policies.#.cluster":                Cluster,
+			"resource.resource.request_mirror_policies.#.cluster":                                Cluster,
+		}
+	case FluentdAccessLog:
+		return map[string]GTypes{
+			"resource.resource.cluster": Cluster,
+		}
+	case DownstreamTlsContext:
+		return map[string]GTypes{
+			"resource.resource.common_tls_context.tls_certificate_sds_secret_configs.#.name": TlsCertificate,
+			"resource.resource.common_tls_context.validation_context_sds_secret_config.name": CertificateValidationContext,
+		}
+	case UpstreamTlsContext:
+		return map[string]GTypes{
+			"resource.resource.common_tls_context.tls_certificate_sds_secret_configs.#.name": TlsCertificate,
+			"resource.resource.common_tls_context.validation_context_sds_secret_config.name": CertificateValidationContext,
+		}
+	default:
+		return nil
+	}
+}
+
+func (gt GTypes) GetDownstreamFilters(name string) []filters.MongoFilters {
+	switch gt {
+	case TcpProxy:
+		return []filters.MongoFilters{
+			filters.TcpProxyDownstreamFilters(name),
+		}
+	case Route:
+		return []filters.MongoFilters{
+			filters.RouteDownstreamFilters(name),
+		}
+	case HTTPConnectionManager:
+		return []filters.MongoFilters{
+			filters.HcmDownstreamFilters(name),
+		}
+	case Cluster:
+		return filters.ClusterDownstreamFilters(name)
+	case Endpoint:
+		return []filters.MongoFilters{
+			filters.EdsDownstreamFilters(name),
+		}
+	case FileAccessLog, FluentdAccessLog, StdErrAccessLog, StdoutAccessLog:
+		return filters.ALSDownstreamFilters(name)
+	case Router:
+		return []filters.MongoFilters{
+			filters.RouterDownstreamFilters(name),
+		}
+	case DownstreamTlsContext:
+		return []filters.MongoFilters{
+			filters.DownstreamTlsDownstreamFilters(name),
+		}
+	case CertificateValidationContext:
+		return []filters.MongoFilters{
+			filters.ContextValidateDownstreamFilters(name),
+		}
+	case TlsCertificate:
+		return []filters.MongoFilters{
+			filters.TlsCertificateDownstreamFilters(name),
+		}
+	default:
+		return nil
+	}
 }

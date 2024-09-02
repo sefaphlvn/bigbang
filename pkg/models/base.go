@@ -72,6 +72,7 @@ type General struct {
 	Type            KnownTYPES             `json:"type" bson:"type"`
 	GType           GTypes                 `json:"gtype" bson:"gtype"`
 	Project         string                 `json:"project" bson:"project"`
+	Collection      string                 `json:"collection" bson:"collection"`
 	CanonicalName   string                 `json:"canonical_name" bson:"canonical_name"`
 	Category        string                 `json:"category" bson:"category"`
 	Managed         bool                   `json:"managed,omitempty" bson:"managed,omitempty"`

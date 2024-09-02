@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sirupsen/logrus"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -89,6 +91,8 @@ func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscover
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {
+	helper.PrettyPrint(req.ErrorDetail)
+	fmt.Println(req.Node.Id)
 
 	c.mu.Lock()
 	defer c.mu.Unlock()

@@ -13,7 +13,7 @@ func (ar *AllResources) DecodeHTTPConnectionManager(arp *common.Resources, resou
 	var message *anypb.Any
 	var configDiscovery []*models.ConfigDiscovery
 
-	resource, err := resources.GetResource(context, "extensions", resourceName)
+	resource, err := resources.GetResourceNGeneral(context, "extensions", resourceName, ar.Project)
 	configDiscovery = resource.GetGeneral().ConfigDiscovery
 	if err != nil {
 		return nil, nil, err

@@ -7,7 +7,7 @@ import (
 )
 
 func (ar *Resources) GetEndpoints(ep string, context *db.AppContext) {
-	doc, _ := resources.GetResource(context, "endpoints", ep)
+	doc, _ := resources.GetResourceNGeneral(context, "endpoints", ep, ar.Project)
 	singleEndpoint := &endpoint.ClusterLoadAssignment{}
 	err := resources.MarshalUnmarshalWithType(doc.GetResource(), singleEndpoint)
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -24,14 +25,14 @@ var unmarshaler = protojson.UnmarshalOptions{
 	DiscardUnknown: true,
 }
 
-func GetResource(db *db.AppContext, collectionName string, name string) (*models.DBResource, error) {
+func GetResourceNGeneral(db *db.AppContext, collectionName string, name string, project string) (*models.DBResource, error) {
 	var doc models.DBResource
 
 	collection := db.Client.Collection(collectionName)
 	findOptions := options.FindOne()
-	findOptions.SetProjection(bson.D{{Key: "resource", Value: 1}, {Key: "_id", Value: 0}, {Key: "general", Value: 1}})
+	findOptions.SetProjection(bson.D{{Key: "resource", Value: 1}, {Key: "_id", Value: 1}, {Key: "general", Value: 1}})
 
-	filter := bson.D{{Key: "general.name", Value: name}}
+	filter := bson.D{{Key: "general.name", Value: name}, {Key: "general.project", Value: project}}
 
 	err := collection.FindOne(db.Ctx, filter, findOptions).Decode(&doc)
 	if err != nil {
@@ -89,4 +90,12 @@ func MarshalUnmarshalWithType(data interface{}, msg proto.Message) error {
 	}
 
 	return nil
+}
+
+func ConvertToJSON(v interface{}, log *logrus.Logger) string {
+	jsonData, err := json.Marshal(v)
+	if err != nil {
+		log.Infof("JSON convert err: %v", err)
+	}
+	return string(jsonData)
 }

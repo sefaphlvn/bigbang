@@ -7,7 +7,7 @@ import (
 )
 
 func (ar *AllResources) GetRoutes(rdsName string, context *db.AppContext) error {
-	route, err := resources.GetResource(context, "routes", rdsName)
+	route, err := resources.GetResourceNGeneral(context, "routes", rdsName, ar.Project)
 	if err != nil {
 		return err
 	}

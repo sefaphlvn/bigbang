@@ -2,49 +2,12 @@ package poker
 
 import (
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/filters"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
-func CreateCdsFilters(clusterName string) []MongoFilters {
-	return []MongoFilters{
-		{
-			Collection: "routes",
-			Filter: bson.D{
-				{Key: "$or", Value: bson.A{
-					bson.D{{Key: "resource.resource.virtual_hosts.routes.route.cluster", Value: clusterName}},
-					bson.D{{Key: "resource.resource.virtual_hosts.routes.route.weighted_clusters.clusters.name", Value: clusterName}},
-					bson.D{{Key: "resource.resource.virtual_hosts.request_mirror_policies.cluster", Value: clusterName}},
-					bson.D{{Key: "resource.resource.request_mirror_policies.cluster", Value: clusterName}},
-				}},
-			},
-		},
-		{
-			Collection: "extensions",
-			Filter: bson.D{
-				{Key: "$and", Value: bson.A{
-					bson.D{{Key: "general.gtype", Value: "envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy"}},
-					bson.D{{Key: "$or", Value: bson.A{
-						bson.D{{Key: "resource.resource.cluster", Value: clusterName}},
-						bson.D{{Key: "resource.resource.weighted_clusters.clusters.name", Value: clusterName}},
-					}}},
-				}},
-			},
-		},
-		{
-			Collection: "others",
-			Filter: bson.D{
-				{Key: "$or", Value: bson.A{
-					bson.D{{Key: "resource.resource.cluster", Value: clusterName}},
-				}},
-			},
-		},
-	}
-}
-
-func PokerCds(context *db.AppContext, clusterName string, processed *Processed) {
-	cdsFilters := CreateCdsFilters(clusterName)
-
+func PokerCds(context *db.AppContext, clusterName string, project string, processed *Processed) {
+	cdsFilters := filters.ClusterDownstreamFilters(clusterName)
 	for _, filter := range cdsFilters {
 		resourceGeneral, err := resources.GetGenerals(context, filter.Collection, filter.Filter)
 		if err != nil {
@@ -52,7 +15,7 @@ func PokerCds(context *db.AppContext, clusterName string, processed *Processed) 
 		}
 
 		for _, general := range resourceGeneral {
-			DetectChangedResource(general.GType, general.Name, context, processed)
+			DetectChangedResource(general.GType, general.Name, project, context, processed)
 		}
 	}
 }

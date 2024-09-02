@@ -26,17 +26,20 @@ func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
 	apiCustom := e.Group("/api/v3/custom")
 	apiExtension := e.Group("/api/v3/eo")
 	apiResource := e.Group("/api/v3/xds")
+	apiDependency := e.Group("/api/v3/dependency")
 
 	apiSettings.Use(middleware.Authentication())
 	apiCustom.Use(middleware.Authentication())
 	apiExtension.Use(middleware.Authentication())
 	apiResource.Use(middleware.Authentication())
+	//apiDependency.Use(middleware.Authentication())
 
 	initAuthRoutes(apiAuth, h)
 	initSettingRoutes(apiSettings, h)
 	initCustomRoutes(apiCustom, h)
 	initExtensionRoutes(apiExtension, h)
 	initResourceRoutes(apiResource, h)
+	initDependencyRoutes(apiDependency, h)
 
 	return e
 }
@@ -86,6 +89,18 @@ func initCustomRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		handler gin.HandlerFunc
 	}{
 		{"GET", "/resource_list", h.GetCustomResourceList},
+	}
+
+	initRoutes(rg, routes)
+}
+
+func initDependencyRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
+	routes := []struct {
+		method  string
+		path    string
+		handler gin.HandlerFunc
+	}{
+		{"GET", "/:name", h.GetResourceDependencies},
 	}
 
 	initRoutes(rg, routes)

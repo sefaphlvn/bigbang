@@ -2,19 +2,19 @@ package poker
 
 import (
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/filters"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
-func PokerRoute(context *db.AppContext, name string, processed *Processed) {
-	filter := bson.D{{Key: "resource.resource.rds.route_config_name", Value: name}}
+func PokerRoute(context *db.AppContext, name string, project string, processed *Processed) {
+	filter := filters.RouteDownstreamFilters(name)
 
-	rGeneral, err := resources.GetGenerals(context, "extensions", filter)
+	rGeneral, err := resources.GetGenerals(context, filter.Collection, filter.Filter)
 	if err != nil {
 		context.Logger.Debug(err)
 	}
 
 	for _, general := range rGeneral {
-		DetectChangedResource(general.GType, general.Name, context, processed)
+		DetectChangedResource(general.GType, general.Name, project, context, processed)
 	}
 }

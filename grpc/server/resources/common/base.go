@@ -13,6 +13,7 @@ import (
 type Resources struct {
 	NodeID     string
 	Version    string
+	Project    string
 	Listener   []types.Resource
 	Cluster    []types.Resource
 	Route      []types.Resource
@@ -27,6 +28,9 @@ type AllResources interface {
 
 	SetVersion(version string)
 	GetVersion() string
+
+	SetProject(project string)
+	GetProject() string
 
 	SetListener(listener []types.Resource)
 	GetListener() []*listener.Listener
@@ -67,6 +71,14 @@ func (ar *Resources) SetVersion(version string) {
 
 func (ar *Resources) GetVersion() string {
 	return ar.Version
+}
+
+func (ar *Resources) SetProject(project string) {
+	ar.Project = project
+}
+
+func (ar *Resources) GetProject() string {
+	return ar.Project
 }
 
 func (ar *Resources) SetListener(listener []types.Resource) {

@@ -46,6 +46,7 @@ var AllowedEndpoints = []string{
 	"/api/v3/eo/:collection/others/:type",
 	"/api/v3/eo/:collection/others/:type/:name",
 	"/api/v3/custom/resource_list",
+	"/api/v3/dependency/:name",
 }
 
 var SECRET_KEY string = os.Getenv("secret")

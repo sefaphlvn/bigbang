@@ -9,24 +9,19 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
-	"go.mongodb.org/mongo-driver/bson"
 )
-
-type MongoFilters struct {
-	Collection string
-	Filter     bson.D
-}
 
 type Processed struct {
 	Listeners []string
 	Depends   []string
 }
 
-func ReSnapshot(listenerName string, context *db.AppContext) {
+func ReSnapshot(listenerName string, project string, context *db.AppContext) {
 	baseURL := fmt.Sprintf("http://%s/poke", context.Config.BIGBANG_ADDRESS)
 
 	params := url.Values{}
 	params.Add("service", listenerName)
+	params.Add("project", project)
 	fullURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
 
 	req, err := http.NewRequest("GET", fullURL, nil)
@@ -53,17 +48,17 @@ func ReSnapshot(listenerName string, context *db.AppContext) {
 	}
 }
 
-func DetectChangedResource(gType models.GTypes, resourceName string, context *db.AppContext, processed *Processed) *Processed {
+func DetectChangedResource(gType models.GTypes, resourceName string, project string, context *db.AppContext, processed *Processed) *Processed {
 	pathWithGtype := gType.String() + "===" + resourceName
 	if gType != models.Listener {
 		processed.Depends = append(processed.Depends, pathWithGtype)
 	}
 
 	if handler, exists := handlers[gType]; exists {
-		handler.Handle(context, resourceName, processed)
+		handler.Handle(context, resourceName, project, processed)
 	} else if gType == models.Listener {
 		if !helper.Contains(processed.Listeners, resourceName) {
-			ReSnapshot(resourceName, context)
+			ReSnapshot(resourceName, project, context)
 			processed.Listeners = append(processed.Listeners, resourceName)
 
 			result := strings.Join(processed.Depends, " \n ")
