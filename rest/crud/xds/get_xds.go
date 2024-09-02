@@ -51,8 +51,7 @@ func GetSnapshotsFromServer(serverAddress string) {
 
 	// Metadata oluştur
 	md := metadata.Pairs(
-		"key1", "value1",
-		"key2", "value2",
+		"bigbang-controller", "1",
 	)
 
 	// Metadata ile context oluştur
