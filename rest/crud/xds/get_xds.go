@@ -29,7 +29,7 @@ func (xds *AppHandler) GetResource(resource models.DBResourceClass, requestDetai
 		}
 	}
 
-	GetSnapshotsFromServer("localhost:18000")
+	// GetSnapshotsFromServer("localhost:18000")
 
 	err := result.Decode(resource)
 	if err != nil {
