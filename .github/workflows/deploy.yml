@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set unique tag
+      - name: Set unique tags
         id: vars
         run: echo "TAG=${GITHUB_SHA}" >> $GITHUB_ENV
 
