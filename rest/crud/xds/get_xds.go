@@ -29,7 +29,7 @@ func (xds *AppHandler) GetResource(resource models.DBResourceClass, requestDetai
 		}
 	}
 
-	GetSnapshotsFromServer("localhost:18000")
+	GetSnapshotsFromServer("localhost:80")
 
 	err := result.Decode(resource)
 	if err != nil {
@@ -60,7 +60,7 @@ func GetSnapshotsFromServer(serverAddress string) {
 	// Snapshot verilerini al
 	resp, err := client.GetSnapshotKeys(ctx, &snapshotStats.Empty{})
 	if err != nil {
-		log.Fatalf("could not get snapshots: %v", err)
+		log.Printf("could not get snapshots: %v", err)
 	}
 
 	fmt.Printf("Snapshot keys: %s\n", resp.Keys)
