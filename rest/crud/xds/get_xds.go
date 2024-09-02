@@ -29,7 +29,7 @@ func (xds *AppHandler) GetResource(resource models.DBResourceClass, requestDetai
 		}
 	}
 
-	GetSnapshotsFromServer("localhost:80")
+	GetSnapshotsFromServer("localhost:18000")
 
 	err := result.Decode(resource)
 	if err != nil {
@@ -43,7 +43,7 @@ func GetSnapshotsFromServer(serverAddress string) {
 	// gRPC client bağlantısını oluştur
 	conn, err := grpc.Dial(serverAddress, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		log.Printf("did not connect: %v", err)
 	}
 	defer conn.Close()
 
