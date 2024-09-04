@@ -1,4 +1,4 @@
-package xds
+package extension
 
 import (
 	"errors"
@@ -9,51 +9,29 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (xds *AppHandler) DelResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) DelExtension(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	resourceType := requestDetails.Collection
 	collection := xds.Context.Client.Collection(resourceType)
+	filter := buildFilter(requestDetails)
 
 	dependList := common.IsDeletable(xds.Context, requestDetails.GType, requestDetails.Name)
 	if len(dependList) > 0 {
-		message := fmt.Sprintf("Resource has dependencies: \n %s", strings.Join(dependList, ", "))
+		message := fmt.Sprintf("Resource has dependencies: %s", strings.Join(dependList, ", "))
 		return nil, errors.New(message)
 	}
 
-	filter := buildFilter(requestDetails)
-
 	if err := checkDocumentExists(xds, collection, filter); err != nil {
 		return nil, err
 	}
 
 	if err := deleteDocument(xds, collection, filter); err != nil {
 		return nil, err
-	}
-
-	if resourceType == "listeners" {
-		if err := xds.delBootstrap(filter); err != nil {
-			return nil, err
-		}
 	}
 
 	return gin.H{"message": "Success"}, nil
-}
-
-func (xds *AppHandler) delBootstrap(filter primitive.M) error {
-	collection := xds.Context.Client.Collection("bootstrap")
-
-	if err := checkDocumentExists(xds, collection, filter); err != nil {
-		return err
-	}
-
-	if err := deleteDocument(xds, collection, filter); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func buildFilter(requestDetails models.RequestDetails) bson.M {

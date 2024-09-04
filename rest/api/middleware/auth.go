@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/api/auth"
 
@@ -86,7 +85,7 @@ func PathCheck() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
 		pathParts := strings.Split(path, "/")
-		for _, allowedPath := range helper.AllowedEndpoints {
+		for _, allowedPath := range AllowedEndpoints {
 			allowedParts := strings.Split(allowedPath, "/")
 			if len(pathParts) != len(allowedParts) {
 				continue

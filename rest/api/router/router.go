@@ -116,14 +116,14 @@ func initExtensionRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		{"POST", "/:collection/others/:type", h.SetExtension},
 		{"GET", "/:collection/others/:type/:name", h.GetOtherExtension},
 		{"PUT", "/:collection/others/:type/:name", h.UpdateOtherExtensions},
-		{"DELETE", "/:collection/others/:type/:canonical_name/:name", h.GetExtension},
+		{"DELETE", "/:collection/others/:type/:name", h.DelExtension},
 
 		{"GET", "/:collection/:type", h.GetExtensions},
 		{"GET", "/:collection/:type/:canonical_name", h.ListExtensions},
 		{"POST", "/:collection/:type/:canonical_name", h.SetExtension},
 		{"GET", "/:collection/:type/:canonical_name/:name", h.GetExtension},
 		{"PUT", "/:collection/:type/:canonical_name/:name", h.UpdateExtension},
-		{"DELETE", "/:collection/:type/:canonical_name/:name", h.GetExtension},
+		{"DELETE", "/:collection/:type/:canonical_name/:name", h.DelExtension},
 	}
 
 	initRoutes(rg, routes)

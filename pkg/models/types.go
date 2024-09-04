@@ -40,6 +40,13 @@ func (gt GTypes) URL() string {
 	return "unknown"
 }
 
+func (gt GTypes) PrettyName() string {
+	if str, exists := gTypeMappings[gt]; exists {
+		return str.PrettyName
+	}
+	return "unknown"
+}
+
 func (gt GTypes) String() string {
 	return string(gt)
 }
@@ -47,25 +54,26 @@ func (gt GTypes) String() string {
 type GTypeMapping struct {
 	Collection string
 	URL        string
+	PrettyName string
 }
 
 var gTypeMappings = map[GTypes]GTypeMapping{
-	BootStrap:                    {Collection: "bootstrap", URL: "/resource/bootstrap/"},
-	HTTPConnectionManager:        {Collection: "extensions", URL: "/filters/network/hcm/"},
-	Router:                       {Collection: "extensions", URL: "/filters/http/http_router/"},
-	Cluster:                      {Collection: "clusters", URL: "/resource/cluster/"},
-	Listener:                     {Collection: "listeners", URL: "/resource/listener/"},
-	Endpoint:                     {Collection: "endpoints", URL: "/resource/endpoint"},
-	Route:                        {Collection: "routes", URL: "/resource/route"},
-	TcpProxy:                     {Collection: "extensions", URL: "/filters/network/tcp_proxy/"},
-	FluentdAccessLog:             {Collection: "others", URL: "/others/access_log/"},
-	FileAccessLog:                {Collection: "others", URL: "/others/access_log/"},
-	StdoutAccessLog:              {Collection: "others", URL: "/others/access_log/"},
-	StdErrAccessLog:              {Collection: "others", URL: "/others/access_log/"},
-	DownstreamTlsContext:         {Collection: "secrets", URL: "/resource/secret/"},
-	UpstreamTlsContext:           {Collection: "secrets", URL: "/resource/secret/"},
-	TlsCertificate:               {Collection: "secrets", URL: "/resource/secret/"},
-	CertificateValidationContext: {Collection: "secrets", URL: "/resource/secret/"},
+	BootStrap:                    {PrettyName: "Bootstrap", Collection: "bootstrap", URL: "/resource/bootstrap/"},
+	HTTPConnectionManager:        {PrettyName: "Http Connection Manager", Collection: "extensions", URL: "/filters/network/hcm/"},
+	Router:                       {PrettyName: "Router", Collection: "extensions", URL: "/filters/http/http_router/"},
+	Cluster:                      {PrettyName: "Cluster", Collection: "clusters", URL: "/resource/cluster/"},
+	Listener:                     {PrettyName: "Listener", Collection: "listeners", URL: "/resource/listener/"},
+	Endpoint:                     {PrettyName: "Endpoint", Collection: "endpoints", URL: "/resource/endpoint"},
+	Route:                        {PrettyName: "Route", Collection: "routes", URL: "/resource/route"},
+	TcpProxy:                     {PrettyName: "Tcp Proxy", Collection: "extensions", URL: "/filters/network/tcp_proxy/"},
+	FluentdAccessLog:             {PrettyName: "Access Log(Fluentd)", Collection: "others", URL: "/others/access_log/"},
+	FileAccessLog:                {PrettyName: "Access Log(File)", Collection: "others", URL: "/others/access_log/"},
+	StdoutAccessLog:              {PrettyName: "Access Log(StdOut)", Collection: "others", URL: "/others/access_log/"},
+	StdErrAccessLog:              {PrettyName: "Access Log(StdErr)", Collection: "others", URL: "/others/access_log/"},
+	DownstreamTlsContext:         {PrettyName: "Downstream TLS", Collection: "secrets", URL: "/resource/secret/"},
+	UpstreamTlsContext:           {PrettyName: "Upstream TLS", Collection: "secrets", URL: "/resource/secret/"},
+	TlsCertificate:               {PrettyName: "TLS Certificate", Collection: "secrets", URL: "/resource/secret/"},
+	CertificateValidationContext: {PrettyName: "Certificate Validation", Collection: "secrets", URL: "/resource/secret/"},
 }
 
 func (gt GTypes) GetUpstreamPaths() map[string]GTypes {

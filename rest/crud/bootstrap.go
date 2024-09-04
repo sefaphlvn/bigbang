@@ -115,6 +115,7 @@ func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[
 		"gtype":                "envoy.config.bootstrap.v3.Bootstrap",
 		"canonical_name":       "config.bootstrap.v3.Bootstrap",
 		"category":             "",
+		"project":              listenerGeneral.Project,
 		"permissions":          map[string]interface{}{"users": []interface{}{}, "groups": []interface{}{}},
 		"additional_resources": []interface{}{},
 		"created_at":           CreatedAt,

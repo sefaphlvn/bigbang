@@ -31,3 +31,7 @@ func (h *Handler) GetOtherExtension(c *gin.Context) {
 func (h *Handler) UpdateOtherExtensions(c *gin.Context) {
 	h.handleRequest(c, h.Extension.UpdateOtherExtensions)
 }
+
+func (h *Handler) DelExtension(c *gin.Context) {
+	h.handleRequest(c, h.Extension.DelExtension)
+}
