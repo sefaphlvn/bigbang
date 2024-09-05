@@ -46,7 +46,7 @@ func (h *AppHandler) AddNodeAndEdge(source Node, target Depend, isUpstream bool)
 			}{
 				Source: source.ID,
 				Target: target.ID,
-				Label:  source.Name + " to " + target.Name,
+				Label:  source.Gtype.PrettyName() + " to " + target.Gtype.PrettyName(),
 			},
 		}
 	} else {
@@ -58,7 +58,7 @@ func (h *AppHandler) AddNodeAndEdge(source Node, target Depend, isUpstream bool)
 			}{
 				Source: target.ID,
 				Target: source.ID,
-				Label:  target.Name + " to " + source.Name,
+				Label:  target.Gtype.PrettyName() + " to " + source.Gtype.PrettyName(),
 			},
 		}
 	}
