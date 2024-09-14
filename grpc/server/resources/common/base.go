@@ -11,15 +11,16 @@ import (
 )
 
 type Resources struct {
-	NodeID     string
-	Version    string
-	Project    string
-	Listener   []types.Resource
-	Cluster    []types.Resource
-	Route      []types.Resource
-	Endpoint   []types.Resource
-	Secret     []types.Resource
-	Extensions []types.Resource
+	NodeID          string
+	Version         string
+	Project         string
+	Listener        []types.Resource
+	Cluster         []types.Resource
+	Route           []types.Resource
+	Endpoint        []types.Resource
+	Secret          []types.Resource
+	Extensions      []types.Resource
+	UniqueResources map[string]struct{}
 }
 
 type AllResources interface {

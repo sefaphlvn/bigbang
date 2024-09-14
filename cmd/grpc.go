@@ -2,20 +2,39 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/sefaphlvn/bigbang/grpc/poke"
 	grpcserver "github.com/sefaphlvn/bigbang/grpc/server"
 	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/log"
 	"github.com/spf13/cobra"
+
+	_ "net/http/pprof"
 )
 
 var (
 	port   uint
 	nodeID string
 )
+
+func stats() {
+	go func() {
+		fmt.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+	go func() {
+		for {
+			helper.PrintMemoryUsage()
+			helper.PrintCPUUsage()
+			time.Sleep(3 * time.Second)
+		}
+	}()
+}
 
 // grpcCmd represents the grpc command
 var grpcCmd = &cobra.Command{

@@ -28,22 +28,11 @@ func (h *AppHandler) GetResourceDependencies(requestDetails models.RequestDetail
 	return h.Dependencies, nil
 }
 
-func GenericUpstreamHandler(ctx *AppHandler, activeResource Depend) (Node, []Depend) {
-	// Upstream koleksiyoncusu çağrılarak upstream bileşenler bulunur
-	return GenericUpstreamCollector(ctx, activeResource)
-}
-
 func (h *AppHandler) CallUpstreamFunction(activeResource Depend) (Node, []Depend) {
-	// Upstream işleyicisi çağrılarak sonuçlar döndürülür
-	return GenericUpstreamHandler(h, activeResource)
-}
-
-func GenericDownstreamHandler(ctx *AppHandler, activeResource Depend) (Node, []Depend) {
-	visited := make(map[string]bool)
-	return GenericDownstreamCollector(ctx, activeResource, visited)
+	return GenericUpstreamCollector(h, activeResource)
 }
 
 func (h *AppHandler) CallDownstreamFunction(activeResource Depend) (Node, []Depend) {
-	// Downstream işleyicisi çağrılarak sonuçlar döndürülür
-	return GenericDownstreamHandler(h, activeResource)
+	visited := make(map[string]bool)
+	return GenericDownstreamCollector(h, activeResource, visited)
 }

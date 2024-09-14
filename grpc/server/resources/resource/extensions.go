@@ -1,16 +1,6 @@
 package resource
 
-import (
-	"fmt"
-
-	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
-	"github.com/sefaphlvn/bigbang/pkg/db"
-	"github.com/sefaphlvn/bigbang/pkg/models"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/anypb"
-)
-
+/*
 func (ar *AllResources) CollectExtensions(resource []*models.ConfigDiscovery, db *db.AppContext, logger *logrus.Logger) {
 	var typedExtensionConfig types.Resource
 	for _, configDiscovery := range resource {
@@ -31,13 +21,12 @@ func (ar *AllResources) CollectExtensions(resource []*models.ConfigDiscovery, db
 			}
 		}
 	}
-
 }
 
 func (ar *AllResources) CreateDynamicFilter(typeUrl models.GTypes, resourceName string, context *db.AppContext) (*anypb.Any, []*models.ConfigDiscovery, error) {
 	switch typeUrl {
 	case models.HTTPConnectionManager:
-		return ar.DecodeHTTPConnectionManager(ar.Resources, resourceName, context)
+		return ar.DecodeHTTPConnectionManager(resourceName, context)
 	case models.Router:
 		return ar.DecodeRouter(resourceName, context)
 	case models.TcpProxy:
@@ -46,3 +35,4 @@ func (ar *AllResources) CreateDynamicFilter(typeUrl models.GTypes, resourceName 
 		return nil, nil, fmt.Errorf("unknown type URL: %s", typeUrl)
 	}
 }
+*/

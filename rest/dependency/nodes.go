@@ -34,6 +34,7 @@ func (h *AppHandler) AddNode(node Node) {
 	h.Context.Logger.Debugf("Adding node: %+v\n", node)
 	h.Dependencies.Nodes = append(h.Dependencies.Nodes, dependency)
 }
+
 func (h *AppHandler) AddNodeAndEdge(source Node, target Depend, isUpstream bool) {
 	// Kenar oluştur ve logla
 	var edge Edge

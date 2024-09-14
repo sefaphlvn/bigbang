@@ -38,22 +38,6 @@ func GetContext(logger *logrus.Logger) *Context {
 	return ctx
 }
 
-/* func (c *Context) SetSnapshot(resources *xdsResource.AllResources, logger *logrus.Logger) error {
-	snapshot := GenerateSnapshot(resources)
-	if err := snapshot.Consistent(); err != nil {
-		logger.Fatalf("snapshot inconsistency: %+v\n%+v", snapshot, err)
-	}
-
-	logger.Debugf("end serve snapshot: (%s)", resources.NodeID)
-	if err := c.Cache.Cache.SetSnapshot(context.Background(), resources.GetNodeID(), snapshot); err != nil {
-		logger.Fatalf("snapshot error %q for %+v", err, snapshot)
-	}
-	aa := c.Cache.Cache.GetStatusKeys()
-	fmt.Println(aa)
-
-	return nil
-} */
-
 func (c *Context) SetSnapshot(resources *xdsResource.AllResources, logger *logrus.Logger) error {
 	snapshot := GenerateSnapshot(resources)
 	if err := snapshot.Consistent(); err != nil {
@@ -70,6 +54,7 @@ func (c *Context) SetSnapshot(resources *xdsResource.AllResources, logger *logru
 
 	// Snapshot ayarlandıktan sonra durumu kontrol edin
 	keys := c.Cache.Cache.GetStatusInfo(resources.NodeID)
+
 	logger.Infof("Current snapshot keys: %v", keys)
 
 	return nil

@@ -39,14 +39,3 @@ func ClusterDownstreamFilters(clusterName string) []MongoFilters {
 		},
 	}
 }
-
-func ClusterUpstreamFilters(clusterName string) []MongoFilters {
-	return []MongoFilters{
-		{
-			Collection: "cluster",
-			Filter: bson.D{
-				{Key: "general.name", Value: clusterName},
-			},
-		},
-	}
-}

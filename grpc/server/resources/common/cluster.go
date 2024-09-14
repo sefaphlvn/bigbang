@@ -16,6 +16,7 @@ func (ar *Resources) GetClusters(clusters []string, context *db.AppContext) {
 		}
 
 		cc := singleCluster.GetEdsClusterConfig()
+
 		ar.GetEndpoints(cc.ServiceName, context)
 		ar.Cluster = append(ar.Cluster, singleCluster)
 	}

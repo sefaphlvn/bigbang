@@ -15,7 +15,10 @@ func (ar *AllResources) DecodeDownstreamTLS(data *models.DBResource, context *db
 		context.Logger.Debug(err)
 	}
 
-	ar.AppendSecret(getValiDationContext(dtc.CommonTlsContext.GetValidationContextSdsSecretConfig().GetName(), context, ar.Project))
+	if vcName := dtc.CommonTlsContext.GetValidationContextSdsSecretConfig().GetName(); vcName != "" {
+		ar.getValiDationContext(vcName, context, ar.Project)
+	}
+
 	ar.getTlsCertificate(dtc.CommonTlsContext.TlsCertificateSdsSecretConfigs, context)
 }
 
@@ -40,10 +43,7 @@ func (ar *AllResources) getTlsCertificate(sdsSecretConfig []*tls.SdsSecretConfig
 	}
 }
 
-func getValiDationContext(vcName string, context *db.AppContext, project string) *tls.Secret {
-	if vcName == "" {
-		return nil
-	}
+func (ar *AllResources) getValiDationContext(vcName string, context *db.AppContext, project string) {
 	validationContext, err := resources.GetResourceNGeneral(context, "secrets", vcName, project)
 	if err != nil {
 		context.Logger.Debugf("validation context empty resource err: %v", err)
@@ -56,7 +56,8 @@ func getValiDationContext(vcName string, context *db.AppContext, project string)
 	}
 
 	singleResource := GetSecret(vcName, &tls.Secret_ValidationContext{ValidationContext: cvc})
-	return singleResource
+
+	ar.AppendSecret(singleResource)
 }
 
 func GetSecret(name string, typ interface{}) *tls.Secret {

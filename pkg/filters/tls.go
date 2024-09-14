@@ -22,3 +22,10 @@ func DownstreamTlsDownstreamFilters(name string) MongoFilters {
 		Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
 	}
 }
+
+func UpstreamTlsDownstreamFilters(name string) MongoFilters {
+	return MongoFilters{
+		Collection: "clusters",
+		Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+	}
+}

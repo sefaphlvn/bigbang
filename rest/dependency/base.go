@@ -8,11 +8,9 @@ var visitedUpstream = make(map[string]bool)
 var visitedDownstream = make(map[string]bool)
 
 func (h *AppHandler) ProcessResource(activeResource Depend) {
-	// Upstream keşfi başlat
 	visitedUpstream = make(map[string]bool)
 	h.ProcessUpstream(activeResource)
 
-	// Downstream keşfi başlat
 	visitedDownstream = make(map[string]bool)
 	h.ProcessDownstream(activeResource)
 }
@@ -54,7 +52,6 @@ func (h *AppHandler) ProcessDownstream(activeResource Depend) {
 
 	visitedDownstream[uniqueKey] = true
 
-	// Downstream bağımlılıkları al
 	node, downstreams := h.CallDownstreamFunction(activeResource)
 	if node.ID != "" && node.Name != "" && node.Gtype != "" {
 		h.AddNode(node)
@@ -63,13 +60,10 @@ func (h *AppHandler) ProcessDownstream(activeResource Depend) {
 		h.Context.Logger.Infof("Node is missing required fields, not adding: %+v\n", node)
 	}
 
-	// Doğrudan downstream bağımlılıkları keşfet ve sadece downstream yönünde ilerle
 	for _, down := range downstreams {
-		// Eğer bir düğüm 'downstream' ise, gerekli alanlara sahipse ve doğru kaynaktan geliyorsa bağlantı kur
 		if down.ID != "" && down.Name != "" && down.Gtype != "" && down.Direction == "downstream" && down.Source == node.ID {
-			// Doğru kaynaktan gelen downstream bağımlılığı ile bağlantı kur
 			h.AddNodeAndEdge(node, down, false)
-			h.ProcessDownstream(down) // Sadece downstream yönünde ilerle
+			h.ProcessDownstream(down)
 		} else {
 			h.Context.Logger.Infof("Downstream is missing required fields, not directly connected, or from incorrect source, not adding: %+v\n", down)
 		}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sirupsen/logrus"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -71,10 +70,14 @@ func (c *Callbacks) OnStreamRequest(_ int64, req *discovery.DiscoveryRequest) er
 }
 
 func (c *Callbacks) OnStreamResponse(context.Context, int64, *discovery.DiscoveryRequest, *discovery.DiscoveryResponse) {
-
+	fmt.Println("OnStreamResponse")
 }
 
 func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscoveryRequest, resp *discovery.DeltaDiscoveryResponse) {
+	fmt.Println()
+	if req.TypeUrl == "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment" {
+		c.logger.Warnf("Sending Delta EDS response: %v", resp)
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.deltaResponses++
@@ -91,8 +94,14 @@ func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscover
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {
-	helper.PrettyPrint(req.ErrorDetail)
-	fmt.Println(req.Node.Id)
+	/* fmt.Println("-----------------")
+	helper.PrettyPrint(req)
+	fmt.Println("-----------------") */
+	c.logger.Errorf("Delta Discovery Request: TypeUrl=%v\n", req.TypeUrl)
+
+	/* if errDetail := req.GetErrorDetail(); errDetail != nil {
+	    c.logger.Errorf("Delta Discovery Request Error: Code=%v, Message=%v\n", errDetail, errDetail.Message)
+	} */
 
 	c.mu.Lock()
 	defer c.mu.Unlock()

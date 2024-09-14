@@ -21,6 +21,7 @@ func (kt KnownTYPES) String() string {
 
 type DBResourceClass interface {
 	GetGeneral() General
+	GetGtype() GTypes
 	SetGeneral(*General)
 	GetResource() interface{}
 	SetResource(interface{})
@@ -106,7 +107,7 @@ type ConfigDiscovery struct {
 type TypedConfig struct {
 	Name          string `json:"name" bson:"name"`
 	CanonicalName string `json:"canonical_name" bson:"canonical_name"`
-	Gtype         string `json:"gtype" bson:"gtype"`
+	Gtype         GTypes `json:"gtype" bson:"gtype"`
 	Type          string `json:"type" bson:"type"`
 	Category      string `json:"category" bson:"category"`
 	Collection    string `json:"collection" bson:"collection"`
@@ -125,6 +126,10 @@ type Resource struct {
 
 func (d *DBResource) GetGeneral() General {
 	return d.General
+}
+
+func (d *DBResource) GetGtype() GTypes {
+	return d.General.GType
 }
 
 func (d *DBResource) GetResource() interface{} {

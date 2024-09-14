@@ -14,3 +14,12 @@ func ALSDownstreamFilters(name string) []MongoFilters {
 		},
 	}
 }
+
+func HCEFSDownstreamFilters(name string) []MongoFilters {
+	return []MongoFilters{
+		{
+			Collection: "clusters",
+			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+		},
+	}
+}

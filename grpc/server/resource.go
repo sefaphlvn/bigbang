@@ -12,7 +12,6 @@ func GenerateSnapshot(r *xdsResource.AllResources) *cache.Snapshot {
 		map[resource.Type][]types.Resource{
 			resource.ClusterType:         r.GetClusterT(),
 			resource.RouteType:           r.GetRouteT(),
-			resource.VirtualHostType:     {},
 			resource.EndpointType:        r.GetEndpointT(),
 			resource.ListenerType:        r.GetListenerT(),
 			resource.ExtensionConfigType: r.GetExtensionsT(),

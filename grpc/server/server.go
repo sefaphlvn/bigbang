@@ -19,7 +19,6 @@ import (
 	runtimeservice "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	secretservice "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
-	snapshotStats "github.com/sefaphlvn/bigbang/pkg/stats"
 )
 
 const (
@@ -90,6 +89,6 @@ func (s *Server) registerServer(grpcServer *grpc.Server) {
 	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(grpcServer, s.xdsServer)
 
 	// custom grpc services
-	snapshotStats.RegisterSnapshotKeyServiceServer(grpcServer, NewSnapshotKeyServiceServer(s.context))
-	snapshotStats.RegisterSnapshotResourceServiceServer(grpcServer, NewSnapshotResourceServiceServer(s.context))
+	/* 	snapshotStats.RegisterSnapshotKeyServiceServer(grpcServer, NewSnapshotKeyServiceServer(s.context))
+	   	snapshotStats.RegisterSnapshotResourceServiceServer(grpcServer, NewSnapshotResourceServiceServer(s.context)) */
 }

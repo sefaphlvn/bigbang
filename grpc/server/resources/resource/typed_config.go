@@ -31,13 +31,13 @@ func (ar *AllResources) GetTypedConfigs(paths []models.TypedConfigPath, jsonData
 		return nil, err
 	}
 
-	helper.PrettyPrint(updatedJSONData)
+	// helper.PrettyPrint(updatedJSONData)
 
 	return updatedJSONData, nil
 }
 
 func (ar *AllResources) processTypedConfigPath(pathd models.TypedConfigPath, jsonStringStr *string, context *db.AppContext) error {
-	_, typedConfigsMap := resources.ProcessTypedConfigs(*jsonStringStr, pathd.JsonPath, pathd.PathTemplate, context.Logger)
+	_, typedConfigsMap := resources.ProcessTypedConfigs(*jsonStringStr, pathd, context.Logger)
 
 	for path, tempTypedConfig := range typedConfigsMap {
 		conf, err := resources.GetResourceNGeneral(context, tempTypedConfig.Collection, tempTypedConfig.Name, ar.Project)
@@ -55,7 +55,7 @@ func (ar *AllResources) processTypedConfigPath(pathd models.TypedConfigPath, jso
 			continue
 		}
 
-		typedConfig, err := DecodeTypedConfig(typedConfigJSON, tempTypedConfig.Gtype)
+		typedConfig, err := decodeTypedConfig(typedConfigJSON, tempTypedConfig.Gtype)
 		if err != nil {
 			context.Logger.Warnf("Error decoding typed config: %v", err)
 			continue
@@ -87,11 +87,8 @@ func (ar *AllResources) updateJSONConfig(jsonStringStr *string, path string, typ
 	return nil
 }
 
-func DecodeTypedConfig(typedConfigJSON []byte, gtype string) (*anypb.Any, error) {
-	msg, ok := models.TypedConfigMap[gtype]
-	if !ok {
-		return nil, fmt.Errorf("unknown typed_config type: %s", gtype)
-	}
+func decodeTypedConfig(typedConfigJSON []byte, gtype models.GTypes) (*anypb.Any, error) {
+	msg := gtype.ProtoMessage()
 
 	if err := protojson.Unmarshal(typedConfigJSON, msg); err != nil {
 		return nil, fmt.Errorf("typed_config not resolved: %w", err)

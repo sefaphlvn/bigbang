@@ -25,7 +25,8 @@ func GenericUpstreamCollector(ctx *AppHandler, activeResource Depend) (Node, []D
 
 	jsonPaths := getDynamicJsonPaths(activeResource.Gtype)
 	for path, gtype := range jsonPaths {
-		collectDependenciesFromPath(ctx, rootResult, path, gtype, activeResource, &dependencies)
+		resourcePath := fmt.Sprintf("%s.%s", "resource.resource", path)
+		collectDependenciesFromPath(ctx, rootResult, resourcePath, gtype, activeResource, &dependencies)
 	}
 
 	dependencies = append(dependencies, parseTypedConfig(ctx, rootResult, activeResource)...)
@@ -123,7 +124,6 @@ func GenericDownstreamCollector(ctx *AppHandler, activeResource Depend, visited 
 		collectDependenciesFromFilter(ctx, filter, activeResource, &dependencies)
 	}
 
-	// Sadece downstream keşfi yap
 	for _, dep := range dependencies {
 		if dep.Direction == "downstream" {
 			_, downstreamDeps := GenericDownstreamCollector(ctx, dep, visited)
@@ -151,9 +151,8 @@ func collectDependenciesFromFilter(ctx *AppHandler, filter filters.MongoFilters,
 			continue
 		}
 
-		// Sadece doğrudan bağlantılı olan bağımlılıkları ekle
 		if resource.General.Name == activeResource.Name && resource.General.GType == activeResource.Gtype {
-			continue // Kendi kendine bağlantı eklenmesini engelle
+			continue
 		}
 
 		dependency := Depend{

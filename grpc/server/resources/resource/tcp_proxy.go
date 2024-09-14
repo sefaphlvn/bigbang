@@ -16,7 +16,7 @@ func (ar *AllResources) DecodeTcpProxy(resourceName string, context *db.AppConte
 	}
 
 	tcpResource := resource.GetResource()
-	tcpWithAccessLog, _ := ar.GetTypedConfigs(models.GeneralAccessLogTypedConfigPaths, tcpResource, context)
+	tcpWithAccessLog, _ := ar.GetTypedConfigs(models.ConfigGetters[resource.GetGtype()], tcpResource, context)
 
 	singleResource := &tcpProxy.TcpProxy{}
 	err = resources.MarshalUnmarshalWithType(tcpWithAccessLog, singleResource)
