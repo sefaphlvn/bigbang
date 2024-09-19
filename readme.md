@@ -2,7 +2,7 @@
 
 BigBang is a Go-based application consisting of two main servers:
 1. **gRPC Server** - Distributes configurations to Envoy instances using go-control-plane.
-2. **REST Server** - Provides API endpoints for the Elchi frontend application, handling CRUD operations with MongoDB.
+2. **REST Server** - Provides API endpoints for the [Elchi](https://github.com/sefaphlvn/elchi), handling CRUD operations with MongoDB.
 
 ## Table of Contents
 - [Getting Started](#getting-started)

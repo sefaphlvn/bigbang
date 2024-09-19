@@ -13,6 +13,7 @@ type PokerEdsHandler struct{}
 type PokerHCEFSHandler struct{}
 type PokerRouterHandler struct{}
 type PokerRouteHandler struct{}
+type PokerVirtualHostHandler struct{}
 type PokerTcpProxyHandler struct{}
 type PokerAccessLogHandler struct{}
 type PokerTLSHandler struct {
@@ -41,6 +42,11 @@ func (h *PokerRouterHandler) Handle(context *db.AppContext, resourceName string,
 // ROUTE
 func (h *PokerRouteHandler) Handle(context *db.AppContext, resourceName string, project string, processed *Processed) {
 	PokerRoute(context, resourceName, project, processed)
+}
+
+// VIRTUAL HOST
+func (h *PokerVirtualHostHandler) Handle(context *db.AppContext, resourceName string, project string, processed *Processed) {
+	PokerVirtualHost(context, resourceName, project, processed)
 }
 
 // HCM
@@ -73,6 +79,7 @@ func init() {
 		models.Cluster:                      &PokerCdsHandler{},
 		models.Router:                       &PokerRouterHandler{},
 		models.Route:                        &PokerRouteHandler{},
+		models.VirtualHost:                  &PokerVirtualHostHandler{},
 		models.HTTPConnectionManager:        &PokerHCMHandler{},
 		models.TcpProxy:                     &PokerTcpProxyHandler{},
 		models.FileAccessLog:                &PokerAccessLogHandler{},

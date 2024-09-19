@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	xdsResource "github.com/sefaphlvn/bigbang/grpc/server/resources/resource"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sirupsen/logrus"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
@@ -54,8 +55,13 @@ func (c *Context) SetSnapshot(resources *xdsResource.AllResources, logger *logru
 
 	// Snapshot ayarlandıktan sonra durumu kontrol edin
 	keys := c.Cache.Cache.GetStatusInfo(resources.NodeID)
-
+	/* 	fmt.Println("##############################################################################")
+	   	fmt.Println("##############################################################################")
+	   	helper.PrettyPrint(snapshot)
+	   	fmt.Println("##############################################################################")
+	   	fmt.Println("##############################################################################") */
 	logger.Infof("Current snapshot keys: %v", keys)
+	helper.PrettyPrint(keys)
 
 	return nil
 }

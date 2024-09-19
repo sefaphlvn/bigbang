@@ -22,9 +22,16 @@ func PokerRoute(context *db.AppContext, name string, project string, processed *
 	CheckResource(context, filter.Filter, filter.Collection, project, processed)
 }
 
+func PokerVirtualHost(context *db.AppContext, name string, project string, processed *Processed) {
+	filters := filters.VirtualHostDownstreamFilters(name)
+	for _, filter := range filters {
+		CheckResource(context, filter.Filter, filter.Collection, project, processed)
+	}
+}
+
 func PokerHCEFS(context *db.AppContext, name string, project string, processed *Processed) {
-	filter := filters.HCEFSDownstreamFilters(name)
-	for _, filter := range filter {
+	filters := filters.HCEFSDownstreamFilters(name)
+	for _, filter := range filters {
 		CheckResource(context, filter.Filter, filter.Collection, project, processed)
 	}
 }

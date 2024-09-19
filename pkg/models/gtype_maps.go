@@ -33,6 +33,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	Listener:                     {PrettyName: "Listener", Collection: "listeners", URL: "/resource/listener/", Message: &listener.Listener{}},
 	Endpoint:                     {PrettyName: "Endpoint", Collection: "endpoints", URL: "/resource/endpoint", Message: &endpoint.ClusterLoadAssignment{}},
 	Route:                        {PrettyName: "Route", Collection: "routes", URL: "/resource/route", Message: &route.RouteConfiguration{}},
+	VirtualHost:                  {PrettyName: "Virtual Host", Collection: "virtual_host", URL: "/resource/virtual_host", Message: &route.VirtualHost{}},
 	TcpProxy:                     {PrettyName: "Tcp Proxy", Collection: "extensions", URL: "/filters/network/tcp_proxy/", Message: &tcp.TcpProxy{}},
 	FluentdAccessLog:             {PrettyName: "Access Log(Fluentd)", Collection: "others", URL: "/others/access_log/", Message: &al_fluentd.FluentdAccessLogConfig{}},
 	FileAccessLog:                {PrettyName: "Access Log(File)", Collection: "others", URL: "/others/access_log/", Message: &al_file.FileAccessLog{}},

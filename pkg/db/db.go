@@ -113,18 +113,19 @@ func indexExists(ctx context.Context, collection *mongo.Collection, indexName st
 
 func collectCreateIndex(database *mongo.Database, ctx context.Context, logger *logrus.Logger) (interface{}, error) {
 	indices := map[string]mongo.IndexModel{
-		"users":      {Keys: bson.M{"username": 1}, Options: options.Index().SetUnique(true).SetName("username_1")},
-		"groups":     {Keys: bson.D{{Key: "groupname", Value: 1}, {Key: "project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("groupname_project_1")},
-		"service":    {Keys: bson.D{{Key: "name", Value: 1}, {Key: "project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("name_project_1")},
-		"clusters":   {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
-		"listeners":  {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
-		"endpoints":  {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
-		"routes":     {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
-		"extensions": {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
-		"secrets":    {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
-		"others":     {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
-		"bootstrap":  {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
-		"projects":   {Keys: bson.M{"projectname": 1}, Options: options.Index().SetUnique(true).SetName("projectname_1")},
+		"users":        {Keys: bson.M{"username": 1}, Options: options.Index().SetUnique(true).SetName("username_1")},
+		"groups":       {Keys: bson.D{{Key: "groupname", Value: 1}, {Key: "project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("groupname_project_1")},
+		"service":      {Keys: bson.D{{Key: "name", Value: 1}, {Key: "project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("name_project_1")},
+		"clusters":     {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
+		"listeners":    {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
+		"endpoints":    {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
+		"routes":       {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
+		"virtual_host": {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
+		"extensions":   {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
+		"secrets":      {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
+		"others":       {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
+		"bootstrap":    {Keys: bson.D{{Key: "general.name", Value: 1}, {Key: "general.project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("general_name_project_1")},
+		"projects":     {Keys: bson.M{"projectname": 1}, Options: options.Index().SetUnique(true).SetName("projectname_1")},
 	}
 
 	for collectionName, index := range indices {

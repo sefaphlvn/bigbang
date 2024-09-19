@@ -20,6 +20,7 @@ type Resources struct {
 	Endpoint        []types.Resource
 	Secret          []types.Resource
 	Extensions      []types.Resource
+	VirtualHost     []types.Resource
 	UniqueResources map[string]struct{}
 }
 
@@ -44,6 +45,11 @@ type AllResources interface {
 	SetRoute(route *route.RouteConfiguration)
 	GetRoute() *route.RouteConfiguration
 	AppendRoute(route *route.RouteConfiguration)
+
+	SetVirtualHost(virtual_host *route.VirtualHost)
+	GetVirtualHost() *route.VirtualHost
+	GetVirtualHostT() []types.Resource
+	AppendVirtualHost(route *route.VirtualHost)
 
 	SetEndpoint(endpoint []types.Resource)
 	GetEndpoint() []*endpoint.Endpoint
@@ -96,6 +102,10 @@ func (ar *Resources) GetListener() []*listener.Listener {
 
 func (ar *Resources) GetListenerT() []types.Resource {
 	return ar.Listener
+}
+
+func (ar *Resources) GetVirtualHostT() []types.Resource {
+	return ar.VirtualHost
 }
 
 func (ar *Resources) SetCluster(cluster []types.Resource) {

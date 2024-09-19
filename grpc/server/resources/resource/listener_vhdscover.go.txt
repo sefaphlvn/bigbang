@@ -268,6 +268,7 @@ func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTy
 		newVirtualHost.Name = fmt.Sprintf("%s/%s", *parentName, newVirtualHost.Name)
 		ar.VirtualHost = append(ar.VirtualHost, newVirtualHost)
 	case models.DownstreamTlsContext, models.UpstreamTlsContext, models.CertificateValidationContext, models.TlsCertificate:
+		fmt.Println("TLS resource")
 		newSecret := proto.Clone(resource).(*tls.Secret)
 		ar.Secret = append(ar.Secret, newSecret)
 	default:

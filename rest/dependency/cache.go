@@ -83,9 +83,22 @@ func getDynamicJsonPaths(gtype models.GTypes) map[string]models.GTypes {
 	paths := gtype.GetUpstreamPaths()
 
 	if len(paths) == 0 {
-		fmt.Println("No matching GType, returning empty paths")
+		//fmt.Println("No matching GType, returning empty paths")
 		return map[string]models.GTypes{}
 	}
-	fmt.Printf("Matched GType: %v\n", gtype)
+
+	if gtype == models.VirtualHost {
+		paths = addPrefixToPaths(paths, "#.")
+	}
+
+	// fmt.Printf("Matched GType: %v\n", gtype)
 	return paths
+}
+
+func addPrefixToPaths(paths map[string]models.GTypes, prefix string) map[string]models.GTypes {
+	newPaths := make(map[string]models.GTypes)
+	for path, gtype := range paths {
+		newPaths[prefix+path] = gtype
+	}
+	return newPaths
 }

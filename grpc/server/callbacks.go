@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sirupsen/logrus"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -58,7 +59,7 @@ func (c *Callbacks) OnStreamRequest(_ int64, req *discovery.DiscoveryRequest) er
 	   	helper.PrettyPrinter(req.TypeUrl)
 	   	helper.PrettyPrinter(req.ResourceLocators)
 	   	helper.PrettyPrinter(req.ResponseNonce) */
-	c.logger.Infof("DiscoveryRequest: %v\n", req.TypeUrl)
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.requests++
@@ -69,15 +70,89 @@ func (c *Callbacks) OnStreamRequest(_ int64, req *discovery.DiscoveryRequest) er
 	return nil
 }
 
-func (c *Callbacks) OnStreamResponse(context.Context, int64, *discovery.DiscoveryRequest, *discovery.DiscoveryResponse) {
-	fmt.Println("OnStreamResponse")
+func (c *Callbacks) OnStreamResponse(_ context.Context, _ int64, req *discovery.DiscoveryRequest, resp *discovery.DiscoveryResponse) {
+	fmt.Println("-----------------")
+	fmt.Println("-----------------")
+	fmt.Println("-----------------")
+	fmt.Println("Error Detail:")
+	helper.PrettyPrint(req.ErrorDetail)
+	fmt.Println("Type URL:")
+	helper.PrettyPrint(req.TypeUrl)
+	fmt.Println("version Info:")
+	helper.PrettyPrint(req.VersionInfo)
+	fmt.Println("Response Nonce:")
+	helper.PrettyPrint(req.ResponseNonce)
+	fmt.Println("Resource names:")
+	helper.PrettyPrint(req.ResourceNames)
+	fmt.Println("Resource locators:")
+	helper.PrettyPrint(req.ResourceLocators)
+	fmt.Println("-----------------")
+	fmt.Println("-----------------")
+	fmt.Println("-----------------")
+
+	fmt.Println("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
+	fmt.Println("##################################")
+	fmt.Println("##################################")
+	fmt.Println("##################################")
+	fmt.Println("Nonce:")
+	helper.PrettyPrint(resp.Nonce)
+	fmt.Println("TypeURL:")
+	helper.PrettyPrint(resp.TypeUrl)
+	fmt.Println("Version Info:")
+	helper.PrettyPrint(resp.VersionInfo)
+	fmt.Println("Config:")
+	helper.PrettyPrint(resp.Resources)
+	fmt.Println("##################################")
+	fmt.Println("##################################")
+	fmt.Println("##################################")
 }
 
 func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscoveryRequest, resp *discovery.DeltaDiscoveryResponse) {
-	fmt.Println()
-	if req.TypeUrl == "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment" {
+	/* if req.TypeUrl == "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment" {
 		c.logger.Warnf("Sending Delta EDS response: %v", resp)
-	}
+	} */
+	fmt.Println("-----------------")
+	fmt.Println("-----------------")
+	fmt.Println("-----------------")
+	fmt.Println("Error Detail:")
+	helper.PrettyPrint(req.ErrorDetail)
+	fmt.Println("Type URL:")
+	helper.PrettyPrint(req.TypeUrl)
+	fmt.Println("initial version Info:")
+	helper.PrettyPrint(req.InitialResourceVersions)
+	fmt.Println("Response Nonce:")
+	helper.PrettyPrint(req.ResponseNonce)
+	fmt.Println("ResourceNamesSubscribe:")
+	helper.PrettyPrint(req.ResourceNamesSubscribe)
+	fmt.Println("ResourceNamesUnsubscribe:")
+	helper.PrettyPrint(req.ResourceNamesUnsubscribe)
+	fmt.Println("-----------------")
+	fmt.Println("-----------------")
+	fmt.Println("-----------------")
+
+	fmt.Println("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
+
+	fmt.Println("##################################")
+	fmt.Println("##################################")
+	fmt.Println("##################################")
+	fmt.Println("Nonce:")
+	helper.PrettyPrint(resp.Nonce)
+	fmt.Println("RemovedResources:")
+	helper.PrettyPrint(resp.RemovedResources)
+
+	fmt.Println("RemovedResourceNames:")
+	helper.PrettyPrint(resp.RemovedResourceNames)
+	fmt.Println("TypeUrl:")
+	helper.PrettyPrint(resp.TypeUrl)
+	fmt.Println("SystemVersionInfo:")
+	helper.PrettyPrint(resp.SystemVersionInfo)
+	fmt.Println("Resources:")
+	helper.PrettyPrint(resp.Resources)
+	fmt.Println("##################################")
+	fmt.Println("##################################")
+	fmt.Println("##################################")
+
+	
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.deltaResponses++
@@ -97,7 +172,6 @@ func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryR
 	/* fmt.Println("-----------------")
 	helper.PrettyPrint(req)
 	fmt.Println("-----------------") */
-	c.logger.Errorf("Delta Discovery Request: TypeUrl=%v\n", req.TypeUrl)
 
 	/* if errDetail := req.GetErrorDetail(); errDetail != nil {
 	    c.logger.Errorf("Delta Discovery Request Error: Code=%v, Message=%v\n", errDetail, errDetail.Message)

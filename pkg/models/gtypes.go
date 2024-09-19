@@ -11,6 +11,7 @@ const (
 	Listener                     GTypes = "envoy.config.listener.v3.Listener"
 	Endpoint                     GTypes = "envoy.config.endpoint.v3.ClusterLoadAssignment"
 	Route                        GTypes = "envoy.config.route.v3.RouteConfiguration"
+	VirtualHost                  GTypes = "envoy.config.route.v3.VirtualHost"
 	TcpProxy                     GTypes = "envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy"
 	FluentdAccessLog             GTypes = "envoy.extensions.access_loggers.fluentd.v3.FluentdAccessLogConfig"
 	FileAccessLog                GTypes = "envoy.extensions.access_loggers.file.v3.FileAccessLog"

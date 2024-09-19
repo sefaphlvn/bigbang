@@ -12,6 +12,8 @@ func (gt GTypes) GetDownstreamFilters(name string) []filters.MongoFilters {
 		return []filters.MongoFilters{
 			filters.RouteDownstreamFilters(name),
 		}
+	case VirtualHost:
+		return filters.VirtualHostDownstreamFilters(name)
 	case HTTPConnectionManager:
 		return []filters.MongoFilters{
 			filters.HcmDownstreamFilters(name),

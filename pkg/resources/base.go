@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/models"
@@ -44,6 +45,45 @@ func GetResourceNGeneral(db *db.AppContext, collectionName string, name string, 
 	}
 
 	return &doc, nil
+}
+
+func IncrementResourceVersion(db *db.AppContext, name string, project string) (string, error) {
+	collection := db.Client.Collection("listeners")
+
+	var doc models.DBResource
+	filter := bson.D{{Key: "general.name", Value: name}, {Key: "general.project", Value: project}}
+	findOptions := options.FindOne()
+	findOptions.SetProjection(bson.D{{Key: "resource.version", Value: 1}})
+
+	err := collection.FindOne(db.Ctx, filter, findOptions).Decode(&doc)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return "", errors.New("not found: (" + name + ")")
+		}
+		return "", errors.New("unknown db error")
+	}
+
+	// Mevcut version değerini int'e çevir ve artır
+	versionInt, err := strconv.Atoi(doc.Resource.Version)
+	if err != nil {
+		return "", errors.New("invalid version format")
+	}
+
+	// Version'u 1 artır
+	versionInt++
+
+	// Yeni version'u string'e çevir
+	newVersion := strconv.Itoa(versionInt)
+
+	// MongoDB'de version değerini güncelle
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "resource.version", Value: newVersion}}}}
+
+	_, err = collection.UpdateOne(db.Ctx, filter, update)
+	if err != nil {
+		return "", errors.New("failed to update resource version")
+	}
+
+	return newVersion, nil
 }
 
 func GetGenerals(context *db.AppContext, collectionName string, filter primitive.D) ([]*models.General, error) {

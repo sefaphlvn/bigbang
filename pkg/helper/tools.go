@@ -24,19 +24,29 @@ func Contains(s []string, str string) bool {
 }
 
 func PrettyPrint(data interface{}) {
+	// Eğer veri nil ise çıkış yap
+	if data == nil {
+		fmt.Println("null")
+		return
+	}
+
+	// JSON verisini saklamak için
 	var jsonData interface{}
 
-	// Eğer veri string ise JSON olarak unmarshall et
 	switch v := data.(type) {
 	case string:
+		// String'i JSON olarak unmarshall etmeyi dene
 		if err := json.Unmarshal([]byte(v), &jsonData); err != nil {
-			log.Fatalf("JSON unmarshaling error: %v", err)
+			// JSON değilse, doğrudan string'i döndür
+			fmt.Println(v)
+			return
 		}
 	default:
+		// JSON olmayan yapıları doğrudan al
 		jsonData = v
 	}
 
-	// JSON verisini pretty print yap
+	// Eğer jsonData bir JSON yapıdaysa, pretty print yap
 	prettyJSON, err := json.MarshalIndent(jsonData, "", "    ")
 	if err != nil {
 		log.Fatalf("JSON marshaling error: %v", err)
