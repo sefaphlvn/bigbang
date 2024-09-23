@@ -13,11 +13,11 @@ func VirtualHostDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "routes",
-			Filter:     bson.D{{Key: "general.config_discovery.extensions.name", Value: name}},
+			Filter:     bson.D{{Key: "general.config_discovery.name", Value: name}},
 		},
 		{
 			Collection: "extensions",
-			Filter:     bson.D{{Key: "general.config_discovery.extensions.name", Value: name}},
+			Filter:     bson.D{{Key: "general.config_discovery.name", Value: name}},
 		},
 	}
 }

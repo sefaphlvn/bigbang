@@ -22,4 +22,5 @@ const (
 	TlsCertificate               GTypes = "envoy.extensions.transport_sockets.tls.v3.TlsCertificate"
 	CertificateValidationContext GTypes = "envoy.extensions.transport_sockets.tls.v3.CertificateValidationContext"
 	HealthCheckEventFileSink     GTypes = "envoy.extensions.health_check.event_sinks.file.v3.HealthCheckEventFileSink"
+	BasicAuth                    GTypes = "envoy.extensions.filters.http.basic_auth.v3.BasicAuth"
 )

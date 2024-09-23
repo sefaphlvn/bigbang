@@ -26,3 +26,10 @@ func PokerRouter(context *db.AppContext, name string, project string, processed 
 	filter := filters.RouterDownstreamFilters(name)
 	CheckResource(context, filter.Filter, filter.Collection, project, processed)
 }
+
+func PokerBasicAuth(context *db.AppContext, name string, project string, processed *Processed) {
+	filters := filters.BasicAuthDownstreamFilters(name)
+	for _, filter := range filters {
+		CheckResource(context, filter.Filter, filter.Collection, project, processed)
+	}
+}

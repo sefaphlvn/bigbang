@@ -90,18 +90,13 @@ type Permissions struct {
 	Groups []string `json:"groups" bson:"groups"`
 }
 
-type Extensions struct {
+type ConfigDiscovery struct {
+	ParentName    string `json:"parent_name,omitempty" bson:"parent_name,omitempty"`
 	GType         GTypes `json:"gtype" bson:"gtype"`
 	Name          string `json:"name" bson:"name"`
 	Priority      int    `json:"priority" bson:"priority"`
 	Category      string `json:"category" bson:"category"`
 	CanonicalName string `json:"canonical_name" bson:"canonical_name"`
-}
-
-type ConfigDiscovery struct {
-	ParentName   string       `json:"parent_name,omitempty" bson:"parent_name,omitempty"`
-	Extensions   []Extensions `json:"extensions,omitempty" bson:"extensions,omitempty"`
-	MainResource string       `json:"main_resource,omitempty" bson:"main_resource,omitempty"`
 }
 
 type TypedConfig struct {

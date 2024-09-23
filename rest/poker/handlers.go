@@ -16,6 +16,7 @@ type PokerRouteHandler struct{}
 type PokerVirtualHostHandler struct{}
 type PokerTcpProxyHandler struct{}
 type PokerAccessLogHandler struct{}
+type PokerBasicAuthHandler struct{}
 type PokerTLSHandler struct {
 	gType models.GTypes
 }
@@ -73,6 +74,10 @@ func (h *PokerHCEFSHandler) Handle(context *db.AppContext, resourceName string, 
 	PokerHCEFS(context, resourceName, project, processed)
 }
 
+func (h *PokerBasicAuthHandler) Handle(context *db.AppContext, resourceName string, project string, processed *Processed) {
+	PokerBasicAuth(context, resourceName, project, processed)
+}
+
 func init() {
 	handlers = map[models.GTypes]ResourceHandler{
 		models.Endpoint:                     &PokerEdsHandler{},
@@ -91,5 +96,6 @@ func init() {
 		models.TlsCertificate:               &PokerTLSHandler{gType: models.TlsCertificate},
 		models.CertificateValidationContext: &PokerTLSHandler{gType: models.CertificateValidationContext},
 		models.HealthCheckEventFileSink:     &PokerHCEFSHandler{},
+		models.BasicAuth:                    &PokerBasicAuthHandler{},
 	}
 }

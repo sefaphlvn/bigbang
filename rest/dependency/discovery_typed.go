@@ -9,18 +9,15 @@ func parseConfigDiscovery(ctx *AppHandler, rootResult gjson.Result, activeResour
 	var dependencies []Depend
 
 	rootResult.Get("general.config_discovery").ForEach(func(_, discoveryItem gjson.Result) bool {
-		discoveryItem.Get("extensions").ForEach(func(_, extItem gjson.Result) bool {
-			gtypeStr := extItem.Get("gtype").String()
-			if gtypeStr == "" {
-				return true
-			}
-
-			gtype := models.GTypes(gtypeStr)
-			cdName := extItem.Get("name").String()
-			cdID, _ := ctx.getResourceData(gtype.CollectionString(), cdName, activeResource.Project)
-			dependencies = append(dependencies, Depend{Name: cdName, Gtype: gtype, Collection: gtype.CollectionString(), Project: activeResource.Project, ID: cdID})
+		gtypeStr := discoveryItem.Get("gtype").String()
+		if gtypeStr == "" {
 			return true
-		})
+		}
+
+		gtype := models.GTypes(gtypeStr)
+		cdName := discoveryItem.Get("name").String()
+		cdID, _ := ctx.getResourceData(gtype.CollectionString(), cdName, activeResource.Project)
+		dependencies = append(dependencies, Depend{Name: cdName, Gtype: gtype, Collection: gtype.CollectionString(), Project: activeResource.Project, ID: cdID})
 		return true
 	})
 

@@ -9,6 +9,7 @@ import (
 	al_file "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	al_fluentd "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/fluentd/v3"
 	al_stream "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stream/v3"
+	basic_auth "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/basic_auth/v3"
 	router "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
@@ -44,6 +45,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	TlsCertificate:               {PrettyName: "TLS Certificate", Collection: "secrets", URL: "/resource/secret/", Message: &tls.TlsCertificate{}},
 	CertificateValidationContext: {PrettyName: "Certificate Validation", Collection: "secrets", URL: "/resource/secret/", Message: &tls.CertificateValidationContext{}},
 	HealthCheckEventFileSink:     {PrettyName: "Health Check Event File Sink", Collection: "others", URL: "/others/hcefs/", Message: &hcefs.HealthCheckEventFileSink{}},
+	BasicAuth:                    {PrettyName: "Basic Auth", Collection: "extensions", URL: "/filters/http/basic_auth/", Message: &basic_auth.BasicAuth{}},
 }
 
 func (gt GTypes) String() string {

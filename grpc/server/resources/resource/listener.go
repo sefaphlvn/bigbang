@@ -69,14 +69,12 @@ func (ar *AllResources) initializeListener(rawListenerResource *models.DBResourc
 // Process config discoveries and collect resources.
 func (ar *AllResources) processConfigDiscoveries(configDiscoveries []*models.ConfigDiscovery, context *db.AppContext, logger *logrus.Logger) {
 	for _, configDiscovery := range configDiscoveries {
-		for i := range configDiscovery.Extensions {
-			ar.processExtension(&configDiscovery.Extensions[i], configDiscovery.ParentName, context, logger)
-		}
+		ar.processExtension(configDiscovery, configDiscovery.ParentName, context, logger)
 	}
 }
 
 // Process a single extension, collect resources, and add to AllResources if not duplicate.
-func (ar *AllResources) processExtension(extension *models.Extensions, parentName string, context *db.AppContext, logger *logrus.Logger) {
+func (ar *AllResources) processExtension(extension *models.ConfigDiscovery, parentName string, context *db.AppContext, logger *logrus.Logger) {
 	uniqKey := fmt.Sprintf("%s__%s__%s", extension.Name, parentName, extension.GType.String())
 	if ar.checkAndMarkDuplicate(uniqKey) {
 		return

@@ -48,6 +48,8 @@ func (gt GTypes) GetDownstreamFilters(name string) []filters.MongoFilters {
 		}
 	case HealthCheckEventFileSink:
 		return filters.HCEFSDownstreamFilters(name)
+	case BasicAuth:
+		return filters.BasicAuthDownstreamFilters(name)
 	default:
 		return nil
 	}
