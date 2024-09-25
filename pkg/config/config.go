@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -36,7 +37,10 @@ func BindEnvs(iface interface{}) {
 		field := typ.Field(i)
 		if mapstructureTag, ok := field.Tag.Lookup("mapstructure"); ok {
 			envVar := strings.ToUpper(mapstructureTag)
-			viper.BindEnv(field.Name, envVar)
+			err := viper.BindEnv(field.Name, envVar)
+			if err != nil {
+				log.Printf("[INFO] Error binding env var %s to field %s", envVar, field.Name)
+			}
 		}
 	}
 }

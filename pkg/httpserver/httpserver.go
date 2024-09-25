@@ -38,6 +38,7 @@ func (s *Server) Run(config *config.AppConfig, log *logrus.Logger) error {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
+
 	log.Infof("Starting http web server [::]:%s", config.BIGBANG_REST_SERVER_PORT)
 	<-done
 	log.Info("Http web server stop signal recived")

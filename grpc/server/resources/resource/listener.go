@@ -51,10 +51,10 @@ func (ar *AllResources) initializeListener(rawListenerResource *models.DBResourc
 
 	var listeners []types.Resource
 	for _, lstnr := range resArray {
-		listenerWithTransportSocket, _ := ar.GetTypedConfigs(models.ConfigGetters[rawListenerResource.GetGtype()], lstnr, context)
+		listenerWithTransportSocket, _ := ar.GetTypedConfigs(rawListenerResource.GetGtype().TypedConfigPaths(), lstnr, context)
 
 		singleListener := &listener.Listener{}
-		if err := resources.MarshalUnmarshalWithType(listenerWithTransportSocket, singleListener); err != nil {
+		if err := helper.MarshalUnmarshalWithType(listenerWithTransportSocket, singleListener); err != nil {
 			logger.Errorf("Listener Unmarshal error: %s", err)
 			continue
 		}
@@ -187,8 +187,9 @@ func (ar *AllResources) CollectAllResourcesWithParent(gtype models.GTypes, resou
 
 // Process typed configs and upstream paths.
 func (ar *AllResources) processTypedConfigsAndUpstream(protoMsg proto.Message, jsonStringStr *string, gtype models.GTypes, parentName string, context *db.AppContext, logger *logrus.Logger) error {
-	ar.processTypedConfigPaths(models.ConfigGetters[gtype], jsonStringStr, context, logger)
-	ar.processUpstreamPaths(gtype.GetUpstreamPaths(), jsonStringStr, parentName, context, logger)
+	typedConfigPaths := gtype.TypedConfigPaths()
+	ar.processTypedConfigPaths(typedConfigPaths, jsonStringStr, context, logger)
+	ar.processUpstreamPaths(gtype.UpstreamPaths(), jsonStringStr, parentName, context, logger)
 
 	if err := protojson.Unmarshal([]byte(*jsonStringStr), protoMsg); err != nil {
 		logger.Errorf("Error unmarshalling to proto message after processing nested configs: %v", err)

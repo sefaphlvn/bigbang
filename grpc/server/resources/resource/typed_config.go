@@ -31,8 +31,6 @@ func (ar *AllResources) GetTypedConfigs(paths []models.TypedConfigPath, jsonData
 		return nil, err
 	}
 
-	// helper.PrettyPrint(updatedJSONData)
-
 	return updatedJSONData, nil
 }
 

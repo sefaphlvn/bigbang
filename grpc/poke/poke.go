@@ -1,11 +1,8 @@
 package poke
 
 import (
-	"fmt"
-	"net/http"
-
-	"github.com/sefaphlvn/bigbang/grpc/server"
 	"github.com/sefaphlvn/bigbang/grpc/server/resources/resource"
+	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"
 	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
@@ -16,18 +13,18 @@ import (
 )
 
 type Poke struct {
-	ctx    *server.Context
+	ctx    *snapshot.Context
 	db     *db.AppContext
 	logger *logrus.Logger
 	config *config.AppConfig
 }
 
-type ProjectServices struct {
+type Nodes struct {
 	Project string
 	Service string
 }
 
-func NewPokeServer(ctx *server.Context, db *db.AppContext, logger *logrus.Logger, config *config.AppConfig) *Poke {
+func NewPokeServer(ctx *snapshot.Context, db *db.AppContext, logger *logrus.Logger, config *config.AppConfig) *Poke {
 	return &Poke{
 		ctx:    ctx,
 		db:     db,
@@ -38,21 +35,16 @@ func NewPokeServer(ctx *server.Context, db *db.AppContext, logger *logrus.Logger
 
 func (p *Poke) Run(pokeHandler *Poke) {
 	p.initialSnapshots()
-	p.logger.Infof("Poke server listening on :%s", p.config.BIGBANG_GRPC_POKE_PORT)
-	address := fmt.Sprintf(":%s", p.config.BIGBANG_GRPC_POKE_PORT)
-	if err := http.ListenAndServe(address, pokeHandler); err != nil {
-		p.logger.Fatalf("failed to start HTTP server: %v", err)
-	}
 }
 
 func (p *Poke) initialSnapshots() {
-	serviceNames := p.getListenerList()
-	for _, serviceName := range serviceNames {
-		p.logger.Debugf("start serve snapshot: (%s) Project: (%s)", serviceName.Service, serviceName.Project)
+	nodes := p.getListenerList()
+	for _, node := range nodes {
+		p.logger.Debugf("start serve snapshot: (%s) Project: (%s)", node.Service, node.Project)
 
-		allResource, err := p.getAllResourcesFromListener(serviceName.Service, serviceName.Project)
+		allResource, err := p.getAllResourcesFromListener(node.Service, node.Project)
 		if err != nil {
-			p.logger.Errorf("BULK GetConfigurationFromListener(%v): %v", serviceName.Service, err)
+			p.logger.Errorf("BULK GetConfigurationFromListener(%v): %v", node.Service, err)
 		}
 
 		err = p.ctx.SetSnapshot(allResource, p.logger)
@@ -63,8 +55,8 @@ func (p *Poke) initialSnapshots() {
 	p.logger.Infof("All snapshots are loaded")
 }
 
-func (p *Poke) getListenerList() []ProjectServices {
-	var serviceNamesWithProject []ProjectServices
+func (p *Poke) getListenerList() []Nodes {
+	var serviceNamesWithProject []Nodes
 	cur, err := p.db.GetGenerals("listeners")
 	if err != nil {
 		p.logger.Fatal(err)
@@ -86,7 +78,7 @@ func (p *Poke) getListenerList() []ProjectServices {
 			return nil
 		}
 
-		serviceNamesWithProject = append(serviceNamesWithProject, ProjectServices{Project: general.Project, Service: general.Name})
+		serviceNamesWithProject = append(serviceNamesWithProject, Nodes{Project: general.Project, Service: general.Name})
 	}
 	return serviceNamesWithProject
 }
@@ -97,7 +89,7 @@ func (p *Poke) getAllResourcesFromListener(serviceName string, project string) (
 		return nil, err
 	}
 
-	lis, err := resource.SetSnapshot(rawListenerResource, serviceName, p.db, p.logger)
+	lis, err := resource.GenerateSnapshot(rawListenerResource, serviceName, p.db, p.logger, project)
 	if err != nil {
 		return nil, err
 	}

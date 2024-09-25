@@ -119,7 +119,7 @@ func GenericDownstreamCollector(ctx *AppHandler, activeResource Depend, visited 
 		Direction:  "downstream",
 	}
 
-	downstreamFilters := activeResource.Gtype.GetDownstreamFilters(activeResource.Name)
+	downstreamFilters := activeResource.Gtype.DownstreamFilters(activeResource.Name)
 	for _, filter := range downstreamFilters {
 		collectDependenciesFromFilter(ctx, filter, activeResource, &dependencies)
 	}

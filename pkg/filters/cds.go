@@ -37,5 +37,16 @@ func ClusterDownstreamFilters(clusterName string) []MongoFilters {
 				}},
 			},
 		},
+		{
+			Collection: "virtual_host",
+			Filter: bson.D{
+				{Key: "$or", Value: bson.A{
+					bson.D{{Key: "resource.resource.routes.route.cluster", Value: clusterName}},
+					bson.D{{Key: "resource.resource.routes.route.weighted_clusters.clusters.name", Value: clusterName}},
+					bson.D{{Key: "resource.resource.request_mirror_policies.cluster", Value: clusterName}},
+					bson.D{{Key: "resource.resource.request_mirror_policies.cluster", Value: clusterName}},
+				}},
+			},
+		},
 	}
 }

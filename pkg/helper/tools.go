@@ -12,7 +12,14 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
+
+var unmarshaler = protojson.UnmarshalOptions{
+	AllowPartial:   true,
+	DiscardUnknown: true,
+}
 
 func Contains(s []string, str string) bool {
 	for _, v := range s {
@@ -176,4 +183,27 @@ func RemoveDuplicatesP(projects *[]models.CombinedProjects) *[]models.CombinedPr
 	}
 
 	return &result
+}
+
+func MarshalUnmarshalWithType(data interface{}, msg proto.Message) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	err = unmarshaler.Unmarshal(jsonData, msg)
+	if err != nil {
+		fmt.Println("proto unmarshall error: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func ConvertToJSON(v interface{}, log *logrus.Logger) string {
+	jsonData, err := json.Marshal(v)
+	if err != nil {
+		log.Infof("JSON convert err: %v", err)
+	}
+	return string(jsonData)
 }

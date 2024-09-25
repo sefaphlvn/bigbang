@@ -51,7 +51,7 @@ func updateResource(extension *AppHandler, resource models.DBResourceClass, requ
 	}
 
 	project := resource.GetGeneral().Project
-	changedResources := crud.HandleResourceChange(resource, requestDetails, extension.Context, project)
+	changedResources := crud.HandleResourceChange(resource, requestDetails, extension.Context, project, extension.Poke)
 
 	return gin.H{"message": "Success", "data": changedResources}, nil
 }

@@ -33,40 +33,45 @@ func (xds *AppHandler) SetResource(resource models.DBResourceClass, requestDetai
 	}
 
 	if general.Type == "listeners" {
-		xds.createBootstrap(general)
+		if err := xds.createBootstrap(general); err != nil {
+			return nil, err
+		}
+
 		if general.Managed {
-			xds.createService(general.Name)
+			if err := xds.createService(general.Name); err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	return gin.H{"message": "Success", "data": nil}, nil
 }
 
-func (xds *AppHandler) createService(serviceName string) (interface{}, error) {
+func (xds *AppHandler) createService(serviceName string) error {
 	var service models.Service
 	collection := xds.Context.Client.Collection("service")
 	service.Name = serviceName
 	_, err := collection.InsertOne(xds.Context.Ctx, service)
 	if err != nil {
 		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
-			return nil, errors.New("name already exists")
+			return errors.New("name already exists")
 		}
-		return nil, err
+		return err
 	}
 
-	return nil, nil
+	return nil
 }
 
-func (xds *AppHandler) createBootstrap(listenerGeneral models.General) (interface{}, error) {
+func (xds *AppHandler) createBootstrap(listenerGeneral models.General) error {
 	collection := xds.Context.Client.Collection("bootstrap")
 	bootstrap := crud.GetBootstrap(listenerGeneral, xds.Context.Config)
 	_, err := collection.InsertOne(xds.Context.Ctx, bootstrap)
 	if err != nil {
 		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
-			return nil, errors.New("name already exists")
+			return errors.New("name already exists")
 		}
-		return nil, err
+		return err
 	}
 
-	return nil, nil
+	return nil
 }

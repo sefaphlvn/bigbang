@@ -6,6 +6,7 @@ import (
 
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/api/auth"
+	"github.com/sefaphlvn/bigbang/rest/bridge"
 	"github.com/sefaphlvn/bigbang/rest/crud/custom"
 	"github.com/sefaphlvn/bigbang/rest/crud/extension"
 	"github.com/sefaphlvn/bigbang/rest/crud/xds"
@@ -23,15 +24,17 @@ type Handler struct {
 	Custom     *custom.AppHandler
 	Auth       *auth.AppHandler
 	dependency *dependency.AppHandler
+	Bridge     *bridge.AppHandler
 }
 
-func NewHandler(XDS *xds.AppHandler, extension *extension.AppHandler, custom *custom.AppHandler, auth *auth.AppHandler, dependency *dependency.AppHandler) *Handler {
+func NewHandler(XDS *xds.AppHandler, extension *extension.AppHandler, custom *custom.AppHandler, auth *auth.AppHandler, dependency *dependency.AppHandler, stats *bridge.AppHandler) *Handler {
 	return &Handler{
 		XDS:        XDS,
 		Extension:  extension,
 		Custom:     custom,
 		Auth:       auth,
 		dependency: dependency,
+		Bridge:     stats,
 	}
 }
 

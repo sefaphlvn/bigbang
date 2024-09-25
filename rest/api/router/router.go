@@ -27,12 +27,13 @@ func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
 	apiExtension := e.Group("/api/v3/eo")
 	apiResource := e.Group("/api/v3/xds")
 	apiDependency := e.Group("/api/v3/dependency")
+	apiBridge := e.Group("/api/v3/bridge")
 
 	apiSettings.Use(middleware.Authentication())
 	apiCustom.Use(middleware.Authentication())
 	apiExtension.Use(middleware.Authentication())
 	apiResource.Use(middleware.Authentication())
-	//apiDependency.Use(middleware.Authentication())
+	apiDependency.Use(middleware.Authentication())
 
 	initAuthRoutes(apiAuth, h)
 	initSettingRoutes(apiSettings, h)
@@ -40,6 +41,7 @@ func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
 	initExtensionRoutes(apiExtension, h)
 	initResourceRoutes(apiResource, h)
 	initDependencyRoutes(apiDependency, h)
+	initBridgeRoutes(apiBridge, h)
 
 	return e
 }
@@ -51,6 +53,20 @@ func initAuthRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		handler gin.HandlerFunc
 	}{
 		{"POST", "/login", h.Auth.Login()},
+	}
+
+	initRoutes(rg, routes)
+}
+
+func initBridgeRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
+	routes := []struct {
+		method  string
+		path    string
+		handler gin.HandlerFunc
+	}{
+		{"GET", "/stats/snapshot-keys", h.GetSnapshotKeys},
+		{"GET", "/stats/:name", h.GetSnapshotResources},
+		{"POST", "/poke/:name", h.GetSnapshotResources},
 	}
 
 	initRoutes(rg, routes)

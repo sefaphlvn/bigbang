@@ -49,7 +49,7 @@ func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, requestDe
 	}
 
 	project := resource.GetGeneral().Project
-	changedResources := crud.HandleResourceChange(resource, requestDetails, xds.Context, project)
+	changedResources := crud.HandleResourceChange(resource, requestDetails, xds.Context, project, xds.Poke)
 
 	return gin.H{"message": "Success", "data": changedResources}, nil
 }

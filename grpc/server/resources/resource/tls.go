@@ -3,6 +3,7 @@ package resource
 import (
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -10,7 +11,7 @@ import (
 
 func (ar *AllResources) DecodeDownstreamTLS(data *models.DBResource, context *db.AppContext) {
 	dtc := &tls.DownstreamTlsContext{}
-	err := resources.MarshalUnmarshalWithType(data.GetResource(), dtc)
+	err := helper.MarshalUnmarshalWithType(data.GetResource(), dtc)
 	if err != nil {
 		context.Logger.Debug(err)
 	}
@@ -32,7 +33,7 @@ func (ar *AllResources) getTlsCertificate(sdsSecretConfig []*tls.SdsSecretConfig
 		certResources, _ := resource.Resource.Resource.(primitive.A)
 		for _, certResource := range certResources {
 			tlsCert := &tls.TlsCertificate{}
-			err = resources.MarshalUnmarshalWithType(certResource, tlsCert)
+			err = helper.MarshalUnmarshalWithType(certResource, tlsCert)
 			if err != nil {
 				context.Logger.Debugf("tls certificate decode err: %v", err)
 			}
@@ -50,7 +51,7 @@ func (ar *AllResources) getValiDationContext(vcName string, context *db.AppConte
 	}
 
 	cvc := &tls.CertificateValidationContext{}
-	err = resources.MarshalUnmarshalWithType(validationContext.Resource.Resource, cvc)
+	err = helper.MarshalUnmarshalWithType(validationContext.Resource.Resource, cvc)
 	if err != nil {
 		context.Logger.Debugf("validation context decode err: %v", err)
 	}

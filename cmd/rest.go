@@ -9,6 +9,7 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/log"
 	"github.com/sefaphlvn/bigbang/rest/api/auth"
 	"github.com/sefaphlvn/bigbang/rest/api/router"
+	"github.com/sefaphlvn/bigbang/rest/bridge"
 	"github.com/sefaphlvn/bigbang/rest/crud/custom"
 	"github.com/sefaphlvn/bigbang/rest/crud/extension"
 	"github.com/sefaphlvn/bigbang/rest/crud/xds"
@@ -30,11 +31,12 @@ var restCmd = &cobra.Command{
 		var xdsHandler = xds.NewXDSHandler(db)
 		var extensionHandler = extension.NewExtensionHandler(db)
 		var customHandler = custom.NewCustomHandler(db)
+		var bridgeHandler = bridge.NewBridgeHandler(db)
 		var userHandler = auth.NewUserHandler(db)
 		var dependencyHandler = dependency.NewDependencyHandler(db)
 		dependencyHandler.StartCacheCleanup(1 * time.Minute)
 
-		h := handlers.NewHandler(xdsHandler, extensionHandler, customHandler, userHandler, dependencyHandler)
+		h := handlers.NewHandler(xdsHandler, extensionHandler, customHandler, userHandler, dependencyHandler, bridgeHandler)
 		r := router.InitRouter(h, logger)
 		if err := server.NewHttpServer(r).Run(appConfig, logger); err != nil {
 			logger.Fatalf("Server failed to run: %v", err)

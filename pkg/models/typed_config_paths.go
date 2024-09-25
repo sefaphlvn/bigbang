@@ -1,22 +1,14 @@
 package models
 
 type ArrayPath struct {
-	ParentPath string // Dizinin bulunduğu üst seviye path
-	IndexPath  string // Dizinin kendisi, %d yer tutucusu ile gösterilir
+	ParentPath string
+	IndexPath  string
 }
 
 type TypedConfigPath struct {
-	ArrayPaths   []ArrayPath // Dizileri tanımlayan tüm seviyeler
-	PathTemplate string      // Nihai path için template
-	Kind         string      // Typed config türü
-}
-
-var ConfigGetters = map[GTypes][]TypedConfigPath{
-	Listener:              ListenerTypedConfigPaths,
-	HTTPConnectionManager: GeneralAccessLogTypedConfigPaths,
-	TcpProxy:              GeneralAccessLogTypedConfigPaths,
-	BootStrap:             BootstrapTypedConfigPaths,
-	Cluster:               ClusterTypedConfigPaths,
+	ArrayPaths   []ArrayPath
+	PathTemplate string
+	Kind         string
 }
 
 var BootstrapTypedConfigPaths = []TypedConfigPath{
@@ -58,7 +50,7 @@ var GeneralAccessLogTypedConfigPaths = []TypedConfigPath{
 
 var ClusterTypedConfigPaths = []TypedConfigPath{
 	{
-		ArrayPaths:   []ArrayPath{}, // Array olmadığı için boş bırakıldı
+		ArrayPaths:   []ArrayPath{},
 		PathTemplate: "transport_socket.typed_config",
 		Kind:         "upstream_tls",
 	},

@@ -2,10 +2,11 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"regexp"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 func GinLog(logger *logrus.Logger) gin.HandlerFunc {
@@ -42,7 +43,8 @@ func GinLog(logger *logrus.Logger) gin.HandlerFunc {
 		}
 
 		if len(c.Errors) > 0 {
-			logger.WithFields(fields).Errorf(c.Errors.ByType(gin.ErrorTypePrivate).String())
+			err := c.Errors.ByType(gin.ErrorTypePrivate).String()
+			logger.WithFields(fields).Error(err)
 		} else {
 			if statusCode > 499 {
 				logger.WithFields(fields).Errorf("HTTP Status Failed")

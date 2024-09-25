@@ -12,7 +12,6 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -38,9 +37,10 @@ var (
 func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *AppContext {
 	// connectionString := fmt.Sprintf("%s://%s%s", config.MongoDB.Scheme, hosts, config.MongoDB.Port)
 	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", config.MONGODB_SCHEME, config.MONGODB_USERNAME, config.MONGODB_PASSWORD, config.MONGODB_HOSTS, config.MONGODB_PORT)
-
 	tM := reflect.TypeOf(bson.M{})
-	reg := bson.NewRegistryBuilder().RegisterTypeMapEntry(bsontype.EmbeddedDocument, tM).Build()
+	reg := bson.NewRegistry()
+	reg.RegisterTypeMapEntry(bson.TypeEmbeddedDocument, tM)
+
 	ctx := context.Background()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(connectionString).SetRegistry(reg))
 	if err != nil {

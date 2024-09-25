@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 )
@@ -69,7 +70,7 @@ func (h *AppHandler) getResourceData(collection, name, project string) (string, 
 	}
 
 	resourceID := resource.ID.Hex()
-	jsonResource := resources.ConvertToJSON(resource, h.Context.Logger)
+	jsonResource := helper.ConvertToJSON(resource, h.Context.Logger)
 
 	h.setCacheEntry(cacheKey, CacheEntry{
 		ID:   resourceID,
@@ -80,10 +81,9 @@ func (h *AppHandler) getResourceData(collection, name, project string) (string, 
 }
 
 func getDynamicJsonPaths(gtype models.GTypes) map[string]models.GTypes {
-	paths := gtype.GetUpstreamPaths()
+	paths := gtype.UpstreamPaths()
 
 	if len(paths) == 0 {
-		//fmt.Println("No matching GType, returning empty paths")
 		return map[string]models.GTypes{}
 	}
 
@@ -91,7 +91,6 @@ func getDynamicJsonPaths(gtype models.GTypes) map[string]models.GTypes {
 		paths = addPrefixToPaths(paths, "#.")
 	}
 
-	// fmt.Printf("Matched GType: %v\n", gtype)
 	return paths
 }
 

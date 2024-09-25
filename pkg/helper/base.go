@@ -1,6 +1,12 @@
 package helper
 
-import "github.com/gin-gonic/gin"
+import (
+	"os"
+
+	"github.com/gin-gonic/gin"
+)
+
+var SECRET_KEY string = os.Getenv("secret")
 
 func GetFromContext[T any](c *gin.Context, key string) (T, bool) {
 	value, exists := c.Get(key)

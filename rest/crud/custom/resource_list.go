@@ -56,7 +56,11 @@ func (custom *AppHandler) GetCustomResourceList(resource models.DBResourceClass,
 				Collection    string `bson:"collection"`
 			} `bson:"general"`
 		}
-		cursor.Decode(&doc)
+
+		if err := cursor.Decode(&doc); err != nil {
+			custom.Context.Logger.Debugf("Error decoding downstream resource: %v", err)
+		}
+
 		results = append(
 			results,
 			Record{

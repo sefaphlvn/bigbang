@@ -1,29 +1,19 @@
 package resources
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/models"
-	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 type GeneralResponse struct {
 	General models.General `bson:"general"`
-}
-
-var unmarshaler = protojson.UnmarshalOptions{
-	AllowPartial:   true,
-	DiscardUnknown: true,
 }
 
 func GetResourceNGeneral(db *db.AppContext, collectionName string, name string, project string) (*models.DBResource, error) {
@@ -115,27 +105,4 @@ func GetGenerals(context *db.AppContext, collectionName string, filter primitive
 	}
 
 	return results, nil
-}
-
-func MarshalUnmarshalWithType(data interface{}, msg proto.Message) error {
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	err = unmarshaler.Unmarshal(jsonData, msg)
-	if err != nil {
-		fmt.Println("proto unmarshall error: ", err)
-		return err
-	}
-
-	return nil
-}
-
-func ConvertToJSON(v interface{}, log *logrus.Logger) string {
-	jsonData, err := json.Marshal(v)
-	if err != nil {
-		log.Infof("JSON convert err: %v", err)
-	}
-	return string(jsonData)
 }

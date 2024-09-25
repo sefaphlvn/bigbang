@@ -10,7 +10,7 @@ import (
 )
 
 func IsDeletable(ctx *db.AppContext, gtype models.GTypes, name string) []string {
-	downstreamFilters := gtype.GetDownstreamFilters(name)
+	downstreamFilters := gtype.DownstreamFilters(name)
 	var deletableNames []string
 
 	for _, filter := range downstreamFilters {

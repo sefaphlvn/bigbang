@@ -21,7 +21,7 @@ func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[
 	cluster := map[string]interface{}{
 		"name":            "bigbang-controller",
 		"type":            "STRICT_DNS",
-		"connect_timeout": "0.50s",
+		"connect_timeout": "1s",
 		"lb_policy":       "ROUND_ROBIN",
 		"load_assignment": map[string]interface{}{
 			"cluster_name": "bigbang-controller",

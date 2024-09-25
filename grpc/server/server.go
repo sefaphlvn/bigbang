@@ -10,15 +10,20 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
-	clusterservice "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	discoverygrpc "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	endpointservice "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
-	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
-	listenerservice "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
-	runtimeservice "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
-	secretservice "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
+
+	/* 	clusterservice "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
+	   	endpointservice "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
+	   	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
+	   	listenerservice "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
+	   	runtimeservice "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
+	   	secretservice "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3" */
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	serverBridge "github.com/sefaphlvn/bigbang/grpc/server/bridge"
+	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"
+	"github.com/sefaphlvn/bigbang/pkg/bridge"
+	"github.com/sefaphlvn/bigbang/pkg/db"
 )
 
 const (
@@ -34,10 +39,10 @@ type Server struct {
 	xdsServer server.Server
 	port      uint
 	logger    *logrus.Logger
-	context   *Context
+	context   *snapshot.Context
 }
 
-func NewServer(xdsServer server.Server, port uint, logger *logrus.Logger, context *Context) *Server {
+func NewServer(xdsServer server.Server, port uint, logger *logrus.Logger, context *snapshot.Context) *Server {
 	return &Server{
 		xdsServer: xdsServer,
 		port:      port,
@@ -47,7 +52,7 @@ func NewServer(xdsServer server.Server, port uint, logger *logrus.Logger, contex
 }
 
 // Run starts an xDS server at the given port.
-func (s *Server) Run() {
+func (s *Server) Run(db *db.AppContext) {
 	var grpcOptions []grpc.ServerOption
 	grpcOptions = append(grpcOptions,
 		grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams),
@@ -69,7 +74,7 @@ func (s *Server) Run() {
 		s.logger.Fatal(err)
 	}
 
-	s.registerServer(grpcServer)
+	s.registerServer(grpcServer, db)
 
 	s.logger.Infof("Management server listening on :%d\n", s.port)
 	if err = grpcServer.Serve(lis); err != nil {
@@ -77,18 +82,19 @@ func (s *Server) Run() {
 	}
 }
 
-func (s *Server) registerServer(grpcServer *grpc.Server) {
+func (s *Server) registerServer(grpcServer *grpc.Server, db *db.AppContext) {
 	discoverygrpc.RegisterAggregatedDiscoveryServiceServer(grpcServer, s.xdsServer)
-	endpointservice.RegisterEndpointDiscoveryServiceServer(grpcServer, s.xdsServer)
+	routeservice.RegisterVirtualHostDiscoveryServiceServer(grpcServer, s.xdsServer)
+	/* endpointservice.RegisterEndpointDiscoveryServiceServer(grpcServer, s.xdsServer)
 	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, s.xdsServer)
 	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, s.xdsServer)
-	routeservice.RegisterVirtualHostDiscoveryServiceServer(grpcServer, s.xdsServer)
 	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, s.xdsServer)
 	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, s.xdsServer)
 	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, s.xdsServer)
-	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(grpcServer, s.xdsServer)
+	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(grpcServer, s.xdsServer) */
 
-	// custom grpc services
-	/* 	snapshotStats.RegisterSnapshotKeyServiceServer(grpcServer, NewSnapshotKeyServiceServer(s.context))
-	   	snapshotStats.RegisterSnapshotResourceServiceServer(grpcServer, NewSnapshotResourceServiceServer(s.context)) */
+	// bridge grpc services
+	bridge.RegisterSnapshotKeyServiceServer(grpcServer, serverBridge.NewSnapshotKeyServiceServer(s.context))
+	bridge.RegisterSnapshotResourceServiceServer(grpcServer, serverBridge.NewSnapshotResourceServiceServer(s.context))
+	bridge.RegisterPokeServiceServer(grpcServer, serverBridge.NewPokeServiceServer(s.context, db))
 }

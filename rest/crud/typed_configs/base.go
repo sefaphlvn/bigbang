@@ -7,12 +7,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-
-
 func DecodeSetTypedConfigs(resource models.DBResourceClass, logger *logrus.Logger) []*models.TypedConfig {
 	var typedConfigs []*models.TypedConfig
 
-	if paths, exists := models.ConfigGetters[resource.GetGtype()]; exists {
+	if paths := resource.GetGtype().TypedConfigPaths(); paths != nil {
 		typedConfigs = getTypedConfigs(resource, logger, paths)
 	} else {
 		logger.Debugf("Unsupported general type: %v", resource.GetGeneral().GType)

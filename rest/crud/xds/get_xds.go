@@ -1,18 +1,12 @@
 package xds
 
 import (
-	"context"
 	"errors"
-	"fmt"
-	"log"
 
 	"github.com/sefaphlvn/bigbang/pkg/models"
-	snapshotStats "github.com/sefaphlvn/bigbang/pkg/stats"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 func (xds *AppHandler) GetResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
@@ -37,32 +31,4 @@ func (xds *AppHandler) GetResource(resource models.DBResourceClass, requestDetai
 	}
 
 	return resource, nil
-}
-
-func GetSnapshotsFromServer(serverAddress string) {
-	// gRPC client bağlantısını oluştur
-	conn, err := grpc.Dial(serverAddress, grpc.WithInsecure())
-	if err != nil {
-		log.Printf("did not connect: %v", err)
-	}
-	defer conn.Close()
-
-	client := snapshotStats.NewSnapshotKeyServiceClient(conn)
-
-	// Metadata oluştur
-	md := metadata.Pairs(
-		"bigbang-controller", "1",
-	)
-
-	// Metadata ile context oluştur
-	ctx := metadata.NewOutgoingContext(context.Background(), md)
-
-	// Snapshot verilerini al
-	resp, err := client.GetSnapshotKeys(ctx, &snapshotStats.Empty{})
-	if err != nil {
-		log.Printf("could not get snapshots: %v", err)
-	}
-
-	fmt.Printf("Snapshot keys: %s\n", resp.Keys)
-
 }
