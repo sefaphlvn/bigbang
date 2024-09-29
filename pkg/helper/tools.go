@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var unmarshaler = protojson.UnmarshalOptions{
+var Unmarshaler = protojson.UnmarshalOptions{
 	AllowPartial:   true,
 	DiscardUnknown: true,
 }
@@ -191,7 +191,7 @@ func MarshalUnmarshalWithType(data interface{}, msg proto.Message) error {
 		return err
 	}
 
-	err = unmarshaler.Unmarshal(jsonData, msg)
+	err = Unmarshaler.Unmarshal(jsonData, msg)
 	if err != nil {
 		fmt.Println("proto unmarshall error: ", err)
 		return err

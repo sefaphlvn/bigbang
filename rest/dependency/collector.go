@@ -103,7 +103,7 @@ func GenericDownstreamCollector(ctx *AppHandler, activeResource Depend, visited 
 		activeResource.ID = id
 	}
 
-	uniqueKey := fmt.Sprintf("%s_%s_%s_%s", activeResource.Name, activeResource.Gtype, activeResource.Collection, activeResource.Project)
+	uniqueKey := generateUniqueKey(activeResource)
 	if visited[uniqueKey] {
 		return Node{}, nil
 	}

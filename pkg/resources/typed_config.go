@@ -11,22 +11,14 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type TempTypedConfig struct {
-	Name          string `json:"name"`
-	CanonicalName string `json:"canonical_name"`
-	Gtype         string `json:"gtype"`
-	Type          string `json:"type"`
-	Category      string `json:"category"`
-}
-
 func DecodeBase64Config(encodedConfig string) (*models.TypedConfig, error) {
-	decodedBytes, err := base64.StdEncoding.DecodeString(encodedConfig)
+	decodedString, err := base64.StdEncoding.DecodeString(encodedConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	var configData models.TypedConfig
-	err = json.Unmarshal(decodedBytes, &configData)
+	err = json.Unmarshal(decodedString, &configData)
 	if err != nil {
 		return nil, err
 	}
@@ -51,28 +43,80 @@ func GetTypedConfigValue(jsonStringStr string, path string, logger *logrus.Logge
 	return typedConfig
 }
 
-// burasi
-
 func ProcessTypedConfigs(jsonStringStr string, typedConfigPath models.TypedConfigPath, logger *logrus.Logger) ([]*models.TypedConfig, map[string]*models.TypedConfig) {
 	var typedConfigs []*models.TypedConfig
 	typedConfigsMap := make(map[string]*models.TypedConfig)
-	seenConfigs := make(map[string]struct{}) // Benzersizliği kontrol etmek için bir set yapısı
+	seenConfigs := make(map[string]struct{})
 
-	// Eğer ArrayPaths boşsa, doğrudan path işlemesi yap
-	if len(typedConfigPath.ArrayPaths) == 0 {
-		processPath(jsonStringStr, typedConfigPath.PathTemplate, &typedConfigs, typedConfigsMap, seenConfigs, logger)
-	} else {
-		// İlk diziyi al ve işleme başla
-		result := gjson.Get(jsonStringStr, typedConfigPath.ArrayPaths[0].ParentPath)
-		if result.IsArray() {
-			processArray(result.Array(), jsonStringStr, typedConfigPath.PathTemplate, typedConfigPath.ArrayPaths, &typedConfigs, typedConfigsMap, seenConfigs, logger)
+	if typedConfigPath.IsPerTypedConfig {
+		if len(typedConfigPath.ArrayPaths) == 0 {
+			result := gjson.Get(jsonStringStr, typedConfigPath.PathTemplate)
+			if result.Exists() {
+				result.ForEach(func(key, value gjson.Result) bool {
+					dynamicKey := key.String()
+					dynamicPath := fmt.Sprintf("%s.%s", typedConfigPath.PathTemplate, dynamicKey)
+					processPath(jsonStringStr, dynamicPath, &typedConfigs, typedConfigsMap, seenConfigs, logger)
+					return true
+				})
+			}
 		} else {
-			// Eğer tekil bir değer varsa
-			processPath(result.String(), typedConfigPath.ArrayPaths[0].ParentPath, &typedConfigs, typedConfigsMap, seenConfigs, logger)
+			result := gjson.Get(jsonStringStr, typedConfigPath.ArrayPaths[0].ParentPath)
+			if result.IsArray() {
+				processPerTypedConfigArray(result.Array(), jsonStringStr, typedConfigPath.PathTemplate, typedConfigPath.ArrayPaths, &typedConfigs, typedConfigsMap, seenConfigs, logger)
+			} else if result.Exists() {
+				processDynamicKey(result, typedConfigPath.ArrayPaths[0].ParentPath, &typedConfigs, typedConfigsMap, seenConfigs, logger)
+			}
+		}
+	} else {
+		if len(typedConfigPath.ArrayPaths) == 0 {
+			processPath(jsonStringStr, typedConfigPath.PathTemplate, &typedConfigs, typedConfigsMap, seenConfigs, logger)
+		} else {
+			result := gjson.Get(jsonStringStr, typedConfigPath.ArrayPaths[0].ParentPath)
+			if result.IsArray() {
+				processArray(result.Array(), jsonStringStr, typedConfigPath.PathTemplate, typedConfigPath.ArrayPaths, &typedConfigs, typedConfigsMap, seenConfigs, logger)
+			} else if result.Exists() {
+				processPath(result.String(), typedConfigPath.ArrayPaths[0].ParentPath, &typedConfigs, typedConfigsMap, seenConfigs, logger)
+			}
 		}
 	}
 
 	return typedConfigs, typedConfigsMap
+}
+
+// Dynamic key ile path işlemlerini işleyen fonksiyon
+func processDynamicKey(result gjson.Result, basePath string, typedConfigs *[]*models.TypedConfig, typedConfigsMap map[string]*models.TypedConfig, seenConfigs map[string]struct{}, logger *logrus.Logger) {
+	result.ForEach(func(key, value gjson.Result) bool {
+		dynamicKey := key.String()
+		dynamicPath := fmt.Sprintf("%s.%s", basePath, dynamicKey)
+		processPath(result.String(), dynamicPath, typedConfigs, typedConfigsMap, seenConfigs, logger)
+		return true
+	})
+}
+
+// PerTypedConfig için dizi elemanlarını işleyen yardımcı fonksiyon
+func processPerTypedConfigArray(array []gjson.Result, jsonStringStr string, pathTemplate string, arrayPaths []models.ArrayPath, typedConfigs *[]*models.TypedConfig, typedConfigsMap map[string]*models.TypedConfig, seenConfigs map[string]struct{}, logger *logrus.Logger) {
+	placeholderCount := strings.Count(pathTemplate, "%d")
+
+	for i := range array {
+		combinations := generateIndexCombinations(jsonStringStr, arrayPaths)
+
+		for _, indices := range combinations {
+			if len(indices) == placeholderCount {
+				indices[0] = i
+				finalPath := fmt.Sprintf(pathTemplate, indices...)
+				dynamicResult := gjson.Get(jsonStringStr, finalPath)
+
+				if dynamicResult.Exists() {
+					dynamicResult.ForEach(func(key, value gjson.Result) bool {
+						dynamicKey := key.String()
+						dynamicPath := fmt.Sprintf("%s.%s", finalPath, dynamicKey)
+						processPath(jsonStringStr, dynamicPath, typedConfigs, typedConfigsMap, seenConfigs, logger)
+						return true
+					})
+				}
+			}
+		}
+	}
 }
 
 // Dizi elemanlarını işleyen yardımcı fonksiyon
@@ -102,7 +146,7 @@ func processPath(jsonStringStr, path string, typedConfigs *[]*models.TypedConfig
 
 	if singleTypedConfig != nil {
 		// Benzersizlik kontrolü için benzersiz bir anahtar oluşturuyoruz (örneğin, type_url ve name kullanarak)
-		uniqueKey := fmt.Sprintf("%s|%s", singleTypedConfig.Gtype, singleTypedConfig.Name)
+		uniqueKey := fmt.Sprintf("%s|%s|%s", singleTypedConfig.Gtype, singleTypedConfig.Name, path)
 
 		// Benzersizlik kontrolü
 		if _, exists := seenConfigs[uniqueKey]; !exists {

@@ -106,6 +106,8 @@ type TypedConfig struct {
 	Type          string `json:"type" bson:"type"`
 	Category      string `json:"category" bson:"category"`
 	Collection    string `json:"collection" bson:"collection"`
+	Disabled      bool   `json:"disabled" bson:"disabled"`
+	Priority      int    `json:"priority" bson:"priority"`
 }
 
 type DBResource struct {

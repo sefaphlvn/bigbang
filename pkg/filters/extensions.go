@@ -35,5 +35,9 @@ func BasicAuthDownstreamFilters(name string) []MongoFilters {
 			Collection: "extensions",
 			Filter:     bson.D{{Key: "general.config_discovery.name", Value: name}},
 		},
+		{
+			Collection: "routes",
+			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+		},
 	}
 }

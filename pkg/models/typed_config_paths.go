@@ -6,9 +6,10 @@ type ArrayPath struct {
 }
 
 type TypedConfigPath struct {
-	ArrayPaths   []ArrayPath
-	PathTemplate string
-	Kind         string
+	ArrayPaths       []ArrayPath
+	PathTemplate     string
+	Kind             string
+	IsPerTypedConfig bool
 }
 
 var BootstrapTypedConfigPaths = []TypedConfigPath{
@@ -61,5 +62,40 @@ var ClusterTypedConfigPaths = []TypedConfigPath{
 		},
 		PathTemplate: "health_checks.%d.event_logger.%d.typed_config",
 		Kind:         "hcefs",
+	},
+}
+
+var RouteTypedConfigPaths = []TypedConfigPath{
+	{
+		ArrayPaths:       []ArrayPath{},
+		PathTemplate:     "typed_per_filter_config",
+		Kind:             "route",
+		IsPerTypedConfig: true,
+	},
+	{
+		ArrayPaths: []ArrayPath{
+			{ParentPath: "virtual_hosts", IndexPath: "virtual_hosts.%d"},
+		},
+		PathTemplate:     "virtual_hosts.%d.typed_per_filter_config",
+		Kind:             "route",
+		IsPerTypedConfig: true,
+	},
+	{
+		ArrayPaths: []ArrayPath{
+			{ParentPath: "virtual_hosts", IndexPath: "virtual_hosts.%d"},
+			{ParentPath: "virtual_hosts.%d.routes", IndexPath: "routes.%d"},
+		},
+		PathTemplate:     "virtual_hosts.%d.routes.%d.typed_per_filter_config",
+		Kind:             "route",
+		IsPerTypedConfig: true,
+	},
+}
+
+var VirtualHostTypedConfigPaths = []TypedConfigPath{
+	{
+		ArrayPaths:       []ArrayPath{},
+		PathTemplate:     "typed_per_filter_config",
+		Kind:             "virtual_host",
+		IsPerTypedConfig: true,
 	},
 }

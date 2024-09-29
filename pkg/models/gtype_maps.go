@@ -25,6 +25,7 @@ type GTypeMapping struct {
 	URL                   string
 	PrettyName            string
 	Message               proto.Message
+	PerFilterMessage      proto.Message
 	DownstreamFiltersFunc func(string) []filters.MongoFilters
 	TypedConfigPaths      []TypedConfigPath
 	UpstreamPaths         map[string]GTypes
@@ -91,7 +92,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		URL:                   "/resource/route",
 		Message:               &route.RouteConfiguration{},
 		DownstreamFiltersFunc: filters.RouteDownstreamFilters,
-		TypedConfigPaths:      nil,
+		TypedConfigPaths:      RouteTypedConfigPaths,
 		UpstreamPaths:         RouteUpstreams,
 	},
 	VirtualHost: {
@@ -100,7 +101,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		URL:                   "/resource/virtual_host",
 		Message:               &route.VirtualHost{},
 		DownstreamFiltersFunc: filters.VirtualHostDownstreamFilters,
-		TypedConfigPaths:      nil,
+		TypedConfigPaths:      VirtualHostTypedConfigPaths,
 		UpstreamPaths:         VirtualHostUpstreams,
 	},
 	TcpProxy: {
@@ -198,6 +199,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   "/filters/http/basic_auth/",
 		Message:               &basic_auth.BasicAuth{},
+		PerFilterMessage:      &basic_auth.BasicAuthPerRoute{},
 		DownstreamFiltersFunc: filters.BasicAuthDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
@@ -234,6 +236,13 @@ func (gt GTypes) ProtoMessage() proto.Message {
 		return mapping.Message
 	}
 	return &anypb.Any{}
+}
+
+func (gt GTypes) PerFilterProtoMessage() proto.Message {
+	if mapping, exists := gTypeMappings[gt]; exists {
+		return mapping.PerFilterMessage
+	}
+	return nil
 }
 
 func (gt GTypes) DownstreamFilters(name string) []filters.MongoFilters {

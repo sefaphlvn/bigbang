@@ -6,7 +6,6 @@ import (
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	"github.com/tidwall/gjson"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -191,7 +190,7 @@ func (ar *AllResources) processTypedConfigsAndUpstream(protoMsg proto.Message, j
 	ar.processTypedConfigPaths(typedConfigPaths, jsonStringStr, context, logger)
 	ar.processUpstreamPaths(gtype.UpstreamPaths(), jsonStringStr, parentName, context, logger)
 
-	if err := protojson.Unmarshal([]byte(*jsonStringStr), protoMsg); err != nil {
+	if err := helper.Unmarshaler.Unmarshal([]byte(*jsonStringStr), protoMsg); err != nil {
 		logger.Errorf("Error unmarshalling to proto message after processing nested configs: %v", err)
 		return err
 	}

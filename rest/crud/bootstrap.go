@@ -1,6 +1,7 @@
 package crud
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sefaphlvn/bigbang/pkg/config"
@@ -13,6 +14,7 @@ func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[
 	CreatedAt := primitive.NewDateTimeFromTime(now)
 	UpdatedAt := primitive.NewDateTimeFromTime(now)
 	authority := config.BIGBANG_ADDRESS
+	nodeID := fmt.Sprintf("%s:%s", listenerGeneral.Name, listenerGeneral.Project)
 	portValue := 80
 	if config.BIGBANG_TLS_ENABLED == "true" {
 		portValue = 443
@@ -63,7 +65,7 @@ func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[
 
 	data := map[string]interface{}{
 		"node": map[string]interface{}{
-			"id":      listenerGeneral.Name,
+			"id":      nodeID,
 			"cluster": "aadsa",
 		},
 		"static_resources": map[string]interface{}{

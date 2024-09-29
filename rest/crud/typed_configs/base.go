@@ -29,6 +29,7 @@ func getTypedConfigs(resource models.DBResourceClass, logger *logrus.Logger, pat
 			logger.Errorf("Error marshaling JSON: %v", err)
 			return
 		}
+
 		for _, path := range paths {
 			typedConfigsPart, _ := resources.ProcessTypedConfigs(jsonStringStr, path, logger)
 			typedConfigs = append(typedConfigs, typedConfigsPart...)

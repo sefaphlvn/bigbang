@@ -53,13 +53,13 @@ func (ar *AllResources) processTypedConfigPath(pathd models.TypedConfigPath, jso
 			continue
 		}
 
-		typedConfig, err := decodeTypedConfig(typedConfigJSON, tempTypedConfig.Gtype)
+		typedConfig, err := decodeTypedConfig(typedConfigJSON, tempTypedConfig.Gtype, pathd.IsPerTypedConfig)
 		if err != nil {
 			context.Logger.Warnf("Error decoding typed config: %v", err)
 			continue
 		}
 
-		if err := ar.updateJSONConfig(jsonStringStr, path, typedConfig); err != nil {
+		if err := ar.updateJSONConfig(jsonStringStr, path, typedConfig, pathd.IsPerTypedConfig, tempTypedConfig); err != nil {
 			context.Logger.Warnf("Error updating JSON config: %v", err)
 		}
 	}
@@ -67,28 +67,43 @@ func (ar *AllResources) processTypedConfigPath(pathd models.TypedConfigPath, jso
 	return nil
 }
 
-func (ar *AllResources) updateJSONConfig(jsonStringStr *string, path string, typedConfig *anypb.Any) error {
-	anyJSON, err := protojson.Marshal(typedConfig)
-	if err != nil {
-		return fmt.Errorf("error marshalling any typed config: %w", err)
+func (ar *AllResources) updateJSONConfig(jsonStringStr *string, path string, typedConfig *anypb.Any, isPerTypedConfig bool, tempTypedConfig *models.TypedConfig) error {
+	var config interface{}
+	var err error
+
+	if isPerTypedConfig && tempTypedConfig.Disabled {
+		config = map[string]interface{}{
+			"@type":    "type.googleapis.com/envoy.config.route.v3.FilterConfig",
+			"disabled": true,
+		}
+	} else {
+		anyJSON, err := protojson.Marshal(typedConfig)
+		if err != nil {
+			return fmt.Errorf("error marshalling any typed config: %w", err)
+		}
+
+		if err := json.Unmarshal(anyJSON, &config); err != nil {
+			return fmt.Errorf("error unmarshalling any typed config: %w", err)
+		}
 	}
 
-	var typedConfigMap map[string]interface{}
-	if err := json.Unmarshal(anyJSON, &typedConfigMap); err != nil {
-		return fmt.Errorf("error unmarshalling any typed config: %w", err)
-	}
-
-	if *jsonStringStr, err = sjson.Set(*jsonStringStr, path, typedConfigMap); err != nil {
+	if *jsonStringStr, err = sjson.Set(*jsonStringStr, path, config); err != nil {
 		return fmt.Errorf("error setting new config value with sjson.Set: %w", err)
 	}
 
 	return nil
 }
 
-func decodeTypedConfig(typedConfigJSON []byte, gtype models.GTypes) (*anypb.Any, error) {
+func decodeTypedConfig(typedConfigJSON []byte, gtype models.GTypes, isPerTypedConfig bool) (*anypb.Any, error) {
+	// Eğer PerFilterProtoMessage yoksa ProtoMessage'ı kullan
 	msg := gtype.ProtoMessage()
+	if isPerTypedConfig {
+		if perFilterMsg := gtype.PerFilterProtoMessage(); perFilterMsg != nil {
+			msg = perFilterMsg
+		}
+	}
 
-	if err := protojson.Unmarshal(typedConfigJSON, msg); err != nil {
+	if err := helper.Unmarshaler.Unmarshal(typedConfigJSON, msg); err != nil {
 		return nil, fmt.Errorf("typed_config not resolved: %w", err)
 	}
 
