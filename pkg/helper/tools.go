@@ -95,15 +95,15 @@ func HashPassword(password string) string {
 	return string(bytes)
 }
 
-func GenerateAllTokens(email *string, Username *string, user_id string, groups *[]string, projects *[]models.CombinedProjects, base_group *string, base_project *string, adminGroup bool, role *models.Role) (signedToken string, signedRefreshToken string, err error) {
+func GenerateAllTokens(email *string, Username *string, userID string, groups *[]string, projects *[]models.CombinedProjects, baseGroup *string, baseProject *string, adminGroup bool, role *models.Role) (signedToken string, signedRefreshToken string, err error) {
 	claims := &models.SignedDetails{
 		Email:       email,
 		Username:    Username,
-		UserId:      user_id,
+		UserId:      userID,
 		Groups:      RemoveDuplicates(groups),
 		Projects:    projects,
-		BaseGroup:   base_group,
-		BaseProject: base_project,
+		BaseGroup:   baseGroup,
+		BaseProject: baseProject,
 		AdminGroup:  adminGroup,
 		Role:        role,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -114,11 +114,11 @@ func GenerateAllTokens(email *string, Username *string, user_id string, groups *
 	refreshClaims := &models.SignedDetails{
 		Email:       email,
 		Username:    Username,
-		UserId:      user_id,
+		UserId:      userID,
 		Groups:      RemoveDuplicates(groups),
 		Projects:    projects,
-		BaseGroup:   base_group,
-		BaseProject: base_project,
+		BaseGroup:   baseGroup,
+		BaseProject: baseProject,
 		AdminGroup:  adminGroup,
 		Role:        role,
 		RegisteredClaims: jwt.RegisteredClaims{

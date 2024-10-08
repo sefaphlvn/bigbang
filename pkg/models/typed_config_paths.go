@@ -12,6 +12,12 @@ type TypedConfigPath struct {
 	IsPerTypedConfig bool
 }
 
+var (
+	access_log              = "access_log.%d"
+	access_log_typed_config = "access_log.%d.typed_config"
+	routes                  = "routes.%d"
+)
+
 var BootstrapTypedConfigPaths = []TypedConfigPath{
 	{
 		ArrayPaths: []ArrayPath{
@@ -32,9 +38,9 @@ var ListenerTypedConfigPaths = []TypedConfigPath{
 	},
 	{
 		ArrayPaths: []ArrayPath{
-			{ParentPath: "access_log", IndexPath: "access_log.%d"},
+			{ParentPath: "access_log", IndexPath: access_log},
 		},
-		PathTemplate: "access_log.%d.typed_config",
+		PathTemplate: access_log_typed_config,
 		Kind:         "access_log",
 	},
 }
@@ -42,9 +48,9 @@ var ListenerTypedConfigPaths = []TypedConfigPath{
 var GeneralAccessLogTypedConfigPaths = []TypedConfigPath{
 	{
 		ArrayPaths: []ArrayPath{
-			{ParentPath: "access_log", IndexPath: "access_log.%d"},
+			{ParentPath: "access_log", IndexPath: access_log},
 		},
-		PathTemplate: "access_log.%d.typed_config",
+		PathTemplate: access_log_typed_config,
 		Kind:         "access_log",
 	},
 }
@@ -83,7 +89,7 @@ var RouteTypedConfigPaths = []TypedConfigPath{
 	{
 		ArrayPaths: []ArrayPath{
 			{ParentPath: "virtual_hosts", IndexPath: "virtual_hosts.%d"},
-			{ParentPath: "virtual_hosts.%d.routes", IndexPath: "routes.%d"},
+			{ParentPath: "virtual_hosts.%d.routes", IndexPath: routes},
 		},
 		PathTemplate:     "virtual_hosts.%d.routes.%d.typed_per_filter_config",
 		Kind:             "route",
@@ -96,6 +102,47 @@ var VirtualHostTypedConfigPaths = []TypedConfigPath{
 		ArrayPaths:       []ArrayPath{},
 		PathTemplate:     "typed_per_filter_config",
 		Kind:             "virtual_host",
+		IsPerTypedConfig: true,
+	},
+	{
+		ArrayPaths: []ArrayPath{
+			{ParentPath: "routes", IndexPath: routes},
+		},
+		PathTemplate:     "routes.%d.typed_per_filter_config",
+		Kind:             "virtual_host",
+		IsPerTypedConfig: true,
+	},
+}
+
+var HttpConnectionManagerTypedConfigPaths = []TypedConfigPath{
+	{
+		ArrayPaths: []ArrayPath{
+			{ParentPath: "access_log", IndexPath: access_log},
+		},
+		PathTemplate: access_log_typed_config,
+		Kind:         "access_log",
+	},
+	{
+		ArrayPaths:       []ArrayPath{},
+		PathTemplate:     "route_config.typed_per_filter_config",
+		Kind:             "hcm",
+		IsPerTypedConfig: true,
+	},
+	{
+		ArrayPaths: []ArrayPath{
+			{ParentPath: "route_config.virtual_hosts", IndexPath: "route_config.virtual_hosts.%d"},
+		},
+		PathTemplate:     "route_config.virtual_hosts.%d.typed_per_filter_config",
+		Kind:             "hcm",
+		IsPerTypedConfig: true,
+	},
+	{
+		ArrayPaths: []ArrayPath{
+			{ParentPath: "route_config.virtual_hosts", IndexPath: "route_config.virtual_hosts.%d"},
+			{ParentPath: "route_config.virtual_hosts.%d.routes", IndexPath: routes},
+		},
+		PathTemplate:     "route_config.virtual_hosts.%d.routes.%d.typed_per_filter_config",
+		Kind:             "hcm",
 		IsPerTypedConfig: true,
 	},
 }

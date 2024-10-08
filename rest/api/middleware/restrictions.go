@@ -44,6 +44,7 @@ var AllowedEndpoints = []string{
 	"/api/v3/eo/:collection/others/:type",
 	"/api/v3/eo/:collection/others/:type/:name",
 	"/api/v3/custom/resource_list",
+	"/api/v3/custom/http_filter_list",
 	"/api/v3/dependency/:name",
 	"/api/v3/bridge/stats/:name",
 	"/api/v3/bridge/poke/:name",

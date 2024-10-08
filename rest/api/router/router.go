@@ -105,6 +105,7 @@ func initCustomRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		handler gin.HandlerFunc
 	}{
 		{"GET", "/resource_list", h.GetCustomResourceList},
+		{"GET", "/http_filter_list", h.GetCustomHttpFilterList},
 	}
 
 	initRoutes(rg, routes)
@@ -134,7 +135,7 @@ func initExtensionRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		{"PUT", "/:collection/others/:type/:name", h.UpdateOtherExtensions},
 		{"DELETE", "/:collection/others/:type/:name", h.DelExtension},
 
-		{"GET", "/:collection/:type", h.GetExtensions},
+		//{"GET", "/:collection/:type", h.GetExtensions},
 		{"GET", "/:collection/:type/:canonical_name", h.ListExtensions},
 		{"POST", "/:collection/:type/:canonical_name", h.SetExtension},
 		{"GET", "/:collection/:type/:canonical_name/:name", h.GetExtension},

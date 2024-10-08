@@ -2,42 +2,47 @@ package filters
 
 import "go.mongodb.org/mongo-driver/bson"
 
-func HcmDownstreamFilters(name string) []MongoFilters {
+var (
+	general_config_discovery_name = "general.config_discovery.name"
+	general_typed_config_name     = "general.typed_config.name"
+)
+
+func ConfigDiscoveryListenerDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "listeners",
-			Filter:     bson.D{{Key: "general.config_discovery.name", Value: name}},
+			Filter:     bson.D{{Key: general_config_discovery_name, Value: name}},
 		},
 	}
 }
 
-func RouterDownstreamFilters(name string) []MongoFilters {
+func ConfigDiscoveryHttpFilterDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "extensions",
-			Filter:     bson.D{{Key: "general.config_discovery.name", Value: name}},
+			Filter:     bson.D{{Key: general_config_discovery_name, Value: name}},
 		},
 	}
 }
 
-func TcpProxyDownstreamFilters(name string) []MongoFilters {
+func TypedHttpFilterDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
-			Collection: "listeners",
-			Filter:     bson.D{{Key: "general.config_discovery.name", Value: name}},
+			Collection: "routes",
+			Filter:     bson.D{{Key: general_typed_config_name, Value: name}},
 		},
 	}
 }
 
-func BasicAuthDownstreamFilters(name string) []MongoFilters {
+func DiscoverAndTypedHttpFilterDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "extensions",
-			Filter:     bson.D{{Key: "general.config_discovery.name", Value: name}},
+			Filter:     bson.D{{Key: general_config_discovery_name, Value: name}},
 		},
 		{
 			Collection: "routes",
-			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+			Filter:     bson.D{{Key: general_typed_config_name, Value: name}},
 		},
 	}
 }

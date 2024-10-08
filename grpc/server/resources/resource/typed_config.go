@@ -53,7 +53,7 @@ func (ar *AllResources) processTypedConfigPath(pathd models.TypedConfigPath, jso
 			continue
 		}
 
-		typedConfig, err := decodeTypedConfig(typedConfigJSON, tempTypedConfig.Gtype, pathd.IsPerTypedConfig)
+		typedConfig, err := decodeTypedConfig(typedConfigJSON, tempTypedConfig.Gtype)
 		if err != nil {
 			context.Logger.Warnf("Error decoding typed config: %v", err)
 			continue
@@ -94,15 +94,8 @@ func (ar *AllResources) updateJSONConfig(jsonStringStr *string, path string, typ
 	return nil
 }
 
-func decodeTypedConfig(typedConfigJSON []byte, gtype models.GTypes, isPerTypedConfig bool) (*anypb.Any, error) {
-	// Eğer PerFilterProtoMessage yoksa ProtoMessage'ı kullan
+func decodeTypedConfig(typedConfigJSON []byte, gtype models.GTypes) (*anypb.Any, error) {
 	msg := gtype.ProtoMessage()
-	if isPerTypedConfig {
-		if perFilterMsg := gtype.PerFilterProtoMessage(); perFilterMsg != nil {
-			msg = perFilterMsg
-		}
-	}
-
 	if err := helper.Unmarshaler.Unmarshal(typedConfigJSON, msg); err != nil {
 		return nil, fmt.Errorf("typed_config not resolved: %w", err)
 	}

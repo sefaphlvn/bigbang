@@ -7,10 +7,10 @@ import (
 type KnownTYPES string
 
 const (
-	EDS        KnownTYPES = "endpoints"
-	CDS        KnownTYPES = "clusters"
-	LDS        KnownTYPES = "listeners"
-	ROUTE      KnownTYPES = "routes"
+	EDS        KnownTYPES = "endpoint"
+	CDS        KnownTYPES = "cluster"
+	LDS        KnownTYPES = "listener"
+	ROUTE      KnownTYPES = "route"
 	EXTENSIONS KnownTYPES = "extensions"
 	ACCESSLOG  KnownTYPES = "access_log"
 )
@@ -44,6 +44,7 @@ type RequestDetails struct {
 	User          UserDetails
 	SaveOrPublish string
 	Project       string
+	Metadata      map[string]string
 }
 
 type UserDetails struct {
@@ -77,7 +78,7 @@ type General struct {
 	CanonicalName   string                 `json:"canonical_name" bson:"canonical_name"`
 	Category        string                 `json:"category" bson:"category"`
 	Managed         bool                   `json:"managed,omitempty" bson:"managed,omitempty"`
-	Metadata        map[string]interface{} `json:"metadata,omitempty" bson:"metadata,omitempty"`
+	Metadata        map[string]interface{} `json:"metadata" bson:"metadata"`
 	Permissions     Permissions            `json:"permissions" bson:"permissions"`
 	ConfigDiscovery []*ConfigDiscovery     `json:"config_discovery,omitempty" bson:"config_discovery,omitempty"`
 	TypedConfig     []*TypedConfig         `json:"typed_config,omitempty" bson:"typed_config,omitempty"`
@@ -108,6 +109,7 @@ type TypedConfig struct {
 	Collection    string `json:"collection" bson:"collection"`
 	Disabled      bool   `json:"disabled" bson:"disabled"`
 	Priority      int    `json:"priority" bson:"priority"`
+	ParentName    string `json:"parent_name" bson:"parent_name"`
 }
 
 type DBResource struct {

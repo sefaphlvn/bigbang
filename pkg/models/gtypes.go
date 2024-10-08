@@ -23,4 +23,8 @@ const (
 	CertificateValidationContext GTypes = "envoy.extensions.transport_sockets.tls.v3.CertificateValidationContext"
 	HealthCheckEventFileSink     GTypes = "envoy.extensions.health_check.event_sinks.file.v3.HealthCheckEventFileSink"
 	BasicAuth                    GTypes = "envoy.extensions.filters.http.basic_auth.v3.BasicAuth"
+	BasicAuthPerRoute            GTypes = "envoy.extensions.filters.http.basic_auth.v3.BasicAuthPerRoute"
+	Cors                         GTypes = "envoy.extensions.filters.http.cors.v3.Cors"
+	CorsPolicy                   GTypes = "envoy.extensions.filters.http.cors.v3.CorsPolicy"
+	BandwidthLimit               GTypes = "envoy.extensions.filters.http.bandwidth_limit.v3.BandwidthLimit"
 )

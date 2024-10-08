@@ -71,6 +71,7 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 		SaveOrPublish: c.Query("save_or_publish"),
 		User:          userDetails,
 		Project:       c.Query("project"),
+		Metadata:      map[string]string{"http_filter": c.Query("metadata_http_filter")},
 	}
 
 	err := checkRole(c, userDetails)

@@ -9,7 +9,9 @@ import (
 	al_file "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	al_fluentd "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/fluentd/v3"
 	al_stream "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stream/v3"
+	bandwidth_limit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/bandwidth_limit/v3"
 	basic_auth "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/basic_auth/v3"
+	cors "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	router "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
@@ -25,17 +27,34 @@ type GTypeMapping struct {
 	URL                   string
 	PrettyName            string
 	Message               proto.Message
-	PerFilterMessage      proto.Message
 	DownstreamFiltersFunc func(string) []filters.MongoFilters
 	TypedConfigPaths      []TypedConfigPath
 	UpstreamPaths         map[string]GTypes
+}
+
+var URLs = map[string]string{
+	"bootstrap":       "/resource/bootstrap/",
+	"clusters":        "/resource/cluster/",
+	"endpoints":       "/resource/endpoint",
+	"listeners":       "/resource/listener/",
+	"routes":          "/resource/route",
+	"virtual_host":    "/resource/virtual_host",
+	"tcp_proxy":       "/filters/network/tcp_proxy/",
+	"hcm":             "/filters/network/hcm/",
+	"secrets":         "/resource/secret/",
+	"access_log":      "/others/access_log/",
+	"http_router":     "/filters/http/http_router/",
+	"hcefs":           "/others/hcefs/",
+	"basic_auth":      "/filters/http/basic_auth/",
+	"cors":            "/filters/http/cors/",
+	"bandwidth_limit": "/filters/http/bandwidth_limit/",
 }
 
 var gTypeMappings = map[GTypes]GTypeMapping{
 	BootStrap: {
 		PrettyName:            "Bootstrap",
 		Collection:            "bootstrap",
-		URL:                   "/resource/bootstrap/",
+		URL:                   URLs["bootstrap"],
 		Message:               &bootstrap.Bootstrap{},
 		DownstreamFiltersFunc: nil,
 		TypedConfigPaths:      BootstrapTypedConfigPaths,
@@ -44,25 +63,25 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	HTTPConnectionManager: {
 		PrettyName:            "Http Connection Manager",
 		Collection:            "extensions",
-		URL:                   "/filters/network/hcm/",
+		URL:                   URLs["hcm"],
 		Message:               &hcm.HttpConnectionManager{},
-		DownstreamFiltersFunc: filters.HcmDownstreamFilters,
-		TypedConfigPaths:      GeneralAccessLogTypedConfigPaths,
+		DownstreamFiltersFunc: filters.ConfigDiscoveryListenerDownstreamFilters,
+		TypedConfigPaths:      HttpConnectionManagerTypedConfigPaths,
 		UpstreamPaths:         HTTPConnectionManagerUpstreams,
 	},
 	Router: {
 		PrettyName:            "Router",
 		Collection:            "extensions",
-		URL:                   "/filters/http/http_router/",
+		URL:                   URLs["http_routerhcm"],
 		Message:               &router.Router{},
-		DownstreamFiltersFunc: filters.RouterDownstreamFilters,
+		DownstreamFiltersFunc: filters.ConfigDiscoveryHttpFilterDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
 	Cluster: {
 		PrettyName:            "Cluster",
 		Collection:            "clusters",
-		URL:                   "/resource/cluster/",
+		URL:                   URLs["clusters"],
 		Message:               &cluster.Cluster{},
 		DownstreamFiltersFunc: filters.ClusterDownstreamFilters,
 		TypedConfigPaths:      ClusterTypedConfigPaths,
@@ -71,7 +90,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	Listener: {
 		PrettyName:            "Listener",
 		Collection:            "listeners",
-		URL:                   "/resource/listener/",
+		URL:                   URLs["listeners"],
 		Message:               &listener.Listener{},
 		DownstreamFiltersFunc: nil,
 		TypedConfigPaths:      ListenerTypedConfigPaths,
@@ -80,7 +99,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	Endpoint: {
 		PrettyName:            "Endpoint",
 		Collection:            "endpoints",
-		URL:                   "/resource/endpoint",
+		URL:                   URLs["endpoints"],
 		Message:               &endpoint.ClusterLoadAssignment{},
 		DownstreamFiltersFunc: filters.EdsDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -89,7 +108,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	Route: {
 		PrettyName:            "Route",
 		Collection:            "routes",
-		URL:                   "/resource/route",
+		URL:                   URLs["routes"],
 		Message:               &route.RouteConfiguration{},
 		DownstreamFiltersFunc: filters.RouteDownstreamFilters,
 		TypedConfigPaths:      RouteTypedConfigPaths,
@@ -98,7 +117,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	VirtualHost: {
 		PrettyName:            "Virtual Host",
 		Collection:            "virtual_host",
-		URL:                   "/resource/virtual_host",
+		URL:                   URLs["virtual_host"],
 		Message:               &route.VirtualHost{},
 		DownstreamFiltersFunc: filters.VirtualHostDownstreamFilters,
 		TypedConfigPaths:      VirtualHostTypedConfigPaths,
@@ -107,16 +126,16 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	TcpProxy: {
 		PrettyName:            "Tcp Proxy",
 		Collection:            "extensions",
-		URL:                   "/filters/network/tcp_proxy/",
+		URL:                   URLs["tcp_proxy"],
 		Message:               &tcp.TcpProxy{},
-		DownstreamFiltersFunc: filters.TcpProxyDownstreamFilters,
+		DownstreamFiltersFunc: filters.ConfigDiscoveryListenerDownstreamFilters,
 		TypedConfigPaths:      GeneralAccessLogTypedConfigPaths,
 		UpstreamPaths:         TcpProxyUpstreams,
 	},
 	FluentdAccessLog: {
 		PrettyName:            "Access Log(Fluentd)",
 		Collection:            "others",
-		URL:                   "/others/access_log/",
+		URL:                   URLs["access_log"],
 		Message:               &al_fluentd.FluentdAccessLogConfig{},
 		DownstreamFiltersFunc: filters.ALSDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -125,7 +144,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	FileAccessLog: {
 		PrettyName:            "Access Log(File)",
 		Collection:            "others",
-		URL:                   "/others/access_log/",
+		URL:                   URLs["access_log"],
 		Message:               &al_file.FileAccessLog{},
 		DownstreamFiltersFunc: filters.ALSDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -134,7 +153,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	StdoutAccessLog: {
 		PrettyName:            "Access Log(StdOut)",
 		Collection:            "others",
-		URL:                   "/others/access_log/",
+		URL:                   URLs["access_log"],
 		Message:               &al_stream.StdoutAccessLog{},
 		DownstreamFiltersFunc: filters.ALSDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -143,7 +162,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	StdErrAccessLog: {
 		PrettyName:            "Access Log(StdErr)",
 		Collection:            "others",
-		URL:                   "/others/access_log/",
+		URL:                   URLs["access_log"],
 		Message:               &al_stream.StderrAccessLog{},
 		DownstreamFiltersFunc: filters.ALSDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -152,7 +171,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	DownstreamTlsContext: {
 		PrettyName:            "Downstream TLS",
 		Collection:            "secrets",
-		URL:                   "/resource/secret/",
+		URL:                   URLs["secrets"],
 		Message:               &tls.DownstreamTlsContext{},
 		DownstreamFiltersFunc: filters.DownstreamTlsDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -161,7 +180,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	UpstreamTlsContext: {
 		PrettyName:            "Upstream TLS",
 		Collection:            "secrets",
-		URL:                   "/resource/secret/",
+		URL:                   URLs["secrets"],
 		Message:               &tls.UpstreamTlsContext{},
 		DownstreamFiltersFunc: filters.UpstreamTlsDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -170,7 +189,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	TlsCertificate: {
 		PrettyName:            "TLS Certificate",
 		Collection:            "secrets",
-		URL:                   "/resource/secret/",
+		URL:                   URLs["secrets"],
 		Message:               &tls.TlsCertificate{},
 		DownstreamFiltersFunc: filters.TlsCertificateDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -179,7 +198,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	CertificateValidationContext: {
 		PrettyName:            "Certificate Validation",
 		Collection:            "secrets",
-		URL:                   "/resource/secret/",
+		URL:                   URLs["secrets"],
 		Message:               &tls.CertificateValidationContext{},
 		DownstreamFiltersFunc: filters.ContextValidateDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -188,7 +207,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	HealthCheckEventFileSink: {
 		PrettyName:            "Health Check Event File Sink",
 		Collection:            "others",
-		URL:                   "/others/hcefs/",
+		URL:                   URLs["hcefs"],
 		Message:               &hcefs.HealthCheckEventFileSink{},
 		DownstreamFiltersFunc: filters.HCEFSDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -197,10 +216,45 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	BasicAuth: {
 		PrettyName:            "Basic Auth",
 		Collection:            "extensions",
-		URL:                   "/filters/http/basic_auth/",
+		URL:                   URLs["basic_auth"],
 		Message:               &basic_auth.BasicAuth{},
-		PerFilterMessage:      &basic_auth.BasicAuthPerRoute{},
-		DownstreamFiltersFunc: filters.BasicAuthDownstreamFilters,
+		DownstreamFiltersFunc: filters.ConfigDiscoveryHttpFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	BasicAuthPerRoute: {
+		PrettyName:            "Basic Auth Per Route",
+		Collection:            "extensions",
+		URL:                   URLs["basic_auth"],
+		Message:               &basic_auth.BasicAuthPerRoute{},
+		DownstreamFiltersFunc: filters.TypedHttpFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	Cors: {
+		PrettyName:            "Cors",
+		Collection:            "extensions",
+		URL:                   URLs["cors"],
+		Message:               &cors.Cors{},
+		DownstreamFiltersFunc: filters.ConfigDiscoveryHttpFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	CorsPolicy: {
+		PrettyName:            "Cors Policy",
+		Collection:            "extensions",
+		URL:                   URLs["cors"],
+		Message:               &cors.CorsPolicy{},
+		DownstreamFiltersFunc: filters.TypedHttpFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	BandwidthLimit: {
+		PrettyName:            "Bandwidth Limit",
+		Collection:            "extensions",
+		URL:                   URLs["bandwidth_limit"],
+		Message:               &bandwidth_limit.BandwidthLimit{},
+		DownstreamFiltersFunc: filters.DiscoverAndTypedHttpFilterDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -236,13 +290,6 @@ func (gt GTypes) ProtoMessage() proto.Message {
 		return mapping.Message
 	}
 	return &anypb.Any{}
-}
-
-func (gt GTypes) PerFilterProtoMessage() proto.Message {
-	if mapping, exists := gTypeMappings[gt]; exists {
-		return mapping.PerFilterMessage
-	}
-	return nil
 }
 
 func (gt GTypes) DownstreamFilters(name string) []filters.MongoFilters {

@@ -12,6 +12,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var (
+	general_name = "general.name"
+)
+
 func (handler *AppHandler) GetPermissions(c *gin.Context) {
 	project := c.Query("project")
 	var userOrGroup = c.Param("kind")
@@ -45,7 +49,7 @@ func (handler *AppHandler) SetPermission(permissions models.Permission, userOrGr
 			if len(p.Added) > 0 || len(p.Removed) > 0 {
 				collection := handler.Context.Client.Collection(name)
 				for _, addedName := range p.Added {
-					filter := bson.M{"general.name": addedName}
+					filter := bson.M{general_name: addedName}
 					update := bson.M{
 						"$addToSet": bson.M{"general.permissions." + kind: userOrGroupID},
 					}
@@ -56,7 +60,7 @@ func (handler *AppHandler) SetPermission(permissions models.Permission, userOrGr
 					fmt.Printf("User/Group %s added to %s: %v\n", userOrGroupID, name, addedName)
 				}
 				for _, removedName := range p.Removed {
-					filter := bson.M{"general.name": removedName}
+					filter := bson.M{general_name: removedName}
 					update := bson.M{
 						"$pull": bson.M{"general.permissions." + kind: userOrGroupID},
 					}
@@ -87,7 +91,7 @@ func (handler *AppHandler) SetPermission(permissions models.Permission, userOrGr
 
 func (handler *AppHandler) GetData(filter bson.M, typ string) ([]bson.M, error) {
 	var resourceCollection *mongo.Collection = handler.Context.Client.Collection(typ)
-	opts := options.Find().SetProjection(bson.M{"general.name": 1})
+	opts := options.Find().SetProjection(bson.M{general_name: 1})
 
 	cursor, err := resourceCollection.Find(handler.Context.Ctx, filter, opts)
 	if err != nil {
