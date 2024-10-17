@@ -47,7 +47,6 @@ func (c *Context) SetSnapshot(resources *xdsResource.AllResources, logger *logru
 		logger.Fatalf("snapshot inconsistency: %+v\n%+v", snapshot, err)
 	} */
 
-	logger.Debugf("end serve snapshot: (%s)", resources.NodeID)
 	if err := c.Cache.Cache.SetSnapshot(context.Background(), resources.NodeID, snapshot); err != nil {
 		logger.Fatalf("snapshot error %q for %+v", err, snapshot)
 	}

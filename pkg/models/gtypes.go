@@ -27,4 +27,10 @@ const (
 	Cors                         GTypes = "envoy.extensions.filters.http.cors.v3.Cors"
 	CorsPolicy                   GTypes = "envoy.extensions.filters.http.cors.v3.CorsPolicy"
 	BandwidthLimit               GTypes = "envoy.extensions.filters.http.bandwidth_limit.v3.BandwidthLimit"
+	Compressor                   GTypes = "envoy.extensions.filters.http.compressor.v3.Compressor"
+	CompressorPerRoute           GTypes = "envoy.extensions.filters.http.compressor.v3.CompressorPerRoute"
+	GzipCompressor               GTypes = "envoy.extensions.compression.gzip.compressor.v3.Gzip"
+	BrotliCompressor             GTypes = "envoy.extensions.compression.brotli.compressor.v3.Brotli"
+	ZstdCompressor               GTypes = "envoy.extensions.compression.zstd.compressor.v3.Zstd"
+	HttpProtocolOptions          GTypes = "envoy.extensions.upstreams.http.v3.HttpProtocolOptions"
 )

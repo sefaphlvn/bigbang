@@ -65,7 +65,7 @@ func (c *Callbacks) OnStreamResponse(_ context.Context, _ int64, req *discovery.
 }
 
 func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscoveryRequest, resp *discovery.DeltaDiscoveryResponse) {
-	/* if req.TypeUrl == "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment" {
+	/* 	if req.TypeUrl == "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment" {
 		c.logger.Warnf("Sending Delta EDS response: %v", resp)
 	} */
 
@@ -73,15 +73,23 @@ func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscover
 	defer c.mu.Unlock()
 	c.deltaResponses++
 
-	// DeltaDiscoveryResponse nesnesini JSON formatına dönüştür
-	/* respJson, err := json.Marshal(resp)
-	if err != nil {
-		c.logger.Errorf("JSON marshalling error: %v", err)
-		return
-	}
+	/*
+		 	// DeltaDiscoveryResponse nesnesini JSON formatına dönüştür
+			respJson, err := json.Marshal(resp)
+			if err != nil {
+				c.logger.Errorf("JSON marshalling error: %v", err)
+				return
+			}
 
-	helper.PrettyPrinter(respJson) */
-	//c.logger.Debugf("DeltaDiscoveryResponse: %s", helper.PrettyPrinter(string(respJson)))
+			c.logger.Errorf("Delta Discovery Request Error: Code=%v, Message=%v\n", req)
+			fmt.Println("--------------------------")
+			helper.PrettyPrint(respJson)
+			fmt.Println("--------------------------")
+
+			fmt.Println("//////////////////////////////////////")
+			helper.PrettyPrint(req.ErrorDetail)
+			fmt.Println("//////////////////////////////////////")
+	*/
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {

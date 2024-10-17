@@ -22,7 +22,7 @@ func (custom *AppHandler) GetCustomHttpFilterList(resource models.DBResourceClas
 	var filters = bson.M{
 		"general.version":              requestDetails.Version,
 		"general.project":              requestDetails.Project,
-		"general.category":             "envoy.filters.http",
+		"general.category":             requestDetails.Category,
 		"general.metadata.http_filter": bson.M{"$regex": requestDetails.Metadata["http_filter"], "$options": "i"},
 	}
 

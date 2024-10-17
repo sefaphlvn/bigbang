@@ -52,8 +52,10 @@ func (ar *AllResources) processTypedConfigPath(pathd models.TypedConfigPath, jso
 			context.Logger.Warnf("Error marshalling typed config: %v", err)
 			continue
 		}
+		typedConfigStr := string(typedConfigJSON)
+		ar.processUpstreamPaths(tempTypedConfig.Gtype.UpstreamPaths(), &typedConfigStr, tempTypedConfig.ParentName, context, context.Logger)
 
-		typedConfig, err := decodeTypedConfig(typedConfigJSON, tempTypedConfig.Gtype)
+		typedConfig, err := decodeTypedConfig([]byte(typedConfigStr), tempTypedConfig.Gtype)
 		if err != nil {
 			context.Logger.Warnf("Error decoding typed config: %v", err)
 			continue

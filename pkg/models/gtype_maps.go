@@ -9,15 +9,20 @@ import (
 	al_file "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	al_fluentd "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/fluentd/v3"
 	al_stream "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stream/v3"
+	brotli_compressor "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/brotli/compressor/v3"
+	gzip_compressor "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
+	zstd_compressor "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/zstd/compressor/v3"
 	bandwidth_limit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/bandwidth_limit/v3"
 	basic_auth "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/basic_auth/v3"
+	compressor "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	cors "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	router "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	hcefs "github.com/envoyproxy/go-control-plane/envoy/extensions/health_check/event_sinks/file/v3"
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	"github.com/sefaphlvn/bigbang/pkg/filters"
+	http_protocol_options "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
+	"github.com/sefaphlvn/bigbang/pkg/models/downstream_filters"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -27,27 +32,30 @@ type GTypeMapping struct {
 	URL                   string
 	PrettyName            string
 	Message               proto.Message
-	DownstreamFiltersFunc func(string) []filters.MongoFilters
+	DownstreamFiltersFunc func(string) []downstream_filters.MongoFilters
 	TypedConfigPaths      []TypedConfigPath
 	UpstreamPaths         map[string]GTypes
 }
 
 var URLs = map[string]string{
-	"bootstrap":       "/resource/bootstrap/",
-	"clusters":        "/resource/cluster/",
-	"endpoints":       "/resource/endpoint",
-	"listeners":       "/resource/listener/",
-	"routes":          "/resource/route",
-	"virtual_host":    "/resource/virtual_host",
-	"tcp_proxy":       "/filters/network/tcp_proxy/",
-	"hcm":             "/filters/network/hcm/",
-	"secrets":         "/resource/secret/",
-	"access_log":      "/others/access_log/",
-	"http_router":     "/filters/http/http_router/",
-	"hcefs":           "/others/hcefs/",
-	"basic_auth":      "/filters/http/basic_auth/",
-	"cors":            "/filters/http/cors/",
-	"bandwidth_limit": "/filters/http/bandwidth_limit/",
+	"bootstrap":             "/resource/bootstrap/",
+	"clusters":              "/resource/cluster/",
+	"endpoints":             "/resource/endpoint",
+	"listeners":             "/resource/listener/",
+	"routes":                "/resource/route",
+	"virtual_host":          "/resource/virtual_host",
+	"tcp_proxy":             "/filters/network/tcp_proxy/",
+	"hcm":                   "/filters/network/hcm/",
+	"secrets":               "/resource/secret/",
+	"access_log":            "/others/access_log/",
+	"http_router":           "/filters/http/http_router/",
+	"hcefs":                 "/others/hcefs/",
+	"basic_auth":            "/filters/http/basic_auth/",
+	"cors":                  "/filters/http/cors/",
+	"bandwidth_limit":       "/filters/http/bandwidth_limit/",
+	"compressor":            "/filters/http/compressor/",
+	"compressor_library":    "/others/compressor_library/",
+	"http_protocol_options": "/others/http_protocol_options/",
 }
 
 var gTypeMappings = map[GTypes]GTypeMapping{
@@ -65,7 +73,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   URLs["hcm"],
 		Message:               &hcm.HttpConnectionManager{},
-		DownstreamFiltersFunc: filters.ConfigDiscoveryListenerDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryListenerDownstreamFilters,
 		TypedConfigPaths:      HttpConnectionManagerTypedConfigPaths,
 		UpstreamPaths:         HTTPConnectionManagerUpstreams,
 	},
@@ -74,7 +82,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   URLs["http_routerhcm"],
 		Message:               &router.Router{},
-		DownstreamFiltersFunc: filters.ConfigDiscoveryHttpFilterDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryHttpFilterDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -83,7 +91,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "clusters",
 		URL:                   URLs["clusters"],
 		Message:               &cluster.Cluster{},
-		DownstreamFiltersFunc: filters.ClusterDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.ClusterDownstreamFilters,
 		TypedConfigPaths:      ClusterTypedConfigPaths,
 		UpstreamPaths:         ClusterUpstreams,
 	},
@@ -101,7 +109,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "endpoints",
 		URL:                   URLs["endpoints"],
 		Message:               &endpoint.ClusterLoadAssignment{},
-		DownstreamFiltersFunc: filters.EdsDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.EdsDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -110,7 +118,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "routes",
 		URL:                   URLs["routes"],
 		Message:               &route.RouteConfiguration{},
-		DownstreamFiltersFunc: filters.RouteDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.RouteDownstreamFilters,
 		TypedConfigPaths:      RouteTypedConfigPaths,
 		UpstreamPaths:         RouteUpstreams,
 	},
@@ -119,7 +127,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "virtual_host",
 		URL:                   URLs["virtual_host"],
 		Message:               &route.VirtualHost{},
-		DownstreamFiltersFunc: filters.VirtualHostDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.VirtualHostDownstreamFilters,
 		TypedConfigPaths:      VirtualHostTypedConfigPaths,
 		UpstreamPaths:         VirtualHostUpstreams,
 	},
@@ -128,7 +136,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   URLs["tcp_proxy"],
 		Message:               &tcp.TcpProxy{},
-		DownstreamFiltersFunc: filters.ConfigDiscoveryListenerDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryListenerDownstreamFilters,
 		TypedConfigPaths:      GeneralAccessLogTypedConfigPaths,
 		UpstreamPaths:         TcpProxyUpstreams,
 	},
@@ -137,7 +145,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "others",
 		URL:                   URLs["access_log"],
 		Message:               &al_fluentd.FluentdAccessLogConfig{},
-		DownstreamFiltersFunc: filters.ALSDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.ALSDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         FluentdAccessLogUpstreams,
 	},
@@ -146,7 +154,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "others",
 		URL:                   URLs["access_log"],
 		Message:               &al_file.FileAccessLog{},
-		DownstreamFiltersFunc: filters.ALSDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.ALSDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -155,7 +163,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "others",
 		URL:                   URLs["access_log"],
 		Message:               &al_stream.StdoutAccessLog{},
-		DownstreamFiltersFunc: filters.ALSDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.ALSDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -164,7 +172,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "others",
 		URL:                   URLs["access_log"],
 		Message:               &al_stream.StderrAccessLog{},
-		DownstreamFiltersFunc: filters.ALSDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.ALSDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -173,7 +181,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "secrets",
 		URL:                   URLs["secrets"],
 		Message:               &tls.DownstreamTlsContext{},
-		DownstreamFiltersFunc: filters.DownstreamTlsDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.DownstreamTlsDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         DownstreamTlsContextUpstreams,
 	},
@@ -182,7 +190,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "secrets",
 		URL:                   URLs["secrets"],
 		Message:               &tls.UpstreamTlsContext{},
-		DownstreamFiltersFunc: filters.UpstreamTlsDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.UpstreamTlsDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         UpstreamTlsContextUpstreams,
 	},
@@ -191,7 +199,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "secrets",
 		URL:                   URLs["secrets"],
 		Message:               &tls.TlsCertificate{},
-		DownstreamFiltersFunc: filters.TlsCertificateDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.TlsCertificateDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -200,7 +208,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "secrets",
 		URL:                   URLs["secrets"],
 		Message:               &tls.CertificateValidationContext{},
-		DownstreamFiltersFunc: filters.ContextValidateDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.ContextValidateDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -209,7 +217,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "others",
 		URL:                   URLs["hcefs"],
 		Message:               &hcefs.HealthCheckEventFileSink{},
-		DownstreamFiltersFunc: filters.HCEFSDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.HCEFSDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -218,7 +226,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   URLs["basic_auth"],
 		Message:               &basic_auth.BasicAuth{},
-		DownstreamFiltersFunc: filters.ConfigDiscoveryHttpFilterDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryHttpFilterDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -227,7 +235,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   URLs["basic_auth"],
 		Message:               &basic_auth.BasicAuthPerRoute{},
-		DownstreamFiltersFunc: filters.TypedHttpFilterDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.TypedHttpFilterDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -236,7 +244,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   URLs["cors"],
 		Message:               &cors.Cors{},
-		DownstreamFiltersFunc: filters.ConfigDiscoveryHttpFilterDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryHttpFilterDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -245,7 +253,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   URLs["cors"],
 		Message:               &cors.CorsPolicy{},
-		DownstreamFiltersFunc: filters.TypedHttpFilterDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.TypedHttpFilterDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -254,7 +262,61 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   URLs["bandwidth_limit"],
 		Message:               &bandwidth_limit.BandwidthLimit{},
-		DownstreamFiltersFunc: filters.DiscoverAndTypedHttpFilterDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.DiscoverAndTypedHttpFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	Compressor: {
+		PrettyName:            "Compressor",
+		Collection:            "extensions",
+		URL:                   URLs["compressor"],
+		Message:               &compressor.Compressor{},
+		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryHttpFilterDownstreamFilters,
+		TypedConfigPaths:      CompressorTypedConfigPaths,
+		UpstreamPaths:         nil,
+	},
+	CompressorPerRoute: {
+		PrettyName:            "Compressor Per Route",
+		Collection:            "extensions",
+		URL:                   URLs["compressor"],
+		Message:               &compressor.CompressorPerRoute{},
+		DownstreamFiltersFunc: downstream_filters.TypedHttpFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	GzipCompressor: {
+		PrettyName:            "Gzip Compressor",
+		Collection:            "others",
+		URL:                   URLs["compressor_library"],
+		Message:               &gzip_compressor.Gzip{},
+		DownstreamFiltersFunc: downstream_filters.CompressorLibraryDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	BrotliCompressor: {
+		PrettyName:            "Brotli Compressor",
+		Collection:            "others",
+		URL:                   URLs["compressor_library"],
+		Message:               &brotli_compressor.Brotli{},
+		DownstreamFiltersFunc: downstream_filters.CompressorLibraryDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	ZstdCompressor: {
+		PrettyName:            "Zstd Compressor",
+		Collection:            "others",
+		URL:                   URLs["compressor_library"],
+		Message:               &zstd_compressor.Zstd{},
+		DownstreamFiltersFunc: downstream_filters.CompressorLibraryDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	HttpProtocolOptions: {
+		PrettyName:            "Http Protocol Options",
+		Collection:            "others",
+		URL:                   URLs["http_protocol_options"],
+		Message:               &http_protocol_options.HttpProtocolOptions{},
+		DownstreamFiltersFunc: downstream_filters.CompressorLibraryDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -292,7 +354,7 @@ func (gt GTypes) ProtoMessage() proto.Message {
 	return &anypb.Any{}
 }
 
-func (gt GTypes) DownstreamFilters(name string) []filters.MongoFilters {
+func (gt GTypes) DownstreamFilters(name string) []downstream_filters.MongoFilters {
 	if mapping, exists := gTypeMappings[gt]; exists && mapping.DownstreamFiltersFunc != nil {
 		return mapping.DownstreamFiltersFunc(name)
 	}

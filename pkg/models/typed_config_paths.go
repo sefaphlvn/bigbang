@@ -146,3 +146,11 @@ var HttpConnectionManagerTypedConfigPaths = []TypedConfigPath{
 		IsPerTypedConfig: true,
 	},
 }
+
+var CompressorTypedConfigPaths = []TypedConfigPath{
+	{
+		ArrayPaths:   []ArrayPath{},
+		PathTemplate: "compressor_library.typed_config",
+		Kind:         "compressor_library",
+	},
+}

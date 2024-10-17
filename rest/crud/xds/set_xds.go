@@ -32,7 +32,7 @@ func (xds *AppHandler) SetResource(resource models.DBResourceClass, requestDetai
 		return nil, err
 	}
 
-	if general.Type == "listeners" {
+	if general.GType == models.Listener {
 		if err := xds.createBootstrap(general); err != nil {
 			return nil, err
 		}

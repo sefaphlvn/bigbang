@@ -3,8 +3,8 @@ package dependency
 import (
 	"fmt"
 
-	"github.com/sefaphlvn/bigbang/pkg/filters"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/pkg/models/downstream_filters"
 	"github.com/tidwall/gjson"
 )
 
@@ -134,7 +134,7 @@ func GenericDownstreamCollector(ctx *AppHandler, activeResource Depend, visited 
 	return node, dependencies
 }
 
-func collectDependenciesFromFilter(ctx *AppHandler, filter filters.MongoFilters, activeResource Depend, dependencies *[]Depend) {
+func collectDependenciesFromFilter(ctx *AppHandler, filter downstream_filters.MongoFilters, activeResource Depend, dependencies *[]Depend) {
 	collection := filter.Collection
 	query := filter.Filter
 

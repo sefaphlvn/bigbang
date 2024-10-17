@@ -31,7 +31,6 @@ func (ar *AllResources) DecodeListener(rawListenerResource *models.DBResource, c
 	}
 
 	ar.processConfigDiscoveries(rawListenerResource.General.ConfigDiscovery, context, logger)
-	fmt.Println("Listener decoded")
 }
 
 // Initialize listener by decoding and setting up listener resources.
@@ -187,6 +186,10 @@ func (ar *AllResources) CollectAllResourcesWithParent(gtype models.GTypes, resou
 // Process typed configs and upstream paths.
 func (ar *AllResources) processTypedConfigsAndUpstream(protoMsg proto.Message, jsonStringStr *string, gtype models.GTypes, parentName string, context *db.AppContext, logger *logrus.Logger) error {
 	typedConfigPaths := gtype.TypedConfigPaths()
+
+	if gtype == models.FluentdAccessLog {
+		fmt.Println("FluentdAccessLog")
+	}
 	ar.processTypedConfigPaths(typedConfigPaths, jsonStringStr, context, logger)
 	ar.processUpstreamPaths(gtype.UpstreamPaths(), jsonStringStr, parentName, context, logger)
 
@@ -218,7 +221,6 @@ func (ar *AllResources) processUpstreamPaths(upstreamPaths map[string]models.GTy
 
 // Process upstream paths recursively.
 func processUpstreamPaths(result gjson.Result, upstreamType models.GTypes, parentName string, ar *AllResources, context *db.AppContext, logger *logrus.Logger) {
-
 	if result.IsArray() {
 		result.ForEach(func(_, item gjson.Result) bool {
 			processUpstreamPaths(item, upstreamType, parentName, ar, context, logger)

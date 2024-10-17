@@ -30,7 +30,6 @@ func GetTypedConfigValue(jsonStringStr string, path string, logger *logrus.Logge
 	value := gjson.Get(jsonStringStr, path).String()
 
 	if value == "" {
-		logger.Debugf("typed_config value empty for path: %s", path)
 		return nil
 	}
 
@@ -136,12 +135,15 @@ func processPath(jsonStringStr, path string, typedConfigs *[]*models.TypedConfig
 	singleTypedConfig := GetTypedConfigValue(jsonStringStr, path+".value", logger)
 
 	if singleTypedConfig != nil {
-		uniqueKey := fmt.Sprintf("%s|%s|%s", singleTypedConfig.Gtype, singleTypedConfig.Name, path)
+		uniqueKey := fmt.Sprintf("%s|%s|%s|%s", singleTypedConfig.Gtype, singleTypedConfig.Name, path, singleTypedConfig.ParentName)
+		if uniqueKey == "envoy.extensions.access_loggers.fluentd.v3.FluentdAccessLogConfig|resource1|access_log.1.typed_config|" {
+			logger.Debugf("Unique key: %s", uniqueKey)
+		}
 
 		if _, exists := seenConfigs[uniqueKey]; !exists {
 			*typedConfigs = append(*typedConfigs, singleTypedConfig)
 			typedConfigsMap[path] = singleTypedConfig
-			seenConfigs[uniqueKey] = struct{}{} // Eklendi olarak işaretle
+			seenConfigs[uniqueKey] = struct{}{}
 		} else {
 			logger.Debugf("Duplicate typed_config detected for key: %s", uniqueKey)
 		}
@@ -169,7 +171,6 @@ func generateCombinations(arrayPaths []models.ArrayPath, indices []interface{}, 
 	parentPath := fillIndices(arrayPaths[level].ParentPath, indices[:level])
 	currentArray := gjson.Get(jsonStringStr, parentPath)
 	if !currentArray.IsArray() {
-		fmt.Printf("Warning: Expected array at path %s, but did not find an array.\n", parentPath)
 		return
 	}
 
