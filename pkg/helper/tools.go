@@ -6,6 +6,7 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -206,4 +207,8 @@ func ConvertToJSON(v interface{}, log *logrus.Logger) string {
 		log.Infof("JSON convert err: %v", err)
 	}
 	return string(jsonData)
+}
+
+func EscapePointKey(key string) string {
+	return strings.ReplaceAll(key, ".", `\.`)
 }

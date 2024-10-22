@@ -62,8 +62,13 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 		collection = c.Query("collection")
 	}
 
+	canonicalName := c.Param("canonical_name")
+	if canonicalName == "" {
+		canonicalName = c.Query("canonical_name")
+	}
+
 	requestDetails := models.RequestDetails{
-		CanonicalName: c.Param("canonical_name"),
+		CanonicalName: canonicalName,
 		GType:         models.GTypes(c.Query("gtype")),
 		Category:      c.Query("category"),
 		Name:          c.Param("name"),

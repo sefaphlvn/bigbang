@@ -1,11 +1,13 @@
 package custom
 
 import (
-	"errors"
+	"context"
 	"fmt"
 
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -20,8 +22,8 @@ type Record struct {
 
 func (custom *AppHandler) GetCustomResourceList(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	collection := custom.Context.Client.Collection(requestDetails.Collection)
-	opts := options.Find()
-	opts.SetProjection(bson.M{
+
+	opts := options.Find().SetProjection(bson.M{
 		"general.name":           1,
 		"general.canonical_name": 1,
 		"general.gtype":          1,
@@ -29,23 +31,47 @@ func (custom *AppHandler) GetCustomResourceList(resource models.DBResourceClass,
 		"general.category":       1,
 	})
 
-	fmt.Println(requestDetails.Project)
-	var filters = bson.M{"general.version": requestDetails.Version, "general.project": requestDetails.Project}
+	filters := buildFilters(requestDetails)
 
-	if requestDetails.GType != "" {
-		filters["general.gtype"] = requestDetails.GType
-	}
-
-	if requestDetails.Category != "" {
-		filters["general.category"] = requestDetails.Category
-	}
 	cursor, err := collection.Find(custom.Context.Ctx, filters, opts)
 	if err != nil {
-		return nil, errors.New("unknown db error")
+		return nil, fmt.Errorf("db error: %w", err)
+	}
+	defer cursor.Close(custom.Context.Ctx)
+
+	results, decodeErr := decodeResults(cursor, requestDetails.Collection, custom.Context.Logger)
+	if decodeErr != nil {
+		return nil, decodeErr
 	}
 
+	return results, nil
+}
+
+func buildFilters(details models.RequestDetails) bson.M {
+	filters := bson.M{
+		"general.version": details.Version,
+		"general.project": details.Project,
+	}
+
+	if details.GType != "" {
+		filters["general.gtype"] = details.GType
+	}
+
+	if details.Category != "" {
+		filters["general.category"] = details.Category
+	}
+
+	if details.CanonicalName != "" {
+		filters["general.canonical_name"] = details.CanonicalName
+	}
+
+	return filters
+}
+
+func decodeResults(cursor *mongo.Cursor, collectionName string, logger *logrus.Logger) ([]Record, error) {
 	var results []Record
-	for cursor.Next(custom.Context.Ctx) {
+
+	for cursor.Next(context.TODO()) {
 		var doc struct {
 			General struct {
 				Name          string `bson:"name"`
@@ -53,29 +79,27 @@ func (custom *AppHandler) GetCustomResourceList(resource models.DBResourceClass,
 				GType         string `bson:"gtype"`
 				Type          string `bson:"type"`
 				Category      string `bson:"category"`
-				Collection    string `bson:"collection"`
 			} `bson:"general"`
 		}
 
 		if err := cursor.Decode(&doc); err != nil {
-			custom.Context.Logger.Debugf("Error decoding downstream resource: %v", err)
+			logger.Debugf("Decode fail: %v", err)
+			continue
 		}
 
-		results = append(
-			results,
-			Record{
-				Name:          doc.General.Name,
-				CanonicalName: doc.General.CanonicalName,
-				GType:         doc.General.GType,
-				Type:          doc.General.Type,
-				Category:      doc.General.Category,
-				Collection:    requestDetails.Collection,
-			},
-		)
+		results = append(results, Record{
+			Name:          doc.General.Name,
+			CanonicalName: doc.General.CanonicalName,
+			GType:         doc.General.GType,
+			Type:          doc.General.Type,
+			Category:      doc.General.Category,
+			Collection:    collectionName,
+		})
 	}
 
 	if err := cursor.Err(); err != nil {
-		custom.Context.Logger.Debug(err)
+		logger.Debugf("Cursor error: %v", err)
+		return nil, err
 	}
 
 	return results, nil

@@ -69,6 +69,12 @@ var ClusterTypedConfigPaths = []TypedConfigPath{
 		PathTemplate: "health_checks.%d.event_logger.%d.typed_config",
 		Kind:         "hcefs",
 	},
+	{
+		ArrayPaths:       []ArrayPath{},
+		PathTemplate:     "typed_extension_protocol_options",
+		Kind:             "http_protocol",
+		IsPerTypedConfig: true,
+	},
 }
 
 var RouteTypedConfigPaths = []TypedConfigPath{

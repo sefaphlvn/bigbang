@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
@@ -53,7 +54,7 @@ func ProcessTypedConfigs(jsonStringStr string, typedConfigPath models.TypedConfi
 			if result.Exists() {
 				result.ForEach(func(key, value gjson.Result) bool {
 					dynamicKey := key.String()
-					dynamicPath := fmt.Sprintf("%s.%s", typedConfigPath.PathTemplate, dynamicKey)
+					dynamicPath := fmt.Sprintf("%s.%s", typedConfigPath.PathTemplate, helper.EscapePointKey(dynamicKey))
 					processPath(jsonStringStr, dynamicPath, &typedConfigs, typedConfigsMap, seenConfigs, logger)
 					return true
 				})
@@ -136,9 +137,6 @@ func processPath(jsonStringStr, path string, typedConfigs *[]*models.TypedConfig
 
 	if singleTypedConfig != nil {
 		uniqueKey := fmt.Sprintf("%s|%s|%s|%s", singleTypedConfig.Gtype, singleTypedConfig.Name, path, singleTypedConfig.ParentName)
-		if uniqueKey == "envoy.extensions.access_loggers.fluentd.v3.FluentdAccessLogConfig|resource1|access_log.1.typed_config|" {
-			logger.Debugf("Unique key: %s", uniqueKey)
-		}
 
 		if _, exists := seenConfigs[uniqueKey]; !exists {
 			*typedConfigs = append(*typedConfigs, singleTypedConfig)

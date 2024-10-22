@@ -32,3 +32,12 @@ func CompressorLibraryDownstreamFilters(name string) []MongoFilters {
 		},
 	}
 }
+
+func TypedHttpProtocolDownstreamFilters(name string) []MongoFilters {
+	return []MongoFilters{
+		{
+			Collection: "clusters",
+			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+		},
+	}
+}

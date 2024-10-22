@@ -86,7 +86,7 @@ func (ar *AllResources) updateJSONConfig(jsonStringStr *string, path string, typ
 
 		if err := json.Unmarshal(anyJSON, &config); err != nil {
 			return fmt.Errorf("error unmarshalling any typed config: %w", err)
-		}
+		} 
 	}
 
 	if *jsonStringStr, err = sjson.Set(*jsonStringStr, path, config); err != nil {
