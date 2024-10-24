@@ -6,6 +6,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/sefaphlvn/bigbang/grpc/poke"
 	grpcserver "github.com/sefaphlvn/bigbang/grpc/server"
+	"github.com/sefaphlvn/bigbang/grpc/server/bridge"
 	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"
 	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sefaphlvn/bigbang/pkg/db"
@@ -33,12 +34,13 @@ var grpcCmd = &cobra.Command{
 
 		var pokeServer = poke.NewPokeServer(ctxCache, db, logger, appConfig)
 		go pokeServer.Run(pokeServer)
+		var errorContext = bridge.NewErrorContext(10) // Her node için 10 hata limiti
 
-		var callbacks = grpcserver.NewCallbacks(logger)
+		var callbacks = grpcserver.NewCallbacks(logger, errorContext)
 		var srv = server.NewServer(context.Background(), ctxCache.Cache.Cache, callbacks)
 		var grpcServer = grpcserver.NewServer(srv, port, logger, ctxCache)
 
-		grpcServer.Run(db)
+		grpcServer.Run(db, errorContext)
 	},
 }
 

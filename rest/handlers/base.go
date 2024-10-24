@@ -57,61 +57,37 @@ func decodeResource(c *gin.Context) (models.DBResourceClass, error) {
 func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 	userDetails, _ := GetUserDetails(c)
 
-	collection := c.Param("collection")
-	if collection == "" {
-		collection = c.Query("collection")
-	}
-
-	canonicalName := c.Param("canonical_name")
-	if canonicalName == "" {
-		canonicalName = c.Query("canonical_name")
-	}
-
 	requestDetails := models.RequestDetails{
-		CanonicalName: canonicalName,
+		CanonicalName: getParamOrQuery(c, "canonical_name"),
 		GType:         models.GTypes(c.Query("gtype")),
 		Category:      c.Query("category"),
 		Name:          c.Param("name"),
-		Collection:    collection,
+		Collection:    getParamOrQuery(c, "collection"),
 		SaveOrPublish: c.Query("save_or_publish"),
 		User:          userDetails,
 		Project:       c.Query("project"),
-		Metadata:      map[string]string{"http_filter": c.Query("metadata_http_filter")},
+		Metadata:      extractMetadata(c),
+		Version:       getOptionalParam(c, "version"),
+		Type:          models.KnownTYPES(getOptionalParam(c, "type")),
 	}
 
-	err := checkRole(c, userDetails)
-	if err != nil {
+	if err := checkRole(c, userDetails); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
-	// Check for a version parameter in the path and query parameters
-	if version := c.Param("version"); version != "" {
-		requestDetails.Version = version
-	} else if version := c.Query("version"); version != "" {
-		requestDetails.Version = version
-	}
-
-	// Check for a type parameter in the path and query parameters
-	if ltype := c.Param("type"); ltype != "" {
-		requestDetails.Type = models.KnownTYPES(ltype)
-	} else if ltype := c.Query("type"); ltype != "" {
-		requestDetails.Type = models.KnownTYPES(ltype)
-	}
-
-	// Decode the resource from the request
 	resource, err := decodeResource(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	// Call the dbFunc with the resource and requestDetails
+
 	response, err := dbFunc(resource, requestDetails)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error(), "data": response})
 		return
 	}
-	// Return the response as a JSON object with the status OK
+
 	c.JSON(http.StatusOK, response)
 }
 
@@ -218,4 +194,30 @@ func (h *Handler) handleDepRequest(c *gin.Context, depFunc DepFunc) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func extractMetadata(c *gin.Context) map[string]string {
+	metadata := make(map[string]string)
+
+	for key, values := range c.Request.URL.Query() {
+		if len(values) > 0 && len(key) >= 9 && key[:9] == "metadata_" {
+			metadata[key[9:]] = values[0]
+		}
+	}
+
+	return metadata
+}
+
+func getParamOrQuery(c *gin.Context, key string) string {
+	if value := c.Param(key); value != "" {
+		return value
+	}
+	return c.Query(key)
+}
+
+func getOptionalParam(c *gin.Context, key string) string {
+	if value := c.Param(key); value != "" {
+		return value
+	}
+	return c.Query(key)
 }

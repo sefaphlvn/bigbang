@@ -67,6 +67,7 @@ func initBridgeRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		{"GET", "/stats/snapshot-keys", h.GetSnapshotKeys},
 		{"GET", "/stats/:name", h.GetSnapshotResources},
 		{"POST", "/poke/:name", h.GetSnapshotResources},
+		{"GET", "/errors", h.GetErrors},
 	}
 
 	initRoutes(rg, routes)

@@ -52,7 +52,7 @@ func NewServer(xdsServer server.Server, port uint, logger *logrus.Logger, contex
 }
 
 // Run starts an xDS server at the given port.
-func (s *Server) Run(db *db.AppContext) {
+func (s *Server) Run(db *db.AppContext, errorContext *serverBridge.ErrorContext) {
 	var grpcOptions []grpc.ServerOption
 	grpcOptions = append(grpcOptions,
 		grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams),
@@ -74,7 +74,7 @@ func (s *Server) Run(db *db.AppContext) {
 		s.logger.Fatal(err)
 	}
 
-	s.registerServer(grpcServer, db)
+	s.registerServer(grpcServer, db, errorContext)
 
 	s.logger.Infof("Management server listening on :%d\n", s.port)
 	if err = grpcServer.Serve(lis); err != nil {
@@ -82,19 +82,15 @@ func (s *Server) Run(db *db.AppContext) {
 	}
 }
 
-func (s *Server) registerServer(grpcServer *grpc.Server, db *db.AppContext) {
+func (s *Server) registerServer(grpcServer *grpc.Server, db *db.AppContext, errorContext *serverBridge.ErrorContext) {
 	discoverygrpc.RegisterAggregatedDiscoveryServiceServer(grpcServer, s.xdsServer)
 	routeservice.RegisterVirtualHostDiscoveryServiceServer(grpcServer, s.xdsServer)
-	/* endpointservice.RegisterEndpointDiscoveryServiceServer(grpcServer, s.xdsServer)
-	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, s.xdsServer)
-	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, s.xdsServer)
-	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, s.xdsServer)
-	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, s.xdsServer)
-	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, s.xdsServer)
-	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(grpcServer, s.xdsServer) */
 
 	// bridge grpc services
 	bridge.RegisterSnapshotKeyServiceServer(grpcServer, serverBridge.NewSnapshotKeyServiceServer(s.context))
 	bridge.RegisterSnapshotResourceServiceServer(grpcServer, serverBridge.NewSnapshotResourceServiceServer(s.context))
 	bridge.RegisterPokeServiceServer(grpcServer, serverBridge.NewPokeServiceServer(s.context, db))
+
+	errorService := serverBridge.NewErrorServiceServer(errorContext, s.logger)
+	bridge.RegisterErrorServiceServer(grpcServer, errorService)
 }

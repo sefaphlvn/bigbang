@@ -18,6 +18,27 @@ service SnapshotResourceService {
 
 service PokeService { rpc Poke(PokeRequest) returns (PokeResponse); }
 
+service ErrorService {
+  rpc GetNodeErrors(NodeErrorRequest) returns (NodeErrorResponse);
+}
+
+message NodeErrorRequest {
+  string node_id = 1; // Node'un ID'si
+}
+
+message ErrorEntry {
+  string message = 1;        // Hata mesajı
+  string resource_id = 2;    // İlgili resource ID'si
+  string response_nonce = 3; // İlgili isteğin nonce değeri
+  int32 count = 4;           // Aynı hatanın tekrar sayısı
+  bool resolved = 5;         // Çözülme durumu
+  string timestamp = 6;      // Hatanın oluşma zamanı (ISO8601 formatında)
+}
+
+message NodeErrorResponse {
+  repeated ErrorEntry errors = 1; // Hata girişlerinin listesi
+}
+
 message PokeRequest {
   string nodeID = 1;
   string project = 2;

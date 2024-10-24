@@ -20,11 +20,16 @@ func (xds *AppHandler) SetResource(resource models.DBResourceClass, requestDetai
 	general.UpdatedAt = primitive.NewDateTimeFromTime(now)
 
 	resource.SetGeneral(&general)
+	validateErr, err, isErr := crud.Validate(models.GTypes(resource.GetGeneral().GType), resource.GetResource())
+	if isErr {
+		return validateErr, err
+	}
+
 	resource.SetTypedConfig(typed_configs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
 	common.DetectSetPermissions(resource, requestDetails)
 
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
-	_, err := collection.InsertOne(xds.Context.Ctx, resource)
+	_, err = collection.InsertOne(xds.Context.Ctx, resource)
 	if err != nil {
 		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
 			return nil, errors.New("name already exists")

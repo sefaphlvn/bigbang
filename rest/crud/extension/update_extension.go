@@ -32,11 +32,17 @@ func updateResource(extension *AppHandler, resource models.DBResourceClass, requ
 		return nil, fmt.Errorf("invalid version format: %s", versionStr)
 	}
 	resource.SetVersion(strconv.Itoa(version + 1))
+	newResource := resource.GetResource()
+	validateErr, err, isErr := crud.Validate(models.GTypes(resource.GetGeneral().GType), newResource)
+	if isErr {
+		return validateErr, err
+	}
+
 	resource.SetTypedConfig(typed_configs.DecodeSetTypedConfigs(resource, extension.Context.Logger))
 
 	update := bson.M{
 		"$set": bson.M{
-			"resource.resource":        resource.GetResource(),
+			"resource.resource":        newResource,
 			"resource.version":         resource.GetVersion(),
 			"general.config_discovery": resource.GetConfigDiscovery(),
 			"general.updated_at":       primitive.NewDateTimeFromTime(time.Now()),

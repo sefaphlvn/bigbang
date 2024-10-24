@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sefaphlvn/bigbang/grpc/server/bridge"
 	"github.com/sirupsen/logrus"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -13,6 +14,7 @@ import (
 type Callbacks struct {
 	signal         chan struct{}
 	logger         *logrus.Logger
+	errorContext   *bridge.ErrorContext
 	fetches        int
 	requests       int
 	deltaRequests  int
@@ -20,9 +22,10 @@ type Callbacks struct {
 	mu             sync.Mutex
 }
 
-func NewCallbacks(logger *logrus.Logger) *Callbacks {
+func NewCallbacks(logger *logrus.Logger, errorContext *bridge.ErrorContext) *Callbacks {
 	return &Callbacks{
-		logger: logger,
+		logger:       logger,
+		errorContext: errorContext,
 	}
 }
 
@@ -65,37 +68,28 @@ func (c *Callbacks) OnStreamResponse(_ context.Context, _ int64, req *discovery.
 }
 
 func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscoveryRequest, resp *discovery.DeltaDiscoveryResponse) {
-	/* 	if req.TypeUrl == "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment" {
-		c.logger.Warnf("Sending Delta EDS response: %v", resp)
-	} */
-
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.deltaResponses++
-
-	/*
-		 	// DeltaDiscoveryResponse nesnesini JSON formatına dönüştür
-			respJson, err := json.Marshal(resp)
-			if err != nil {
-				c.logger.Errorf("JSON marshalling error: %v", err)
-				return
-			}
-
-			c.logger.Errorf("Delta Discovery Request Error: Code=%v, Message=%v\n", req)
-			fmt.Println("--------------------------")
-			helper.PrettyPrint(respJson)
-			fmt.Println("--------------------------")
-
-			fmt.Println("//////////////////////////////////////")
-			helper.PrettyPrint(req.ErrorDetail)
-			fmt.Println("//////////////////////////////////////")
-	*/
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {
-	/* if errDetail := req.GetErrorDetail(); errDetail != nil {
-	    c.logger.Errorf("Delta Discovery Request Error: Code=%v, Message=%v\n", errDetail, errDetail.Message)
-	} */
+	nodeID := req.GetNode().GetId()
+	typeURL := req.GetTypeUrl()
+	responseNonce := req.GetResponseNonce()
+
+	if errDetail := req.GetErrorDetail(); errDetail != nil {
+		// Hata varsa cache'e ekle veya güncelle
+		errorMsg := errDetail.Message
+		c.logger.Errorf("Delta Discovery Request Error (Node %s, Resource %s): %s", nodeID, typeURL, errorMsg)
+
+		c.errorContext.ErrorCache.AddOrUpdateError(nodeID, typeURL, errorMsg, responseNonce)
+	} else {
+		// Hata yoksa ilgili resource için hataları çözülmüş olarak işaretle
+		c.errorContext.ErrorCache.ResolveErrorsForResource(nodeID, typeURL)
+		// Çözülmüş hataları temizle
+		c.errorContext.ErrorCache.ClearResolvedErrors(nodeID)
+	}
 
 	c.mu.Lock()
 	defer c.mu.Unlock()

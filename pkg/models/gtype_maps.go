@@ -374,3 +374,10 @@ func (gt GTypes) UpstreamPaths() map[string]GTypes {
 	}
 	return nil
 }
+
+func (gt GTypes) Validate() map[string]GTypes {
+	if mapping, exists := gTypeMappings[gt]; exists && mapping.UpstreamPaths != nil {
+		return mapping.UpstreamPaths
+	}
+	return nil
+}

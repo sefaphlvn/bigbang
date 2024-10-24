@@ -4,6 +4,7 @@ import (
 	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"
 	"github.com/sefaphlvn/bigbang/pkg/bridge"
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sirupsen/logrus"
 )
 
 type BaseServiceServer struct {
@@ -45,5 +46,20 @@ func NewPokeServiceServer(context *snapshot.Context, db *db.AppContext) *PokeSer
 	return &PokeServiceServer{
 		BaseServiceServer: &BaseServiceServer{context: context},
 		AppContext:        db,
+	}
+}
+
+// ErrorContext yapısı, hataların merkezi yönetimi için.
+type ErrorServiceServer struct {
+	bridge.UnimplementedErrorServiceServer
+	errorContext *ErrorContext
+	logger       *logrus.Logger
+}
+
+// Yeni bir ErrorServiceServer oluşturur.
+func NewErrorServiceServer(ctx *ErrorContext, logger *logrus.Logger) *ErrorServiceServer {
+	return &ErrorServiceServer{
+		errorContext: ctx,
+		logger:       logger,
 	}
 }

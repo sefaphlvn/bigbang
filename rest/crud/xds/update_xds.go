@@ -28,13 +28,19 @@ func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, requestDe
 		}
 	}
 
+	newResource := resource.GetResource()
 	version, _ := strconv.Atoi(resource.GetVersion().(string))
+	validateErr, err, isErr := crud.Validate(models.GTypes(resource.GetGeneral().GType), newResource)
+	if isErr {
+		return validateErr, err
+	}
+
 	resource.SetVersion(strconv.Itoa(version + 1))
 	resource.SetTypedConfig(typed_configs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
 
 	update := bson.M{
 		"$set": bson.M{
-			"resource.resource":        resource.GetResource(),
+			"resource.resource":        newResource,
 			"resource.version":         resource.GetVersion(),
 			"general.config_discovery": resource.GetConfigDiscovery(),
 			"general.updated_at":       primitive.NewDateTimeFromTime(time.Now()),
@@ -43,7 +49,7 @@ func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, requestDe
 	}
 
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
-	_, err := collection.UpdateOne(xds.Context.Ctx, filterWithRestriction, update)
+	_, err = collection.UpdateOne(xds.Context.Ctx, filterWithRestriction, update)
 	if err != nil {
 		return nil, err
 	}

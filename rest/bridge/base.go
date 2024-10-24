@@ -15,6 +15,7 @@ type AppHandler struct {
 	SnapshotResource bridge.SnapshotResourceServiceClient
 	SnapshotKeys     bridge.SnapshotKeyServiceClient
 	Poke             bridge.PokeServiceClient
+	Errors           bridge.ErrorServiceClient
 }
 
 func NewBridgeHandler(context *db.AppContext) *AppHandler {
@@ -26,6 +27,7 @@ func NewBridgeHandler(context *db.AppContext) *AppHandler {
 	ResourcesClient := bridge.NewSnapshotResourceServiceClient(conn)
 	ListenersClient := bridge.NewSnapshotKeyServiceClient(conn)
 	PokeClient := bridge.NewPokeServiceClient(conn)
+	ErrorsClient := bridge.NewErrorServiceClient(conn)
 
 	return &AppHandler{
 		Context:          context,
@@ -33,5 +35,6 @@ func NewBridgeHandler(context *db.AppContext) *AppHandler {
 		SnapshotResource: ResourcesClient,
 		SnapshotKeys:     ListenersClient,
 		Poke:             PokeClient,
+		Errors:           ErrorsClient,
 	}
 }

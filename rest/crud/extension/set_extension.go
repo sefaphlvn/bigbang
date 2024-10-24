@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/rest/crud"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 	"github.com/sefaphlvn/bigbang/rest/crud/typed_configs"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,11 +19,16 @@ func (extension *AppHandler) SetExtension(resource models.DBResourceClass, reque
 	general.CreatedAt = primitive.NewDateTimeFromTime(now)
 	general.UpdatedAt = primitive.NewDateTimeFromTime(now)
 	resource.SetGeneral(&general)
+	validateErr, err, isErr := crud.Validate(models.GTypes(resource.GetGeneral().GType), resource.GetResource())
+	if isErr {
+		return validateErr, err
+	}
+
 	resource.SetTypedConfig(typed_configs.DecodeSetTypedConfigs(resource, extension.Context.Logger))
 	common.DetectSetPermissions(resource, requestDetails)
-	
+
 	collection := extension.Context.Client.Collection(requestDetails.Collection)
-	_, err := collection.InsertOne(extension.Context.Ctx, resource)
+	_, err = collection.InsertOne(extension.Context.Ctx, resource)
 	if err != nil {
 		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
 			return nil, errors.New("name already exists")

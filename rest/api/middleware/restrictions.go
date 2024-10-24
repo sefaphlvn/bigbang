@@ -48,4 +48,5 @@ var AllowedEndpoints = []string{
 	"/api/v3/dependency/:name",
 	"/api/v3/bridge/stats/:name",
 	"/api/v3/bridge/poke/:name",
+	"/api/v3/bridge/errors",
 }
