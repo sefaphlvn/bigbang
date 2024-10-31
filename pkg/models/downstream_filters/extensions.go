@@ -19,7 +19,7 @@ func ConfigDiscoveryListenerDownstreamFilters(name string) []MongoFilters {
 func ConfigDiscoveryHttpFilterDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
-			Collection: "extensions",
+			Collection: "filters",
 			Filter:     bson.D{{Key: general_config_discovery_name, Value: name}},
 		},
 	}
@@ -37,7 +37,7 @@ func TypedHttpFilterDownstreamFilters(name string) []MongoFilters {
 func DiscoverAndTypedHttpFilterDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
-			Collection: "extensions",
+			Collection: "filters",
 			Filter:     bson.D{{Key: general_config_discovery_name, Value: name}},
 		},
 		{

@@ -124,9 +124,9 @@ func collectCreateIndex(database *mongo.Database, ctx context.Context, logger *l
 		"endpoints":    {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
 		"routes":       {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
 		"virtual_host": {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
-		"extensions":   {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
+		"filters":      {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
 		"secrets":      {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
-		"others":       {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
+		"extensions":   {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
 		"bootstrap":    {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
 		"projects":     {Keys: bson.M{"projectname": 1}, Options: options.Index().SetUnique(true).SetName("projectname_1")},
 	}

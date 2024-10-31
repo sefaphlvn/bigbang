@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/sefaphlvn/bigbang/grpc/server/bridge"
@@ -15,8 +16,6 @@ type Callbacks struct {
 	signal         chan struct{}
 	logger         *logrus.Logger
 	errorContext   *bridge.ErrorContext
-	fetches        int
-	requests       int
 	deltaRequests  int
 	deltaResponses int
 	mu             sync.Mutex
@@ -29,19 +28,22 @@ func NewCallbacks(logger *logrus.Logger, errorContext *bridge.ErrorContext) *Cal
 	}
 }
 
-func (c *Callbacks) Report() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.logger.Infof("server callbacks fetches=%d requests=%d\n", c.fetches, c.requests)
+func (c *Callbacks) OnFetchResponse(*discovery.DiscoveryRequest, *discovery.DiscoveryResponse) {}
+
+func (c *Callbacks) OnStreamResponse(_ context.Context, _ int64, req *discovery.DiscoveryRequest, resp *discovery.DiscoveryResponse) {
+}
+
+func (c *Callbacks) OnFetchRequest(a context.Context, d *discovery.DiscoveryRequest) error {
+	return nil
 }
 
 func (c *Callbacks) OnStreamOpen(_ context.Context, id int64, typ string) error {
-	c.logger.Debugf("stream %d open for %s\n", id, typ)
+	fmt.Println("stream open", id, typ)
 	return nil
 }
 
 func (c *Callbacks) OnStreamClosed(id int64, node *core.Node) {
-	c.logger.Debugf("stream %d of node %s closed\n", id, node.Id)
+	fmt.Println("stream closed", id, node)
 }
 
 func (c *Callbacks) OnDeltaStreamOpen(_ context.Context, id int64, typ string) error {
@@ -53,24 +55,23 @@ func (c *Callbacks) OnDeltaStreamClosed(id int64, node *core.Node) {
 	c.logger.Debugf("delta stream %d of node %s closed\n", id, node.Id)
 }
 
-func (c *Callbacks) OnStreamRequest(_ int64, req *discovery.DiscoveryRequest) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.requests++
-	if c.signal != nil {
-		close(c.signal)
-		c.signal = nil
-	}
-	return nil
-}
-
-func (c *Callbacks) OnStreamResponse(_ context.Context, _ int64, req *discovery.DiscoveryRequest, resp *discovery.DiscoveryResponse) {
-}
+func (c *Callbacks) OnStreamRequest(_ int64, req *discovery.DiscoveryRequest) error { return nil }
 
 func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscoveryRequest, resp *discovery.DeltaDiscoveryResponse) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	fmt.Println(req.ErrorDetail)
 	c.deltaResponses++
+
+	nodeID := req.GetNode().GetId()
+	typeURL := req.GetTypeUrl()
+	responseNonce := req.GetResponseNonce()
+	nonce := resp.GetNonce()
+	c.logger.Warnf("respnonce: %s\n nonce: %s\n typeurl: %s\n", responseNonce, nonce, typeURL)
+	if errEntry, found := c.errorContext.ErrorCache.GetErrorEntry(nodeID, typeURL, responseNonce); found {
+		errEntry.ResponseNonce = nonce
+		c.errorContext.ErrorCache.UpdateErrorEntry(nodeID, typeURL, responseNonce, *errEntry)
+	}
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {
@@ -79,15 +80,11 @@ func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryR
 	responseNonce := req.GetResponseNonce()
 
 	if errDetail := req.GetErrorDetail(); errDetail != nil {
-		// Hata varsa cache'e ekle veya güncelle
 		errorMsg := errDetail.Message
 		c.logger.Errorf("Delta Discovery Request Error (Node %s, Resource %s): %s", nodeID, typeURL, errorMsg)
-
 		c.errorContext.ErrorCache.AddOrUpdateError(nodeID, typeURL, errorMsg, responseNonce)
 	} else {
-		// Hata yoksa ilgili resource için hataları çözülmüş olarak işaretle
-		c.errorContext.ErrorCache.ResolveErrorsForResource(nodeID, typeURL)
-		// Çözülmüş hataları temizle
+		c.errorContext.ErrorCache.ResolveErrorsForResource(nodeID, typeURL, responseNonce)
 		c.errorContext.ErrorCache.ClearResolvedErrors(nodeID)
 	}
 
@@ -101,16 +98,3 @@ func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryR
 
 	return nil
 }
-
-func (c *Callbacks) OnFetchRequest(context.Context, *discovery.DiscoveryRequest) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.fetches++
-	if c.signal != nil {
-		close(c.signal)
-		c.signal = nil
-	}
-	return nil
-}
-
-func (c *Callbacks) OnFetchResponse(*discovery.DiscoveryRequest, *discovery.DiscoveryResponse) {}

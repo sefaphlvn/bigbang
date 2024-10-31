@@ -47,15 +47,15 @@ var URLs = map[string]string{
 	"tcp_proxy":             "/filters/network/tcp_proxy/",
 	"hcm":                   "/filters/network/hcm/",
 	"secrets":               "/resource/secret/",
-	"access_log":            "/others/access_log/",
+	"access_log":            "/extensions/access_log/",
 	"http_router":           "/filters/http/http_router/",
-	"hcefs":                 "/others/hcefs/",
+	"hcefs":                 "/extensions/hcefs/",
 	"basic_auth":            "/filters/http/basic_auth/",
 	"cors":                  "/filters/http/cors/",
 	"bandwidth_limit":       "/filters/http/bandwidth_limit/",
 	"compressor":            "/filters/http/compressor/",
-	"compressor_library":    "/others/compressor_library/",
-	"http_protocol_options": "/others/http_protocol_options/",
+	"compressor_library":    "/extensions/compressor_library/",
+	"http_protocol_options": "/extensions/http_protocol_options/",
 }
 
 var gTypeMappings = map[GTypes]GTypeMapping{
@@ -70,7 +70,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	HTTPConnectionManager: {
 		PrettyName:            "Http Connection Manager",
-		Collection:            "extensions",
+		Collection:            "filters",
 		URL:                   URLs["hcm"],
 		Message:               &hcm.HttpConnectionManager{},
 		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryListenerDownstreamFilters,
@@ -79,7 +79,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	Router: {
 		PrettyName:            "Router",
-		Collection:            "extensions",
+		Collection:            "filters",
 		URL:                   URLs["http_routerhcm"],
 		Message:               &router.Router{},
 		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryHttpFilterDownstreamFilters,
@@ -133,7 +133,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	TcpProxy: {
 		PrettyName:            "Tcp Proxy",
-		Collection:            "extensions",
+		Collection:            "filters",
 		URL:                   URLs["tcp_proxy"],
 		Message:               &tcp.TcpProxy{},
 		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryListenerDownstreamFilters,
@@ -142,7 +142,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	FluentdAccessLog: {
 		PrettyName:            "Access Log(Fluentd)",
-		Collection:            "others",
+		Collection:            "extensions",
 		URL:                   URLs["access_log"],
 		Message:               &al_fluentd.FluentdAccessLogConfig{},
 		DownstreamFiltersFunc: downstream_filters.ALSDownstreamFilters,
@@ -151,7 +151,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	FileAccessLog: {
 		PrettyName:            "Access Log(File)",
-		Collection:            "others",
+		Collection:            "extensions",
 		URL:                   URLs["access_log"],
 		Message:               &al_file.FileAccessLog{},
 		DownstreamFiltersFunc: downstream_filters.ALSDownstreamFilters,
@@ -160,7 +160,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	StdoutAccessLog: {
 		PrettyName:            "Access Log(StdOut)",
-		Collection:            "others",
+		Collection:            "extensions",
 		URL:                   URLs["access_log"],
 		Message:               &al_stream.StdoutAccessLog{},
 		DownstreamFiltersFunc: downstream_filters.ALSDownstreamFilters,
@@ -169,7 +169,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	StdErrAccessLog: {
 		PrettyName:            "Access Log(StdErr)",
-		Collection:            "others",
+		Collection:            "extensions",
 		URL:                   URLs["access_log"],
 		Message:               &al_stream.StderrAccessLog{},
 		DownstreamFiltersFunc: downstream_filters.ALSDownstreamFilters,
@@ -214,7 +214,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	HealthCheckEventFileSink: {
 		PrettyName:            "Health Check Event File Sink",
-		Collection:            "others",
+		Collection:            "extensions",
 		URL:                   URLs["hcefs"],
 		Message:               &hcefs.HealthCheckEventFileSink{},
 		DownstreamFiltersFunc: downstream_filters.HCEFSDownstreamFilters,
@@ -223,7 +223,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	BasicAuth: {
 		PrettyName:            "Basic Auth",
-		Collection:            "extensions",
+		Collection:            "filters",
 		URL:                   URLs["basic_auth"],
 		Message:               &basic_auth.BasicAuth{},
 		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryHttpFilterDownstreamFilters,
@@ -232,7 +232,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	BasicAuthPerRoute: {
 		PrettyName:            "Basic Auth Per Route",
-		Collection:            "extensions",
+		Collection:            "filters",
 		URL:                   URLs["basic_auth"],
 		Message:               &basic_auth.BasicAuthPerRoute{},
 		DownstreamFiltersFunc: downstream_filters.TypedHttpFilterDownstreamFilters,
@@ -241,7 +241,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	Cors: {
 		PrettyName:            "Cors",
-		Collection:            "extensions",
+		Collection:            "filters",
 		URL:                   URLs["cors"],
 		Message:               &cors.Cors{},
 		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryHttpFilterDownstreamFilters,
@@ -250,7 +250,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	CorsPolicy: {
 		PrettyName:            "Cors Policy",
-		Collection:            "extensions",
+		Collection:            "filters",
 		URL:                   URLs["cors"],
 		Message:               &cors.CorsPolicy{},
 		DownstreamFiltersFunc: downstream_filters.TypedHttpFilterDownstreamFilters,
@@ -259,7 +259,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	BandwidthLimit: {
 		PrettyName:            "Bandwidth Limit",
-		Collection:            "extensions",
+		Collection:            "filters",
 		URL:                   URLs["bandwidth_limit"],
 		Message:               &bandwidth_limit.BandwidthLimit{},
 		DownstreamFiltersFunc: downstream_filters.DiscoverAndTypedHttpFilterDownstreamFilters,
@@ -268,7 +268,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	Compressor: {
 		PrettyName:            "Compressor",
-		Collection:            "extensions",
+		Collection:            "filters",
 		URL:                   URLs["compressor"],
 		Message:               &compressor.Compressor{},
 		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryHttpFilterDownstreamFilters,
@@ -277,7 +277,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	CompressorPerRoute: {
 		PrettyName:            "Compressor Per Route",
-		Collection:            "extensions",
+		Collection:            "filters",
 		URL:                   URLs["compressor"],
 		Message:               &compressor.CompressorPerRoute{},
 		DownstreamFiltersFunc: downstream_filters.TypedHttpFilterDownstreamFilters,
@@ -286,7 +286,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	GzipCompressor: {
 		PrettyName:            "Gzip Compressor",
-		Collection:            "others",
+		Collection:            "extensions",
 		URL:                   URLs["compressor_library"],
 		Message:               &gzip_compressor.Gzip{},
 		DownstreamFiltersFunc: downstream_filters.CompressorLibraryDownstreamFilters,
@@ -295,7 +295,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	BrotliCompressor: {
 		PrettyName:            "Brotli Compressor",
-		Collection:            "others",
+		Collection:            "extensions",
 		URL:                   URLs["compressor_library"],
 		Message:               &brotli_compressor.Brotli{},
 		DownstreamFiltersFunc: downstream_filters.CompressorLibraryDownstreamFilters,
@@ -304,7 +304,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	ZstdCompressor: {
 		PrettyName:            "Zstd Compressor",
-		Collection:            "others",
+		Collection:            "extensions",
 		URL:                   URLs["compressor_library"],
 		Message:               &zstd_compressor.Zstd{},
 		DownstreamFiltersFunc: downstream_filters.CompressorLibraryDownstreamFilters,
@@ -313,7 +313,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	},
 	HttpProtocolOptions: {
 		PrettyName:            "Http Protocol Options",
-		Collection:            "others",
+		Collection:            "extensions",
 		URL:                   URLs["http_protocol_options"],
 		Message:               &http_protocol_options.HttpProtocolOptions{},
 		DownstreamFiltersFunc: downstream_filters.TypedHttpProtocolDownstreamFilters,

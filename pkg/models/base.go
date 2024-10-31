@@ -12,6 +12,7 @@ const (
 	LDS        KnownTYPES = "listener"
 	ROUTE      KnownTYPES = "route"
 	EXTENSIONS KnownTYPES = "extensions"
+	FILTERS    KnownTYPES = "filters"
 	ACCESSLOG  KnownTYPES = "access_log"
 )
 

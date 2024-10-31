@@ -13,8 +13,8 @@ type ErrorEntry struct {
 	ResourceID    string
 	ResponseNonce string
 	Timestamp     time.Time
-	Count         int  // Aynı hata kaç kez geldi
-	Resolved      bool // Çözülme durumu
+	Count         int
+	Resolved      bool
 }
 
 type BoundedCache struct {
@@ -44,24 +44,21 @@ func (b *BoundedCache) AddOrUpdateError(nodeID, resourceID, errorMsg, nonce stri
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	// Node ID için hata listesi yoksa oluştur
 	if b.errors[nodeID] == nil {
 		b.errors[nodeID] = []ErrorEntry{}
 	}
 
-	// Aynı resource ve mesaj için hata varsa güncelle
 	for i, entry := range b.errors[nodeID] {
 		if entry.ResourceID == resourceID && entry.Message == errorMsg {
 			entry.ResponseNonce = nonce
 			entry.Timestamp = time.Now()
-			entry.Count++          // Aynı hatanın tekrarını sayar
-			entry.Resolved = false // Çözülmemiş olarak işaretle
+			entry.Count++
+			entry.Resolved = false
 			b.errors[nodeID][i] = entry
 			return
 		}
 	}
 
-	// Yeni hata ekle
 	b.errors[nodeID] = append(b.errors[nodeID], ErrorEntry{
 		Message:       errorMsg,
 		ResourceID:    resourceID,
@@ -71,7 +68,6 @@ func (b *BoundedCache) AddOrUpdateError(nodeID, resourceID, errorMsg, nonce stri
 		Resolved:      false,
 	})
 
-	// Limit aşılırsa en eski hatayı kaldır
 	if len(b.errors[nodeID]) > b.limit {
 		b.evictOldestError(nodeID)
 	}
@@ -97,14 +93,15 @@ func (b *BoundedCache) evictOldestError(nodeID string) {
 }
 
 // Hata çözülmüş olarak işaretler
-func (b *BoundedCache) ResolveErrorsForResource(nodeID, resourceID string) {
+func (b *BoundedCache) ResolveErrorsForResource(nodeID, resourceID, nonce string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	for i, entry := range b.errors[nodeID] {
-		if entry.ResourceID == resourceID {
+		if entry.ResourceID == resourceID && entry.ResponseNonce == nonce {
 			entry.Resolved = true
 			b.errors[nodeID][i] = entry
+			return
 		}
 	}
 }
@@ -140,4 +137,28 @@ func (s *ErrorServiceServer) GetNodeErrors(ctx context.Context, req *bridge.Node
 	}
 
 	return response, nil
+}
+
+func (b *BoundedCache) GetErrorEntry(nodeID, resourceID, nonce string) (*ErrorEntry, bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	for _, entry := range b.errors[nodeID] {
+		if entry.ResourceID == resourceID && entry.ResponseNonce == nonce {
+			return &entry, true
+		}
+	}
+	return nil, false
+}
+
+func (b *BoundedCache) UpdateErrorEntry(nodeID, resourceID, nonce string, updatedEntry ErrorEntry) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	for i, entry := range b.errors[nodeID] {
+		if entry.ResourceID == resourceID && entry.ResponseNonce == nonce {
+			b.errors[nodeID][i] = updatedEntry
+			return
+		}
+	}
 }

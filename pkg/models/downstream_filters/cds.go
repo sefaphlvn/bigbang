@@ -22,7 +22,7 @@ func ClusterDownstreamFilters(clusterName string) []MongoFilters {
 			},
 		},
 		{
-			Collection: "extensions",
+			Collection: "filters",
 			Filter: bson.D{
 				{Key: "$and", Value: bson.A{
 					bson.D{{Key: "general.gtype", Value: "envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy"}},
@@ -34,7 +34,7 @@ func ClusterDownstreamFilters(clusterName string) []MongoFilters {
 			},
 		},
 		{
-			Collection: "others",
+			Collection: "extensions",
 			Filter: bson.D{
 				{Key: "$or", Value: bson.A{
 					bson.D{{Key: "resource.resource.cluster", Value: clusterName}},

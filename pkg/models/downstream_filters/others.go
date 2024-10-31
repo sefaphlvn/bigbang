@@ -5,7 +5,7 @@ import "go.mongodb.org/mongo-driver/bson"
 func ALSDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
-			Collection: "extensions",
+			Collection: "filters",
 			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
 		},
 		{
@@ -27,7 +27,7 @@ func HCEFSDownstreamFilters(name string) []MongoFilters {
 func CompressorLibraryDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
-			Collection: "extensions",
+			Collection: "filters",
 			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
 		},
 	}

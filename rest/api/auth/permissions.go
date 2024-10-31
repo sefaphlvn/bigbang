@@ -81,6 +81,7 @@ func (handler *AppHandler) SetPermission(permissions models.Permission, userOrGr
 		"endpoints":  permissions.Endpoints,
 		"secrets":    permissions.Secrets,
 		"extensions": permissions.Extensions,
+		"filters":    permissions.Filters,
 		"bootstrap":  permissions.Bootstrap,
 	}
 

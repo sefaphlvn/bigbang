@@ -7,8 +7,8 @@ var Collections = []string{
 	"routes",
 	"lb_endpoints",
 	"extensions",
+	"filters",
 	"vhds",
-	"others",
 }
 
 var AllowedEndpoints = []string{
@@ -41,8 +41,8 @@ var AllowedEndpoints = []string{
 	"/api/v3/eo/:collection/:type",
 	"/api/v3/eo/:collection/:type/:canonical_name",
 	"/api/v3/eo/:collection/:type/:canonical_name/:name",
-	"/api/v3/eo/:collection/others/:type",
-	"/api/v3/eo/:collection/others/:type/:name",
+	"/api/v3/eo/:collection/extensions/:type",
+	"/api/v3/eo/:collection/extensions/:type/:name",
 	"/api/v3/custom/resource_list",
 	"/api/v3/custom/http_filter_list",
 	"/api/v3/dependency/:name",
