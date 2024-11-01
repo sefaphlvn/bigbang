@@ -99,6 +99,7 @@ func (b *BoundedCache) ResolveErrorsForResource(nodeID, resourceID, nonce string
 
 	for i, entry := range b.errors[nodeID] {
 		if entry.ResourceID == resourceID && entry.ResponseNonce == nonce {
+			// Hata çözülmüş olarak işaretleniyor, ancak listeden silinmiyor
 			entry.Resolved = true
 			b.errors[nodeID][i] = entry
 			return

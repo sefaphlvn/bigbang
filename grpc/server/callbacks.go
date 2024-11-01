@@ -85,7 +85,7 @@ func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryR
 		c.errorContext.ErrorCache.AddOrUpdateError(nodeID, typeURL, errorMsg, responseNonce)
 	} else {
 		c.errorContext.ErrorCache.ResolveErrorsForResource(nodeID, typeURL, responseNonce)
-		c.errorContext.ErrorCache.ClearResolvedErrors(nodeID)
+		// c.errorContext.ErrorCache.ClearResolvedErrors(nodeID)
 	}
 
 	c.mu.Lock()
