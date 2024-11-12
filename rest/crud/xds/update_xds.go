@@ -9,7 +9,7 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/crud/typed_configs"
+	"github.com/sefaphlvn/bigbang/rest/crud/typedConfigs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -30,13 +30,14 @@ func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, requestDe
 
 	newResource := resource.GetResource()
 	version, _ := strconv.Atoi(resource.GetVersion().(string))
-	validateErr, err, isErr := crud.Validate(models.GTypes(resource.GetGeneral().GType), newResource)
+	validateErr, err, isErr := crud.Validate(resource.GetGeneral().GType, newResource)
+	//	validateErr, err, isErr := crud.Validate(models.GTypes(resource.GetGeneral().GType), newResource)
 	if isErr {
 		return validateErr, err
 	}
 
 	resource.SetVersion(strconv.Itoa(version + 1))
-	resource.SetTypedConfig(typed_configs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
+	resource.SetTypedConfig(typedConfigs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
 
 	update := bson.M{
 		"$set": bson.M{

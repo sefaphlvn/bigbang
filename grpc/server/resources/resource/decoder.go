@@ -20,7 +20,6 @@ import (
 	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 )
 
 // DecodeListener processes a raw listener resource and collects extensions.
@@ -87,9 +86,7 @@ func (ar *AllResources) processExtension(extension *models.ConfigDiscovery, pare
 	for _, extConfig := range extConfigs {
 		if extension.GType == models.VirtualHost {
 			uniqKey := fmt.Sprintf("%s__%s", extension.Name, extension.GType.String())
-
-			ar.AddToCollection(extConfig, extension.GType, uniqKey, &parentName)
-
+			ar.AddToCollection(extConfig, extension.GType, uniqKey, &parentName, extension.Name)
 		} else {
 			typedConfigAsAny, err := anypb.New(extConfig)
 			if err != nil {
@@ -108,7 +105,6 @@ func (ar *AllResources) processExtension(extension *models.ConfigDiscovery, pare
 
 // Add a typed extension configuration to the Extensions slice.
 func (ar *AllResources) addTypedExtensionConfig(typedConfig *anypb.Any, parentName string) {
-
 	typedExtensionConfig := &core.TypedExtensionConfig{
 		Name:        parentName,
 		TypedConfig: typedConfig,
@@ -237,7 +233,7 @@ func processUpstreamPaths(result gjson.Result, upstreamType models.GTypes, paren
 		for _, protoMsg := range upstreamResourceProtoMsgs {
 			uniqKey := fmt.Sprintf("%s__%s", resourceName, upstreamType.String())
 			if protoMsg != nil {
-				ar.AddToCollection(protoMsg, upstreamType, uniqKey, nil)
+				ar.AddToCollection(protoMsg, upstreamType, uniqKey, nil, resourceName)
 			}
 		}
 		if additionalExtResources != nil {
@@ -247,7 +243,7 @@ func processUpstreamPaths(result gjson.Result, upstreamType models.GTypes, paren
 }
 
 // Add a resource to the appropriate collection in AllResources.
-func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTypes, uniqName string, parentName *string) {
+func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTypes, uniqName string, parentName *string, resourceName string) {
 	if ar.checkAndMarkDuplicate(uniqName) {
 		fmt.Printf("Skipping duplicate collection of resource: %s", uniqName)
 		return
@@ -267,9 +263,9 @@ func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTy
 		newVirtualHost := proto.Clone(resource).(*route.VirtualHost)
 		newVirtualHost.Name = fmt.Sprintf("%s/%s", *parentName, newVirtualHost.Name)
 		ar.VirtualHost = append(ar.VirtualHost, newVirtualHost)
-	case models.DownstreamTlsContext, models.UpstreamTlsContext, models.CertificateValidationContext, models.TlsCertificate:
-		newSecret := proto.Clone(resource).(*tls.Secret)
-		ar.Secret = append(ar.Secret, newSecret)
+	case models.CertificateValidationContext, models.TlsCertificate, models.TlsSessionTicketKeys, models.GenericSecret:
+		newSecret := GetSecret(resourceName, resource)
+		ar.AppendSecret(newSecret)
 	default:
 		ar.Extensions = append(ar.Extensions, resource)
 	}

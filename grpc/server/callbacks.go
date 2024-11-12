@@ -30,10 +30,10 @@ func NewCallbacks(logger *logrus.Logger, errorContext *bridge.ErrorContext) *Cal
 
 func (c *Callbacks) OnFetchResponse(*discovery.DiscoveryRequest, *discovery.DiscoveryResponse) {}
 
-func (c *Callbacks) OnStreamResponse(_ context.Context, _ int64, req *discovery.DiscoveryRequest, resp *discovery.DiscoveryResponse) {
+func (c *Callbacks) OnStreamResponse(_ context.Context, _ int64, _ *discovery.DiscoveryRequest, _ *discovery.DiscoveryResponse) {
 }
 
-func (c *Callbacks) OnFetchRequest(a context.Context, d *discovery.DiscoveryRequest) error {
+func (c *Callbacks) OnFetchRequest(_ context.Context, _ *discovery.DiscoveryRequest) error {
 	return nil
 }
 
@@ -55,9 +55,10 @@ func (c *Callbacks) OnDeltaStreamClosed(id int64, node *core.Node) {
 	c.logger.Debugf("delta stream %d of node %s closed\n", id, node.Id)
 }
 
-func (c *Callbacks) OnStreamRequest(_ int64, req *discovery.DiscoveryRequest) error { return nil }
+func (c *Callbacks) OnStreamRequest(_ int64, _ *discovery.DiscoveryRequest) error { return nil }
 
-func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscoveryRequest, resp *discovery.DeltaDiscoveryResponse) {
+func (c *Callbacks) OnStreamDeltaResponse(_ int64, req *discovery.DeltaDiscoveryRequest, resp *discovery.DeltaDiscoveryResponse) {
+	//Testit(nil, resp)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	fmt.Println(req.ErrorDetail)
@@ -75,6 +76,8 @@ func (c *Callbacks) OnStreamDeltaResponse(id int64, req *discovery.DeltaDiscover
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {
+	//Testit(req, nil)
+
 	nodeID := req.GetNode().GetId()
 	typeURL := req.GetTypeUrl()
 	responseNonce := req.GetResponseNonce()

@@ -1,6 +1,8 @@
 package poke
 
 import (
+	"context"
+
 	"github.com/sefaphlvn/bigbang/grpc/server/resources/resource"
 	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"
 	"github.com/sefaphlvn/bigbang/pkg/config"
@@ -47,7 +49,7 @@ func (p *Poke) initialSnapshots() {
 			p.logger.Errorf("BULK GetConfigurationFromListener(%v): %v", node.Service, err)
 		}
 
-		err = p.ctx.SetSnapshot(allResource, p.logger)
+		err = p.ctx.SetSnapshot(context.Background(), allResource, p.logger)
 		if err != nil {
 			p.logger.Errorf("%s", err)
 		}

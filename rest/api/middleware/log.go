@@ -11,7 +11,6 @@ import (
 
 func GinLog(logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		path := c.Request.URL.Path
 		start := time.Now()
 

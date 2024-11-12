@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -53,7 +54,7 @@ func (s *Server) Run(config *config.AppConfig, log *logrus.Logger) error {
 		log.Print("Server exited properly")
 	}
 
-	if err == http.ErrServerClosed {
+	if errors.Is(err, http.ErrServerClosed) {
 		err = nil
 	}
 

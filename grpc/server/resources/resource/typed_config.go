@@ -41,16 +41,15 @@ func (ar *AllResources) processTypedConfigPath(pathd models.TypedConfigPath, jso
 		conf, err := resources.GetResourceNGeneral(context, tempTypedConfig.Collection, tempTypedConfig.Name, ar.Project)
 		if err != nil {
 			context.Logger.Warnf("Error getting resource from DB: %v", err)
-			continue
+			return err
 		}
 
 		resource := conf.GetResource()
-		ar.DetectResources(pathd.Kind, conf, context)
 
 		typedConfigJSON, err := json.Marshal(resource)
 		if err != nil {
 			context.Logger.Warnf("Error marshalling typed config: %v", err)
-			continue
+			return err
 		}
 		typedConfigStr := string(typedConfigJSON)
 		ar.processUpstreamPaths(tempTypedConfig.Gtype.UpstreamPaths(), &typedConfigStr, tempTypedConfig.ParentName, context, context.Logger)
@@ -58,11 +57,12 @@ func (ar *AllResources) processTypedConfigPath(pathd models.TypedConfigPath, jso
 		typedConfig, err := decodeTypedConfig([]byte(typedConfigStr), tempTypedConfig.Gtype)
 		if err != nil {
 			context.Logger.Warnf("Error decoding typed config: %v", err)
-			continue
+			return err
 		}
 
 		if err := ar.updateJSONConfig(jsonStringStr, path, typedConfig, pathd.IsPerTypedConfig, tempTypedConfig); err != nil {
 			context.Logger.Warnf("Error updating JSON config: %v", err)
+			return err
 		}
 	}
 
@@ -86,7 +86,7 @@ func (ar *AllResources) updateJSONConfig(jsonStringStr *string, path string, typ
 
 		if err := json.Unmarshal(anyJSON, &config); err != nil {
 			return fmt.Errorf("error unmarshalling any typed config: %w", err)
-		} 
+		}
 	}
 
 	if *jsonStringStr, err = sjson.Set(*jsonStringStr, path, config); err != nil {
@@ -103,10 +103,4 @@ func decodeTypedConfig(typedConfigJSON []byte, gtype models.GTypes) (*anypb.Any,
 	}
 
 	return anypb.New(msg)
-}
-
-func (ar *AllResources) DetectResources(pathKind string, conf *models.DBResource, context *db.AppContext) {
-	if pathKind == "downstream_tls" {
-		ar.DecodeDownstreamTLS(conf, context)
-	}
 }

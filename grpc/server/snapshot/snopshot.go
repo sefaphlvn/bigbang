@@ -41,13 +41,13 @@ func GetContext(logger *logrus.Logger) *Context {
 	return ctx
 }
 
-func (c *Context) SetSnapshot(resources *xdsResource.AllResources, logger *logrus.Logger) error {
+func (c *Context) SetSnapshot(ctx context.Context, resources *xdsResource.AllResources, logger *logrus.Logger) error {
 	snapshot := GenerateSnapshot(resources)
 	/* if err := snapshot.Consistent(); err != nil {
 		logger.Fatalf("snapshot inconsistency: %+v\n%+v", snapshot, err)
 	} */
 
-	if err := c.Cache.Cache.SetSnapshot(context.Background(), resources.NodeID, snapshot); err != nil {
+	if err := c.Cache.Cache.SetSnapshot(ctx, resources.NodeID, snapshot); err != nil {
 		logger.Fatalf("snapshot error %q for %+v", err, snapshot)
 	}
 

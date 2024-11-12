@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	"github.com/spf13/cobra"
+
 	"github.com/sefaphlvn/bigbang/grpc/poke"
 	grpcserver "github.com/sefaphlvn/bigbang/grpc/server"
 	"github.com/sefaphlvn/bigbang/grpc/server/bridge"
@@ -11,9 +13,6 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/log"
-	"github.com/spf13/cobra"
-
-	_ "net/http/pprof"
 )
 
 var (
@@ -26,19 +25,19 @@ var grpcCmd = &cobra.Command{
 	Use:   "server-grpc",
 	Short: "Start Bigbang GRPC Server",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		var appConfig = config.Read(cfgFile)
-		var logger = log.NewLogger(appConfig)
-		var db = db.NewMongoDB(appConfig, logger)
-		var ctxCache = snapshot.GetContext(logger)
+	Run: func(_ *cobra.Command, _ []string) {
+		appConfig := config.Read(cfgFile)
+		logger := log.NewLogger(appConfig)
+		db := db.NewMongoDB(appConfig, logger)
+		ctxCache := snapshot.GetContext(logger)
 
-		var pokeServer = poke.NewPokeServer(ctxCache, db, logger, appConfig)
+		pokeServer := poke.NewPokeServer(ctxCache, db, logger, appConfig)
 		go pokeServer.Run(pokeServer)
-		var errorContext = bridge.NewErrorContext(10) // Her node için 10 hata limiti
+		errorContext := bridge.NewErrorContext(10)
 
-		var callbacks = grpcserver.NewCallbacks(logger, errorContext)
-		var srv = server.NewServer(context.Background(), ctxCache.Cache.Cache, callbacks)
-		var grpcServer = grpcserver.NewServer(srv, port, logger, ctxCache)
+		callbacks := grpcserver.NewCallbacks(logger, errorContext)
+		srv := server.NewServer(context.Background(), ctxCache.Cache.Cache, callbacks)
+		grpcServer := grpcserver.NewServer(srv, port, logger, ctxCache)
 
 		grpcServer.Run(db, errorContext)
 	},

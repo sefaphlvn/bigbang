@@ -148,7 +148,7 @@ func createIndex(ctx context.Context, collection *mongo.Collection, index mongo.
 	}
 	exists, err := indexExists(ctx, collection, indexName)
 	if err != nil {
-		return fmt.Errorf("could not check for index existence: %v", err)
+		return fmt.Errorf("could not check for index existence: %w", err)
 	}
 
 	if !exists {
@@ -197,7 +197,8 @@ func createAdminUser(db *AppContext) (string, error) {
 	collection := db.Client.Collection("users")
 	var user models.User
 	err := collection.FindOne(db.Ctx, bson.M{"username": "admin"}).Decode(&user)
-	if err == mongo.ErrNoDocuments {
+
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		hashedPassword := helper.HashPassword("admin")
 		user.Password = &hashedPassword
 		now := time.Now()
@@ -232,7 +233,8 @@ func createAdminGroup(db *AppContext, userID string) error {
 	collection := db.Client.Collection("groups")
 	var group models.Group
 	err := collection.FindOne(db.Ctx, bson.M{"groupname": "admin"}).Decode(&group)
-	if err == mongo.ErrNoDocuments {
+
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		_, err = collection.InsertOne(db.Ctx, bson.M{
 			"groupname":  "admin",
 			"members":    []string{userID},
@@ -265,7 +267,7 @@ func createDefaultProject(db *AppContext, userID string) error {
 	collection := db.Client.Collection("projects")
 	var project models.Project
 	err := collection.FindOne(db.Ctx, bson.M{"projectname": "default"}).Decode(&project)
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		_, err = collection.InsertOne(db.Ctx, bson.M{
 			"projectname": "default",
 			"members":     []string{userID},

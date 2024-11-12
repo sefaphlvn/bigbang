@@ -9,7 +9,7 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/crud/typed_configs"
+	"github.com/sefaphlvn/bigbang/rest/crud/typedConfigs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -38,7 +38,7 @@ func updateResource(extension *AppHandler, resource models.DBResourceClass, requ
 		return validateErr, err
 	}
 
-	resource.SetTypedConfig(typed_configs.DecodeSetTypedConfigs(resource, extension.Context.Logger))
+	resource.SetTypedConfig(typedConfigs.DecodeSetTypedConfigs(resource, extension.Context.Logger))
 
 	update := bson.M{
 		"$set": bson.M{

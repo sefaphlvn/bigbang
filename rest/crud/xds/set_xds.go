@@ -8,7 +8,7 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/crud/typed_configs"
+	"github.com/sefaphlvn/bigbang/rest/crud/typedConfigs"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -25,13 +25,13 @@ func (xds *AppHandler) SetResource(resource models.DBResourceClass, requestDetai
 		return validateErr, err
 	}
 
-	resource.SetTypedConfig(typed_configs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
+	resource.SetTypedConfig(typedConfigs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
 	common.DetectSetPermissions(resource, requestDetails)
 
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
 	_, err = collection.InsertOne(xds.Context.Ctx, resource)
 	if err != nil {
-		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
+		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
 			return nil, errors.New("name already exists")
 		}
 		return nil, err
@@ -58,7 +58,7 @@ func (xds *AppHandler) createService(serviceName string) error {
 	service.Name = serviceName
 	_, err := collection.InsertOne(xds.Context.Ctx, service)
 	if err != nil {
-		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
+		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
 			return errors.New("name already exists")
 		}
 		return err
@@ -72,7 +72,7 @@ func (xds *AppHandler) createBootstrap(listenerGeneral models.General) error {
 	bootstrap := crud.GetBootstrap(listenerGeneral, xds.Context.Config)
 	_, err := collection.InsertOne(xds.Context.Ctx, bootstrap)
 	if err != nil {
-		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
+		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
 			return errors.New("name already exists")
 		}
 		return err

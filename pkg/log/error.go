@@ -10,7 +10,6 @@ import (
 )
 
 func NewLogger(appConfig *config.AppConfig) *logrus.Logger {
-
 	var formatter logrus.Formatter
 
 	if appConfig.LOG_FORMATTER == "text" {

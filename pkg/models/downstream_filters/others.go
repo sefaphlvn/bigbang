@@ -24,6 +24,23 @@ func HCEFSDownstreamFilters(name string) []MongoFilters {
 	}
 }
 
+func UTMDownstreamFilters(name string) []MongoFilters {
+	return []MongoFilters{
+		{
+			Collection: "virtual_host",
+			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+		},
+		{
+			Collection: "routes",
+			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+		},
+		{
+			Collection: "filters",
+			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+		},
+	}
+}
+
 func CompressorLibraryDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{

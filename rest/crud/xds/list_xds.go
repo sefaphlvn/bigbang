@@ -28,12 +28,12 @@ func (xds *AppHandler) ListResource(resource models.DBResourceClass, requestDeta
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
 	cursor, err := collection.Find(xds.Context.Ctx, filterWithRestriction, opts)
 	if err != nil {
-		return nil, fmt.Errorf("could not find records: %v", err)
+		return nil, fmt.Errorf("could not find records: %w", err)
 	}
 
 	var records []bson.M
 	if err = cursor.All(xds.Context.Ctx, &records); err != nil {
-		return nil, fmt.Errorf("could not decode records: %v", err)
+		return nil, fmt.Errorf("could not decode records: %w", err)
 	}
 
 	return common.TransformGenerals(records), nil

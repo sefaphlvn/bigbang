@@ -93,12 +93,12 @@ func convertToStructPB(resourceData map[string]types.Resource) (*structpb.Struct
 
 		jsonBytes, err := protojson.Marshal(resProto)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal resource %s: %v", key, err)
+			return nil, fmt.Errorf("failed to marshal resource %s: %w", key, err)
 		}
 
 		var jsonData interface{}
 		if err := json.Unmarshal(jsonBytes, &jsonData); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal JSON for resource %s: %v", key, err)
+			return nil, fmt.Errorf("failed to unmarshal JSON for resource %s: %w", key, err)
 		}
 		dataMap[key] = jsonData
 	}

@@ -31,6 +31,14 @@ func TypedHttpFilterDownstreamFilters(name string) []MongoFilters {
 			Collection: "routes",
 			Filter:     bson.D{{Key: general_typed_config_name, Value: name}},
 		},
+		{
+			Collection: "virtual_host",
+			Filter:     bson.D{{Key: general_typed_config_name, Value: name}},
+		},
+		{
+			Collection: "filters",
+			Filter:     bson.D{{Key: general_typed_config_name, Value: name}},
+		},
 	}
 }
 
@@ -42,6 +50,10 @@ func DiscoverAndTypedHttpFilterDownstreamFilters(name string) []MongoFilters {
 		},
 		{
 			Collection: "routes",
+			Filter:     bson.D{{Key: general_typed_config_name, Value: name}},
+		},
+		{
+			Collection: "virtual_host",
 			Filter:     bson.D{{Key: general_typed_config_name, Value: name}},
 		},
 	}

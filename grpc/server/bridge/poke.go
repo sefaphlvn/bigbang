@@ -22,7 +22,7 @@ func (s *PokeServiceServer) Poke(ctx context.Context, req *bridge.PokeRequest) (
 		return nil, err
 	}
 
-	err = s.context.SetSnapshot(lis, s.AppContext.Logger)
+	err = s.context.SetSnapshot(ctx, lis, s.AppContext.Logger)
 	if err != nil {
 		return nil, err
 	}

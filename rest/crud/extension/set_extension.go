@@ -8,7 +8,7 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/crud/typed_configs"
+	"github.com/sefaphlvn/bigbang/rest/crud/typedConfigs"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -24,13 +24,13 @@ func (extension *AppHandler) SetExtension(resource models.DBResourceClass, reque
 		return validateErr, err
 	}
 
-	resource.SetTypedConfig(typed_configs.DecodeSetTypedConfigs(resource, extension.Context.Logger))
+	resource.SetTypedConfig(typedConfigs.DecodeSetTypedConfigs(resource, extension.Context.Logger))
 	common.DetectSetPermissions(resource, requestDetails)
 
 	collection := extension.Context.Client.Collection(requestDetails.Collection)
 	_, err = collection.InsertOne(extension.Context.Ctx, resource)
 	if err != nil {
-		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
+		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
 			return nil, errors.New("name already exists")
 		}
 		return nil, err

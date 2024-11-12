@@ -12,14 +12,20 @@ import (
 	brotli_compressor "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/brotli/compressor/v3"
 	gzip_compressor "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
 	zstd_compressor "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/zstd/compressor/v3"
+	adaptive_concurrency "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/adaptive_concurrency/v3"
 	bandwidth_limit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/bandwidth_limit/v3"
 	basic_auth "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/basic_auth/v3"
+	buffer "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/buffer/v3"
 	compressor "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	cors "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
+	h_rbac "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	router "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	n_rbac "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/rbac/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	hcefs "github.com/envoyproxy/go-control-plane/envoy/extensions/health_check/event_sinks/file/v3"
+	utm "github.com/envoyproxy/go-control-plane/envoy/extensions/path/match/uri_template/v3"
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	http_protocol_options "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	"github.com/sefaphlvn/bigbang/pkg/models/downstream_filters"
@@ -46,16 +52,21 @@ var URLs = map[string]string{
 	"virtual_host":          "/resource/virtual_host/",
 	"tcp_proxy":             "/filters/network/tcp_proxy/",
 	"hcm":                   "/filters/network/hcm/",
+	"n_rbac":                "/filters/network/rbac/",
+	"h_rbac":                "/filters/http/rbac/",
 	"secrets":               "/resource/secret/",
 	"access_log":            "/extensions/access_log/",
 	"http_router":           "/filters/http/http_router/",
 	"hcefs":                 "/extensions/hcefs/",
+	"utm":                   "/extensions/utm/",
 	"basic_auth":            "/filters/http/basic_auth/",
 	"cors":                  "/filters/http/cors/",
 	"bandwidth_limit":       "/filters/http/bandwidth_limit/",
 	"compressor":            "/filters/http/compressor/",
 	"compressor_library":    "/extensions/compressor_library/",
 	"http_protocol_options": "/extensions/http_protocol_options/",
+	"lua":                   "/filters/http/lua/",
+	"adaptive_concurrency":  "/filters/http/adaptive_concurrency/",
 }
 
 var gTypeMappings = map[GTypes]GTypeMapping{
@@ -76,6 +87,33 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryListenerDownstreamFilters,
 		TypedConfigPaths:      HttpConnectionManagerTypedConfigPaths,
 		UpstreamPaths:         HTTPConnectionManagerUpstreams,
+	},
+	RBAC: {
+		PrettyName:            "RBAC",
+		Collection:            "filters",
+		URL:                   URLs["n_rbac"],
+		Message:               &n_rbac.RBAC{},
+		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryListenerDownstreamFilters,
+		TypedConfigPaths:      RBACTypedConfigPaths,
+		UpstreamPaths:         nil,
+	},
+	HttpRBAC: {
+		PrettyName:            "Http RBAC",
+		Collection:            "filters",
+		URL:                   URLs["h_rbac"],
+		Message:               &h_rbac.RBAC{},
+		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryHttpFilterDownstreamFilters,
+		TypedConfigPaths:      RBACTypedConfigPaths,
+		UpstreamPaths:         nil,
+	},
+	HttpRBACPerRoute: {
+		PrettyName:            "Http RBAC Per Route",
+		Collection:            "filters",
+		URL:                   URLs["h_rbac"],
+		Message:               &h_rbac.RBACPerRoute{},
+		DownstreamFiltersFunc: downstream_filters.TypedHttpFilterDownstreamFilters,
+		TypedConfigPaths:      RBACPerRouteTypedConfigPaths,
+		UpstreamPaths:         nil,
 	},
 	Router: {
 		PrettyName:            "Router",
@@ -221,6 +259,15 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
+	UriTemplateMatch: {
+		PrettyName:            "Uri Template Match",
+		Collection:            "extensions",
+		URL:                   URLs["utm"],
+		Message:               &utm.UriTemplateMatchConfig{},
+		DownstreamFiltersFunc: downstream_filters.UTMDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
 	BasicAuth: {
 		PrettyName:            "Basic Auth",
 		Collection:            "filters",
@@ -262,7 +309,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "filters",
 		URL:                   URLs["bandwidth_limit"],
 		Message:               &bandwidth_limit.BandwidthLimit{},
-		DownstreamFiltersFunc: downstream_filters.DiscoverAndTypedHttpFilterDownstreamFilters,
+		DownstreamFiltersFunc: downstream_filters.TypedHttpFilterDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -317,6 +364,51 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		URL:                   URLs["http_protocol_options"],
 		Message:               &http_protocol_options.HttpProtocolOptions{},
 		DownstreamFiltersFunc: downstream_filters.TypedHttpProtocolDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	Lua: {
+		PrettyName:            "Lua",
+		Collection:            "filters",
+		URL:                   URLs["lua"],
+		Message:               &lua.Lua{},
+		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryHttpFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	LuaPerRoute: {
+		PrettyName:            "Lua Per Route",
+		Collection:            "filters",
+		URL:                   URLs["lua"],
+		Message:               &lua.LuaPerRoute{},
+		DownstreamFiltersFunc: downstream_filters.TypedHttpFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	Buffer: {
+		PrettyName:            "Buffer",
+		Collection:            "filters",
+		URL:                   URLs["buffer"],
+		Message:               &buffer.Buffer{},
+		DownstreamFiltersFunc: downstream_filters.ConfigDiscoveryHttpFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	BufferPerRoute: {
+		PrettyName:            "Buffer Per Route",
+		Collection:            "filters",
+		URL:                   URLs["buffer"],
+		Message:               &buffer.BufferPerRoute{},
+		DownstreamFiltersFunc: downstream_filters.TypedHttpFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	AdaptiveConcurrency: {
+		PrettyName:            "Adaptive Concurrency",
+		Collection:            "filters",
+		URL:                   URLs["adaptive_concurrency"],
+		Message:               &adaptive_concurrency.AdaptiveConcurrency{},
+		DownstreamFiltersFunc: downstream_filters.TypedHttpFilterDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},

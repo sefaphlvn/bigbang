@@ -1,4 +1,4 @@
-package typed_configs
+package typedConfigs
 
 import (
 	"github.com/sefaphlvn/bigbang/pkg/helper"

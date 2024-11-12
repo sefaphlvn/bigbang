@@ -24,16 +24,16 @@ var restCmd = &cobra.Command{
 	Use:   "server-rest",
 	Short: "Start Bigbang REST Server",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		var appConfig = config.Read(cfgFile)
-		var logger = log.NewLogger(appConfig)
-		var db = db.NewMongoDB(appConfig, logger)
-		var xdsHandler = xds.NewXDSHandler(db)
-		var extensionHandler = extension.NewExtensionHandler(db)
-		var customHandler = custom.NewCustomHandler(db)
-		var bridgeHandler = bridge.NewBridgeHandler(db)
-		var userHandler = auth.NewUserHandler(db)
-		var dependencyHandler = dependency.NewDependencyHandler(db)
+	Run: func(_ *cobra.Command, _ []string) {
+		appConfig := config.Read(cfgFile)
+		logger := log.NewLogger(appConfig)
+		db := db.NewMongoDB(appConfig, logger)
+		xdsHandler := xds.NewXDSHandler(db)
+		extensionHandler := extension.NewExtensionHandler(db)
+		customHandler := custom.NewCustomHandler(db)
+		bridgeHandler := bridge.NewBridgeHandler(db)
+		userHandler := auth.NewUserHandler(db)
+		dependencyHandler := dependency.NewDependencyHandler(db)
 		dependencyHandler.StartCacheCleanup(1 * time.Minute)
 
 		h := handlers.NewHandler(xdsHandler, extensionHandler, customHandler, userHandler, dependencyHandler, bridgeHandler)
@@ -41,7 +41,6 @@ var restCmd = &cobra.Command{
 		if err := server.NewHttpServer(r).Run(appConfig, logger); err != nil {
 			logger.Fatalf("Server failed to run: %v", err)
 		}
-
 	},
 }
 

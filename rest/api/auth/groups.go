@@ -158,7 +158,6 @@ func (handler *AppHandler) SetUpdateGroup(c *gin.Context) {
 
 	if groupWA.IsCreate {
 		status, msg, groupID = handler.CreateGroup(ctx, userCollection, groupWA)
-
 	} else {
 		status, msg = handler.UpdateGroup(ctx, userCollection, groupWA, c.Param("group_id"))
 		groupID = c.Param("group_id")

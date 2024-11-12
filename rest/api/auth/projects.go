@@ -179,7 +179,6 @@ func (handler *AppHandler) SetUpdateProject(c *gin.Context) {
 			return
 		}
 		status, msg, projectID = handler.CreateProject(ctx, userCollection, projectWA)
-
 	} else {
 		status, msg = handler.UpdateProject(ctx, userCollection, projectWA, c.Param("project_id"))
 		projectID = c.Param("project_id")
