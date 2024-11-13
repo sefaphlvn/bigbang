@@ -32,6 +32,7 @@ jobs:
           export MONGODB_PORT=${{ vars.MONGODB_PORT }}
           export MONGODB_REPLICASET=${{ vars.MONGODB_REPLICASET }}
           export MONGODB_TIMEOUTSECONDS=${{ vars.MONGODB_TIMEOUTSECONDS }}
+          export MONGODB_TLS_ENABLED=${{ vars.MONGODB_TLS_ENABLED }}
           export LOG_LEVEL=${{ vars.LOG_LEVEL }}
           export LOG_FORMATTER=${{ vars.LOG_FORMATTER }}
           export LOG_REPORTCALLER=${{ vars.LOG_REPORTCALLER }}
