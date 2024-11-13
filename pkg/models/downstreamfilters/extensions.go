@@ -32,7 +32,7 @@ func TypedHTTPFilterDownstreamFilters(name string) []MongoFilters {
 			Filter:     bson.D{{Key: generalTypedConfigName, Value: name}},
 		},
 		{
-			Collection: "virtual_host",
+			Collection: "virtual_hosts",
 			Filter:     bson.D{{Key: generalTypedConfigName, Value: name}},
 		},
 		{
@@ -53,7 +53,7 @@ func DiscoverAndTypedHTTPFilterDownstreamFilters(name string) []MongoFilters {
 			Filter:     bson.D{{Key: generalTypedConfigName, Value: name}},
 		},
 		{
-			Collection: "virtual_host",
+			Collection: "virtual_hosts",
 			Filter:     bson.D{{Key: generalTypedConfigName, Value: name}},
 		},
 	}

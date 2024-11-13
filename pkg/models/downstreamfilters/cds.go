@@ -40,7 +40,7 @@ func ClusterDownstreamFilters(clusterName string) []MongoFilters {
 			},
 		},
 		{
-			Collection: "virtual_host",
+			Collection: "virtual_hosts",
 			Filter: bson.D{
 				{Key: "$or", Value: bson.A{
 					bson.D{{Key: "resource.resource.routes.route.cluster", Value: clusterName}},

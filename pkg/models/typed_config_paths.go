@@ -115,7 +115,7 @@ var VirtualHostTypedConfigPaths = []TypedConfigPath{
 	{
 		ArrayPaths:       []ArrayPath{},
 		PathTemplate:     "typed_per_filter_config",
-		Kind:             "virtual_host",
+		Kind:             "virtual_hosts",
 		IsPerTypedConfig: true,
 	},
 	{
@@ -123,7 +123,7 @@ var VirtualHostTypedConfigPaths = []TypedConfigPath{
 			{ParentPath: "routes", IndexPath: routes},
 		},
 		PathTemplate:     "routes.%d.typed_per_filter_config",
-		Kind:             "virtual_host",
+		Kind:             "virtual_hosts",
 		IsPerTypedConfig: true,
 	},
 	{
@@ -131,7 +131,7 @@ var VirtualHostTypedConfigPaths = []TypedConfigPath{
 			{ParentPath: "routes", IndexPath: "routes.%d"},
 		},
 		PathTemplate: "routes.%d.match.path_match_policy.typed_config",
-		Kind:         "virtual_host",
+		Kind:         "virtual_hosts",
 	},
 }
 

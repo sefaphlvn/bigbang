@@ -27,7 +27,7 @@ func HCEFSDownstreamFilters(name string) []MongoFilters {
 func UTMDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
-			Collection: "virtual_host",
+			Collection: "virtual_hosts",
 			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
 		},
 		{
