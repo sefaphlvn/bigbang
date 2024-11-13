@@ -27,7 +27,11 @@ linters:
     - gocritic
     - funlen
     - containedctx
-    # - nestif
+    - forcetypeassert
+    - inamedparam
+    - makezero
+    - usestdlibvars
+    - nestif
     # - err113
     # - cyclop
 

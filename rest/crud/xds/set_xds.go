@@ -1,6 +1,7 @@
 package xds
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/typedconfigs"
 )
 
-func (xds *AppHandler) SetResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) SetResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	general := resource.GetGeneral()
 	now := time.Now()
 	general.CreatedAt = primitive.NewDateTimeFromTime(now)
@@ -31,7 +32,7 @@ func (xds *AppHandler) SetResource(resource models.DBResourceClass, requestDetai
 	common.DetectSetPermissions(resource, requestDetails)
 
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
-	_, err = collection.InsertOne(xds.Context.Ctx, resource)
+	_, err = collection.InsertOne(ctx, resource)
 	if err != nil {
 		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
 			return nil, errstr.ErrNameAlreadyExists
@@ -40,12 +41,12 @@ func (xds *AppHandler) SetResource(resource models.DBResourceClass, requestDetai
 	}
 
 	if general.GType == models.Listener {
-		if err := xds.createBootstrap(general); err != nil {
+		if err := xds.createBootstrap(ctx, general); err != nil {
 			return nil, err
 		}
 
 		if general.Managed {
-			if err := xds.createService(general.Name); err != nil {
+			if err := xds.createService(ctx, general.Name); err != nil {
 				return nil, err
 			}
 		}
@@ -54,11 +55,11 @@ func (xds *AppHandler) SetResource(resource models.DBResourceClass, requestDetai
 	return gin.H{"message": "Success", "data": nil}, nil
 }
 
-func (xds *AppHandler) createService(serviceName string) error {
+func (xds *AppHandler) createService(ctx context.Context, serviceName string) error {
 	var service models.Service
 	collection := xds.Context.Client.Collection("service")
 	service.Name = serviceName
-	_, err := collection.InsertOne(xds.Context.Ctx, service)
+	_, err := collection.InsertOne(ctx, service)
 	if err != nil {
 		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
 			return errstr.ErrNameAlreadyExists
@@ -69,10 +70,10 @@ func (xds *AppHandler) createService(serviceName string) error {
 	return nil
 }
 
-func (xds *AppHandler) createBootstrap(listenerGeneral models.General) error {
+func (xds *AppHandler) createBootstrap(ctx context.Context, listenerGeneral models.General) error {
 	collection := xds.Context.Client.Collection("bootstrap")
 	bootstrap := crud.GetBootstrap(listenerGeneral, xds.Context.Config)
-	_, err := collection.InsertOne(xds.Context.Ctx, bootstrap)
+	_, err := collection.InsertOne(ctx, bootstrap)
 	if err != nil {
 		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
 			return errstr.ErrNameAlreadyExists

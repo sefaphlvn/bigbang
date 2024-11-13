@@ -12,12 +12,12 @@ func (s *PokeServiceServer) Poke(ctx context.Context, req *bridge.PokeRequest) (
 	serviceValue := req.NodeID
 	projectValue := req.Project
 
-	rawListenerResource, err := resources.GetResourceNGeneral(s.AppContext, "listeners", serviceValue, projectValue)
+	rawListenerResource, err := resources.GetResourceNGeneral(ctx, s.AppContext, "listeners", serviceValue, projectValue)
 	if err != nil {
 		return nil, err
 	}
 
-	lis, err := resource.GenerateSnapshot(rawListenerResource, serviceValue, s.AppContext, s.AppContext.Logger, projectValue)
+	lis, err := resource.GenerateSnapshot(ctx, rawListenerResource, serviceValue, s.AppContext, s.AppContext.Logger, projectValue)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package extension
 
 import (
+	"context"
 	"errors"
 	"strings"
 
@@ -13,22 +14,22 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (xds *AppHandler) DelExtension(_ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) DelExtension(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	resourceType := requestDetails.Collection
 	collection := xds.Context.Client.Collection(resourceType)
 	filter := buildFilter(requestDetails)
 
-	dependList := common.IsDeletable(xds.Context, requestDetails.GType, requestDetails.Name)
+	dependList := common.IsDeletable(ctx, xds.Context, requestDetails.GType, requestDetails.Name)
 	if len(dependList) > 0 {
 		message := "Resource has dependencies: \n " + strings.Join(dependList, ", ")
 		return nil, errors.New(message)
 	}
 
-	if err := checkDocumentExists(xds, collection, filter); err != nil {
+	if err := checkDocumentExists(ctx, xds, collection, filter); err != nil {
 		return nil, err
 	}
 
-	if err := deleteDocument(xds, collection, filter); err != nil {
+	if err := deleteDocument(ctx, xds, collection, filter); err != nil {
 		return nil, err
 	}
 
@@ -48,8 +49,8 @@ func buildFilter(requestDetails models.RequestDetails) bson.M {
 	}
 }
 
-func checkDocumentExists(xds *AppHandler, collection *mongo.Collection, filter bson.M) error {
-	result := collection.FindOne(xds.Context.Ctx, filter)
+func checkDocumentExists(ctx context.Context, _ *AppHandler, collection *mongo.Collection, filter bson.M) error {
+	result := collection.FindOne(ctx, filter)
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
 			return errstr.ErrNoDocumentsDelete
@@ -59,8 +60,8 @@ func checkDocumentExists(xds *AppHandler, collection *mongo.Collection, filter b
 	return nil
 }
 
-func deleteDocument(xds *AppHandler, collection *mongo.Collection, filter bson.M) error {
-	res, err := collection.DeleteOne(xds.Context.Ctx, filter)
+func deleteDocument(ctx context.Context, _ *AppHandler, collection *mongo.Collection, filter bson.M) error {
+	res, err := collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return errstr.ErrUnknownDBError
 	}

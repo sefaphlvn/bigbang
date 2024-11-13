@@ -1,6 +1,7 @@
 package poker
 
 import (
+	"context"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -19,7 +20,7 @@ type Processed struct {
 	Depends            []string
 }
 
-func DetectChangedResource(gType models.GTypes, resourceName, project string, context *db.AppContext, processed *Processed, poke *bridge.PokeServiceClient) *Processed {
+func DetectChangedResource(ctx context.Context, gType models.GTypes, resourceName, project string, context *db.AppContext, processed *Processed, poke *bridge.PokeServiceClient) *Processed {
 	pathWithGtype := gType.String() + "===" + resourceName
 	if gType != models.Listener {
 		processed.Depends = append(processed.Depends, pathWithGtype)
@@ -32,7 +33,7 @@ func DetectChangedResource(gType models.GTypes, resourceName, project string, co
 
 	if gType == models.Listener {
 		if !helper.Contains(processed.Listeners, resourceName) {
-			_, err := bridgeClient.PokeNode(*poke, resourceName, project)
+			_, err := bridgeClient.PokeNode(ctx, *poke, resourceName, project)
 			if err != nil {
 				context.Logger.Debugf("Poke failed: %s\n", err)
 			}
@@ -42,27 +43,27 @@ func DetectChangedResource(gType models.GTypes, resourceName, project string, co
 			context.Logger.Infof("new version added to snapshot for (%s) processed resource paths: \n %s", resourceName, result)
 		}
 	} else {
-		ProcessResource(context, gType, resourceName, project, processed, poke)
+		ProcessResource(ctx, context, gType, resourceName, project, processed, poke)
 	}
 
 	return processed
 }
 
-func ProcessResource(context *db.AppContext, gType models.GTypes, resourceName, project string, processed *Processed, poke *bridge.PokeServiceClient) {
+func ProcessResource(ctx context.Context, context *db.AppContext, gType models.GTypes, resourceName, project string, processed *Processed, poke *bridge.PokeServiceClient) {
 	filterResults := gType.DownstreamFilters(resourceName)
 
 	for _, filterResult := range filterResults {
-		CheckResource(context, filterResult.Filter, filterResult.Collection, project, processed, poke)
+		CheckResource(ctx, context, filterResult.Filter, filterResult.Collection, project, processed, poke)
 	}
 }
 
-func CheckResource(context *db.AppContext, filter primitive.D, collection, project string, processed *Processed, poke *bridge.PokeServiceClient) {
-	rGeneral, err := resources.GetGenerals(context, collection, filter)
+func CheckResource(ctx context.Context, context *db.AppContext, filter primitive.D, collection, project string, processed *Processed, poke *bridge.PokeServiceClient) {
+	rGeneral, err := resources.GetGenerals(ctx, context, collection, filter)
 	if err != nil {
 		context.Logger.Debug(err)
 	}
 
 	for _, general := range rGeneral {
-		DetectChangedResource(general.GType, general.Name, project, context, processed, poke)
+		DetectChangedResource(ctx, general.GType, general.Name, project, context, processed, poke)
 	}
 }

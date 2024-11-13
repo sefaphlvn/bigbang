@@ -1,6 +1,7 @@
 package extension
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -15,19 +16,24 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/typedconfigs"
 )
 
-func (extension *AppHandler) UpdateExtensions(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) UpdateExtensions(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	filter := bson.M{"general.name": requestDetails.Name, "general.canonical_name": requestDetails.CanonicalName, "general.project": requestDetails.Project}
-	return updateResource(extension, resource, requestDetails, filter)
+	return updateResource(ctx, extension, resource, requestDetails, filter)
 }
 
-func (extension *AppHandler) UpdateOtherExtensions(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) UpdateOtherExtensions(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	filter := bson.M{"general.name": requestDetails.Name, "general.project": requestDetails.Project}
-	return updateResource(extension, resource, requestDetails, filter)
+	return updateResource(ctx, extension, resource, requestDetails, filter)
 }
 
-func updateResource(extension *AppHandler, resource models.DBResourceClass, requestDetails models.RequestDetails, filter bson.M) (interface{}, error) {
+func updateResource(ctx context.Context, extension *AppHandler, resource models.DBResourceClass, requestDetails models.RequestDetails, filter bson.M) (interface{}, error) {
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
-	versionStr := resource.GetVersion().(string)
+	versionStr, ok := resource.GetVersion().(string)
+	if !ok {
+		extension.Context.Logger.Warnf("expected string type for version, got %v", resource.GetVersion())
+		return nil, fmt.Errorf("invalid version format: %v", resource.GetVersion())
+	}
+
 	version, err := strconv.Atoi(versionStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid version format: %s", versionStr)
@@ -52,13 +58,13 @@ func updateResource(extension *AppHandler, resource models.DBResourceClass, requ
 	}
 
 	collection := extension.Context.Client.Collection(requestDetails.Collection)
-	_, err = collection.UpdateOne(extension.Context.Ctx, filterWithRestriction, update)
+	_, err = collection.UpdateOne(ctx, filterWithRestriction, update)
 	if err != nil {
 		return nil, fmt.Errorf("update failed: %w", err)
 	}
 
 	project := resource.GetGeneral().Project
-	changedResources := crud.HandleResourceChange(resource, requestDetails, extension.Context, project, extension.Poke)
+	changedResources := crud.HandleResourceChange(ctx, resource, requestDetails, extension.Context, project, extension.Poke)
 
 	return gin.H{"message": "Success", "data": changedResources}, nil
 }

@@ -17,4 +17,6 @@ var (
 	ErrUnexpectedResource    = errors.New("unexpected resource format")
 	ErrValidationFailed      = errors.New("validation failed")
 	ErrInvalidRefreshToken   = errors.New("invalid refresh token")
+	ErrUnexpectedTypeBsonM   = errors.New("unexpected type for update['$set'], expected bson.M")
+	ErrUserUpdatePermError   = errors.New("user does not have permission to update of user")
 )

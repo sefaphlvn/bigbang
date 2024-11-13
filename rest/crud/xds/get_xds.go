@@ -1,6 +1,7 @@
 package xds
 
 import (
+	"context"
 	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -11,11 +12,11 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (xds *AppHandler) GetResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) GetResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
 	filter := bson.M{"general.name": requestDetails.Name}
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
-	result := collection.FindOne(xds.Context.Ctx, filterWithRestriction)
+	result := collection.FindOne(ctx, filterWithRestriction)
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -37,13 +36,11 @@ func (c *Callbacks) OnFetchRequest(_ context.Context, _ *discovery.DiscoveryRequ
 	return nil
 }
 
-func (c *Callbacks) OnStreamOpen(_ context.Context, id int64, typ string) error {
-	fmt.Println("stream open", id, typ)
+func (c *Callbacks) OnStreamOpen(_ context.Context, _ int64, _ string) error {
 	return nil
 }
 
-func (c *Callbacks) OnStreamClosed(id int64, node *core.Node) {
-	fmt.Println("stream closed", id, node)
+func (c *Callbacks) OnStreamClosed(_ int64, _ *core.Node) {
 }
 
 func (c *Callbacks) OnDeltaStreamOpen(_ context.Context, id int64, typ string) error {
@@ -61,14 +58,13 @@ func (c *Callbacks) OnStreamDeltaResponse(_ int64, req *discovery.DeltaDiscovery
 	// Testit(nil, resp)
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	fmt.Println(req.ErrorDetail)
 	c.deltaResponses++
 
 	nodeID := req.GetNode().GetId()
 	typeURL := req.GetTypeUrl()
 	responseNonce := req.GetResponseNonce()
 	nonce := resp.GetNonce()
-	c.logger.Warnf("respnonce: %s\n nonce: %s\n typeurl: %s\n", responseNonce, nonce, typeURL)
+	// c.logger.Warnf("respnonce: %s\n nonce: %s\n typeurl: %s\n", responseNonce, nonce, typeURL)
 	if errEntry, found := c.errorContext.ErrorCache.GetErrorEntry(nodeID, typeURL, responseNonce); found {
 		errEntry.ResponseNonce = nonce
 		c.errorContext.ErrorCache.UpdateErrorEntry(nodeID, typeURL, responseNonce, *errEntry)

@@ -39,6 +39,7 @@ func Validate(gtype models.GTypes, resource interface{}) ([]string, bool, error)
 	case reflect.Slice:
 		s := reflect.ValueOf(resource)
 		var allErrors []string
+
 		for i := 0; i < s.Len(); i++ {
 			elem := s.Index(i).Interface()
 			if err := validateSingleResource(gtype, elem); err != nil {

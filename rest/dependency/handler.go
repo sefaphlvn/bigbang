@@ -1,6 +1,8 @@
 package dependency
 
 import (
+	"context"
+
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
@@ -13,7 +15,7 @@ func NewDependencyHandler(context *db.AppContext) *AppHandler {
 	}
 }
 
-func (h *AppHandler) GetResourceDependencies(requestDetails models.RequestDetails) (*Graph, error) {
+func (h *AppHandler) GetResourceDependencies(ctx context.Context, requestDetails models.RequestDetails) (*Graph, error) {
 	activeResource := Depend{
 		Collection: requestDetails.Collection,
 		Name:       requestDetails.Name,
@@ -23,16 +25,16 @@ func (h *AppHandler) GetResourceDependencies(requestDetails models.RequestDetail
 	}
 
 	h.Dependencies = &Graph{}
-	h.ProcessResource(activeResource)
+	h.ProcessResource(ctx, activeResource)
 
 	return h.Dependencies, nil
 }
 
-func (h *AppHandler) CallUpstreamFunction(activeResource Depend) (Node, []Depend) {
-	return GenericUpstreamCollector(h, activeResource)
+func (h *AppHandler) CallUpstreamFunction(ctx context.Context, activeResource Depend) (Node, []Depend) {
+	return GenericUpstreamCollector(ctx, h, activeResource)
 }
 
-func (h *AppHandler) CallDownstreamFunction(activeResource Depend) (Node, []Depend) {
+func (h *AppHandler) CallDownstreamFunction(ctx context.Context, activeResource Depend) (Node, []Depend) {
 	visited := make(map[string]bool)
-	return GenericDownstreamCollector(h, activeResource, visited)
+	return GenericDownstreamCollector(ctx, h, activeResource, visited)
 }

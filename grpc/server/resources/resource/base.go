@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -20,10 +21,10 @@ func NewResources() *AllResources {
 	}
 }
 
-func GenerateSnapshot(rawListenerResource *models.DBResource, listenerName string, db *db.AppContext, logger *logrus.Logger, project string) (*AllResources, error) {
+func GenerateSnapshot(ctx context.Context, rawListenerResource *models.DBResource, listenerName string, db *db.AppContext, logger *logrus.Logger, project string) (*AllResources, error) {
 	ar := NewResources()
 	nodeID := fmt.Sprintf("%s:%s", listenerName, project)
 	ar.SetNodeID(nodeID)
-	ar.DecodeListener(rawListenerResource, db, logger)
+	ar.DecodeListener(ctx, rawListenerResource, db, logger)
 	return ar, nil
 }

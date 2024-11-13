@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -35,7 +34,6 @@ func Contains(s []string, str string) bool {
 func PrettyPrint(data interface{}) {
 	// Eğer veri nil ise çıkış yap
 	if data == nil {
-		fmt.Println("null")
 		return
 	}
 
@@ -64,10 +62,10 @@ func PrettyPrint(data interface{}) {
 	fmt.Println(string(prettyJSON))
 }
 
-func GetResourceType(data interface{}) {
+/* func GetResourceType(data interface{}) {
 	resourceType := reflect.TypeOf(data)
 	fmt.Printf("Resource type: %v\n", resourceType)
-}
+} */
 
 func ToBool(strBool string) bool {
 	boolean, err := strconv.ParseBool(strBool)
@@ -76,16 +74,6 @@ func ToBool(strBool string) bool {
 	}
 
 	return boolean
-}
-
-func ToInt(strInt string) int {
-	number, err := strconv.Atoi(strInt)
-	if err != nil {
-		fmt.Printf("Cannot convert to int: %s", err)
-		return 0
-	}
-
-	return number
 }
 
 func HashPassword(password string) string {
@@ -193,7 +181,6 @@ func MarshalUnmarshalWithType(data interface{}, msg proto.Message) error {
 
 	err = Unmarshaler.Unmarshal(jsonData, msg)
 	if err != nil {
-		fmt.Println("proto unmarshall error: ", err)
 		return err
 	}
 

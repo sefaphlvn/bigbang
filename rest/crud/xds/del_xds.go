@@ -1,6 +1,7 @@
 package xds
 
 import (
+	"context"
 	"errors"
 	"strings"
 
@@ -14,11 +15,11 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (xds *AppHandler) DelResource(_ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) DelResource(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	resourceType := requestDetails.Collection
 	collection := xds.Context.Client.Collection(resourceType)
 
-	dependList := common.IsDeletable(xds.Context, requestDetails.GType, requestDetails.Name)
+	dependList := common.IsDeletable(ctx, xds.Context, requestDetails.GType, requestDetails.Name)
 	if len(dependList) > 0 {
 		message := "Resource has dependencies: \n " + strings.Join(dependList, ", ")
 		return nil, errors.New(message)
@@ -26,16 +27,16 @@ func (xds *AppHandler) DelResource(_ models.DBResourceClass, requestDetails mode
 
 	filter := buildFilter(requestDetails)
 
-	if err := checkDocumentExists(xds, collection, filter); err != nil {
+	if err := checkDocumentExists(ctx, xds, collection, filter); err != nil {
 		return nil, err
 	}
 
-	if err := deleteDocument(xds, collection, filter); err != nil {
+	if err := deleteDocument(ctx, xds, collection, filter); err != nil {
 		return nil, err
 	}
 
 	if resourceType == "listeners" {
-		if err := xds.delBootstrap(filter); err != nil {
+		if err := xds.delBootstrap(ctx, filter); err != nil {
 			return nil, err
 		}
 	}
@@ -43,14 +44,14 @@ func (xds *AppHandler) DelResource(_ models.DBResourceClass, requestDetails mode
 	return gin.H{"message": "Success"}, nil
 }
 
-func (xds *AppHandler) delBootstrap(filter primitive.M) error {
+func (xds *AppHandler) delBootstrap(ctx context.Context, filter primitive.M) error {
 	collection := xds.Context.Client.Collection("bootstrap")
 
-	if err := checkDocumentExists(xds, collection, filter); err != nil {
+	if err := checkDocumentExists(ctx, xds, collection, filter); err != nil {
 		return err
 	}
 
-	if err := deleteDocument(xds, collection, filter); err != nil {
+	if err := deleteDocument(ctx, xds, collection, filter); err != nil {
 		return err
 	}
 
@@ -70,8 +71,8 @@ func buildFilter(requestDetails models.RequestDetails) bson.M {
 	}
 }
 
-func checkDocumentExists(xds *AppHandler, collection *mongo.Collection, filter bson.M) error {
-	result := collection.FindOne(xds.Context.Ctx, filter)
+func checkDocumentExists(ctx context.Context, _ *AppHandler, collection *mongo.Collection, filter bson.M) error {
+	result := collection.FindOne(ctx, filter)
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
 			return errstr.ErrNoDocumentsDelete
@@ -81,8 +82,8 @@ func checkDocumentExists(xds *AppHandler, collection *mongo.Collection, filter b
 	return nil
 }
 
-func deleteDocument(xds *AppHandler, collection *mongo.Collection, filter bson.M) error {
-	res, err := collection.DeleteOne(xds.Context.Ctx, filter)
+func deleteDocument(ctx context.Context, _ *AppHandler, collection *mongo.Collection, filter bson.M) error {
+	res, err := collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return errstr.ErrUnknownDBError
 	}

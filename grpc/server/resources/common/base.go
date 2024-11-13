@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+
 	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
@@ -93,9 +95,13 @@ func (ar *Resources) SetListener(listener []types.Resource) {
 }
 
 func (ar *Resources) GetListener() []*listener.Listener {
-	listeners := make([]*listener.Listener, len(ar.Listener))
-	for i, res := range ar.Listener {
-		listeners[i] = res.(*listener.Listener)
+	listeners := make([]*listener.Listener, 0, len(ar.Listener))
+	for _, res := range ar.Listener {
+		if listenerConfig, ok := res.(*listener.Listener); ok {
+			listeners = append(listeners, listenerConfig)
+		} else {
+			fmt.Printf("Unexpected type in ar.Listener")
+		}
 	}
 	return listeners
 }
@@ -113,9 +119,13 @@ func (ar *Resources) SetCluster(cluster []types.Resource) {
 }
 
 func (ar *Resources) GetCluster() []*cluster.Cluster {
-	clusters := make([]*cluster.Cluster, len(ar.Cluster))
-	for i, res := range ar.Cluster {
-		clusters[i] = res.(*cluster.Cluster)
+	clusters := make([]*cluster.Cluster, 0, len(ar.Cluster))
+	for _, res := range ar.Cluster {
+		if clusterConfig, ok := res.(*cluster.Cluster); ok {
+			clusters = append(clusters, clusterConfig)
+		} else {
+			fmt.Printf("Unexpected type in ar.Cluster")
+		}
 	}
 	return clusters
 }
@@ -133,9 +143,13 @@ func (ar *Resources) AppendRoute(route *route.RouteConfiguration) {
 }
 
 func (ar *Resources) GetRoute() []*route.RouteConfiguration {
-	routes := make([]*route.RouteConfiguration, len(ar.Route))
-	for i, res := range ar.Route {
-		routes[i] = res.(*route.RouteConfiguration)
+	routes := make([]*route.RouteConfiguration, 0, len(ar.Route))
+	for _, res := range ar.Route {
+		if routeConfig, ok := res.(*route.RouteConfiguration); ok {
+			routes = append(routes, routeConfig)
+		} else {
+			fmt.Print("Unexpected type in ar.Route")
+		}
 	}
 	return routes
 }
@@ -151,7 +165,11 @@ func (ar *Resources) SetEndpoint(endpoint []types.Resource) {
 func (ar *Resources) GetEndpoint() []*endpoint.Endpoint {
 	endpoints := make([]*endpoint.Endpoint, len(ar.Endpoint))
 	for i, res := range ar.Endpoint {
-		endpoints[i] = res.(*endpoint.Endpoint)
+		if endpointVal, ok := res.(*endpoint.Endpoint); ok {
+			endpoints[i] = endpointVal
+		} else {
+			fmt.Printf("Unexpected type in ar.Endpoint at index %d", i)
+		}
 	}
 	return endpoints
 }
@@ -171,7 +189,11 @@ func (ar *Resources) AppendSecret(secret *tls.Secret) {
 func (ar *Resources) GetSecret() []*tls.Secret {
 	secret := make([]*tls.Secret, len(ar.Secret))
 	for i, res := range ar.Secret {
-		secret[i] = res.(*tls.Secret)
+		if secretVal, ok := res.(*tls.Secret); ok {
+			secret[i] = secretVal
+		} else {
+			fmt.Printf("Unexpected type in ar.Secret at index %d", i)
+		}
 	}
 	return secret
 }
@@ -185,10 +207,16 @@ func (ar *Resources) SetExtensions(extensions []types.Resource) {
 }
 
 func (ar *Resources) GetExtensions() []*core.TypedExtensionConfig {
-	extensions := make([]*core.TypedExtensionConfig, len(ar.Extensions))
-	for i, res := range ar.Extensions {
-		extensions[i] = res.(*core.TypedExtensionConfig)
+	extensions := make([]*core.TypedExtensionConfig, 0, len(ar.Extensions))
+
+	for _, res := range ar.Extensions {
+		if ext, ok := res.(*core.TypedExtensionConfig); ok {
+			extensions = append(extensions, ext)
+		} else {
+			fmt.Printf("Unexpected type in Extensions slice: %T\n", res)
+		}
 	}
+
 	return extensions
 }
 

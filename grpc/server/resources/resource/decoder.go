@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"context"
 	"fmt"
 
 	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -22,24 +23,36 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 )
 
-// DecodeListener processes a raw listener resource and collects extensions.
-func (ar *AllResources) DecodeListener(rawListenerResource *models.DBResource, context *db.AppContext, logger *logrus.Logger) {
+// DecodeListener decodes the listener configuration from the provided input.
+// It parses the input data and converts it into a structured format that can be used by the application.
+// Parameters:
+// - input: the raw input data to be decoded
+// Returns:
+// - ListenerConfig: a structured representation of the listener configuration
+// - error: an error if any occurred during the decoding process
+func (ar *AllResources) DecodeListener(ctx context.Context, rawListenerResource *models.DBResource, context *db.AppContext, logger *logrus.Logger) {
 	ar.UniqueResources = make(map[string]struct{})
-	if err := ar.initializeListener(rawListenerResource, context, logger); err != nil {
+	if err := ar.initializeListener(ctx, rawListenerResource, context, logger); err != nil {
 		logger.Fatalf("Error initializing listener: %v", err)
 	}
 
-	ar.processConfigDiscoveries(rawListenerResource.General.ConfigDiscovery, context, logger)
+	ar.processConfigDiscoveries(ctx, rawListenerResource.General.ConfigDiscovery, context, logger)
 }
 
-// Initialize listener by decoding and setting up listener resources.
-func (ar *AllResources) initializeListener(rawListenerResource *models.DBResource, context *db.AppContext, logger *logrus.Logger) error {
+// initializeListener initializes the listener with the provided configuration.
+// It sets up the necessary parameters and prepares the listener for operation.
+// Parameters:
+// - config: the configuration settings for the listener
+// Returns:
+// - Listener: an initialized listener instance
+// - error: an error if any occurred during the initialization process
+func (ar *AllResources) initializeListener(ctx context.Context, rawListenerResource *models.DBResource, context *db.AppContext, logger *logrus.Logger) error {
 	resArray, ok := rawListenerResource.Resource.Resource.(primitive.A)
 	if !ok {
 		return errstr.ErrUnexpectedResource
 	}
 
-	newVersion, err := resources.IncrementResourceVersion(context, rawListenerResource.General.Name, rawListenerResource.General.Project)
+	newVersion, err := resources.IncrementResourceVersion(ctx, context, rawListenerResource.General.Name, rawListenerResource.General.Project)
 	if err != nil {
 		return err
 	}
@@ -48,7 +61,7 @@ func (ar *AllResources) initializeListener(rawListenerResource *models.DBResourc
 
 	listeners := make([]types.Resource, 0, len(resArray))
 	for _, lstnr := range resArray {
-		listenerWithTransportSocket, _ := ar.GetTypedConfigs(rawListenerResource.GetGtype().TypedConfigPaths(), lstnr, context)
+		listenerWithTransportSocket, _ := ar.GetTypedConfigs(ctx, rawListenerResource.GetGtype().TypedConfigPaths(), lstnr, context)
 
 		singleListener := &listener.Listener{}
 		if err := helper.MarshalUnmarshalWithType(listenerWithTransportSocket, singleListener); err != nil {
@@ -63,21 +76,36 @@ func (ar *AllResources) initializeListener(rawListenerResource *models.DBResourc
 	return nil
 }
 
-// Process config discoveries and collect resources.
-func (ar *AllResources) processConfigDiscoveries(configDiscoveries []*models.ConfigDiscovery, context *db.AppContext, logger *logrus.Logger) {
+// processConfigDiscoveries processes the discovered configurations.
+// It iterates through the discovered configurations and processes each one to collect resources.
+// Parameters:
+// - ctx: context for controlling the request lifetime
+// - configDiscoveries: a slice of discovered configurations to be processed
+// - context: application context containing database connections and other settings
+// - logger: logger for logging errors and information
+func (ar *AllResources) processConfigDiscoveries(ctx context.Context, configDiscoveries []*models.ConfigDiscovery, context *db.AppContext, logger *logrus.Logger) {
 	for _, configDiscovery := range configDiscoveries {
-		ar.processExtension(configDiscovery, configDiscovery.ParentName, context, logger)
+		ar.processExtension(ctx, configDiscovery, configDiscovery.ParentName, context, logger)
 	}
 }
 
-// Process a single extension, collect resources, and add to AllResources if not duplicate.
-func (ar *AllResources) processExtension(extension *models.ConfigDiscovery, parentName string, context *db.AppContext, logger *logrus.Logger) {
+// processExtension processes a single configuration discovery.
+// It reads the configuration details and converts them into a structured format for further processing.
+// Parameters:
+// - ctx: context for controlling the request lifetime
+// - configDiscovery: the discovered configuration to be processed
+// - parentName: the name of the parent configuration
+// - context: application context containing database connections and other settings
+// - logger: logger for logging errors and information
+// Returns:
+// - error: an error if any occurred during the processing of the configuration
+func (ar *AllResources) processExtension(ctx context.Context, extension *models.ConfigDiscovery, parentName string, context *db.AppContext, logger *logrus.Logger) {
 	uniqKey := fmt.Sprintf("%s__%s__%s", extension.Name, parentName, extension.GType.String())
 	if ar.checkAndMarkDuplicate(uniqKey) {
 		return
 	}
 
-	extConfigs, additionalExtResources, err := ar.CollectAllResourcesWithParent(extension.GType, extension.Name, parentName, context, logger)
+	extConfigs, additionalExtResources, err := ar.CollectAllResourcesWithParent(ctx, extension.GType, extension.Name, parentName, context, logger)
 	if err != nil {
 		logger.Errorf("Error collecting resources: %v", err)
 		return
@@ -99,11 +127,18 @@ func (ar *AllResources) processExtension(extension *models.ConfigDiscovery, pare
 	}
 
 	if additionalExtResources != nil {
-		ar.processConfigDiscoveries(additionalExtResources, context, logger)
+		ar.processConfigDiscoveries(ctx, additionalExtResources, context, logger)
 	}
 }
 
-// Add a typed extension configuration to the Extensions slice.
+// addTypedExtensionConfig adds a typed extension configuration to the given resource.
+// It creates and attaches the extension configuration based on the provided parameters.
+// Parameters:
+// - resource: the resource to which the extension configuration will be added
+// - extensionName: the name of the extension to be added
+// - config: the configuration details for the extension
+// Returns:
+// - error: an error if any occurred during the addition of the extension configuration
 func (ar *AllResources) addTypedExtensionConfig(typedConfig *anypb.Any, parentName string) {
 	typedExtensionConfig := &core.TypedExtensionConfig{
 		Name:        parentName,
@@ -112,7 +147,13 @@ func (ar *AllResources) addTypedExtensionConfig(typedConfig *anypb.Any, parentNa
 	ar.Extensions = append(ar.Extensions, typedExtensionConfig)
 }
 
-// Check if a resource is a duplicate and mark it as processed.
+// checkAndMarkDuplicate checks for duplicate entries in the provided list and marks them if found.
+// It iterates through the list and identifies any duplicate entries based on the specified criteria.
+// Parameters:
+// - list: the list of entries to be checked for duplicates
+// - markFunc: a function to mark the duplicate entries
+// Returns:
+// - error: an error if any occurred during the duplicate checking process
 func (ar *AllResources) checkAndMarkDuplicate(name string) bool {
 	if _, exists := ar.UniqueResources[name]; exists {
 		return true
@@ -122,24 +163,30 @@ func (ar *AllResources) checkAndMarkDuplicate(name string) bool {
 	return false
 }
 
-// CollectAllResourcesWithParent processes and collects resources with a parent.
-func (ar *AllResources) CollectAllResourcesWithParent(gtype models.GTypes, resourceName, parentName string, context *db.AppContext, logger *logrus.Logger) ([]proto.Message, []*models.ConfigDiscovery, error) {
-	resource, err := resources.GetResourceNGeneral(context, gtype.CollectionString(), resourceName, ar.Project)
+// CollectAllResourcesWithParent collects all resources associated with a given parent.
+// It retrieves the resources from the database and organizes them based on the parent-child relationship.
+// Parameters:
+// - ctx: context for controlling the request lifetime
+// - parentID: the ID of the parent resource
+// - db: database connection to fetch the resources from
+// Returns:
+// - []Resource: a slice containing all resources associated with the parent
+// - error: an error if any occurred during the resource collection process
+func (ar *AllResources) CollectAllResourcesWithParent(ctx context.Context, gtype models.GTypes, resourceName, parentName string, context *db.AppContext, logger *logrus.Logger) ([]proto.Message, []*models.ConfigDiscovery, error) {
+	resource, err := resources.GetResourceNGeneral(ctx, context, gtype.CollectionString(), resourceName, ar.Project)
 	if err != nil {
 		logger.Errorf("Error getting resource %s: %v", resourceName, err)
 		return nil, nil, err
 	}
 
-	// resource.GetResource() array olabilir, bu yüzden array olup olmadığını kontrol ediyoruz.
 	resourceData := resource.GetResource()
 
 	var protoMessages []proto.Message
 	var finalConfigDiscoveries []*models.ConfigDiscovery
 
 	switch res := resourceData.(type) {
-	case primitive.A: // Eğer array ise
+	case primitive.A:
 		for _, item := range res {
-			// Array'in her elemanını işleyerek JSON string'e çeviriyoruz
 			jsonStringStr, err := helper.MarshalJSON(item, context.Logger)
 			if err != nil {
 				logger.Errorf("Error marshaling array item: %v", err)
@@ -147,47 +194,48 @@ func (ar *AllResources) CollectAllResourcesWithParent(gtype models.GTypes, resou
 			}
 
 			typedProtoMsg := gtype.ProtoMessage()
-			if err := ar.processTypedConfigsAndUpstream(typedProtoMsg, &jsonStringStr, gtype, parentName, context, logger); err != nil {
+			if err := ar.processTypedConfigsAndUpstream(ctx, typedProtoMsg, &jsonStringStr, gtype, parentName, context, logger); err != nil {
 				logger.Errorf("Error processing typed configs and upstream resources: %v", err)
 				return nil, nil, err
 			}
 
-			// Sonucu biriktiriyoruz
 			protoMessages = append(protoMessages, typedProtoMsg)
 			finalConfigDiscoveries = resource.General.ConfigDiscovery
-			ar.processConfigDiscoveries(resource.General.ConfigDiscovery, context, logger)
+			ar.processConfigDiscoveries(ctx, resource.General.ConfigDiscovery, context, logger)
 		}
-	default: // Eğer array değilse, tek bir resource olarak işlem yapıyoruz
+	default:
 		jsonStringStr, err := helper.MarshalJSON(resourceData, context.Logger)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		typedProtoMsg := gtype.ProtoMessage()
-		if err := ar.processTypedConfigsAndUpstream(typedProtoMsg, &jsonStringStr, gtype, parentName, context, logger); err != nil {
+		if err := ar.processTypedConfigsAndUpstream(ctx, typedProtoMsg, &jsonStringStr, gtype, parentName, context, logger); err != nil {
 			logger.Errorf("Error processing typed configs and upstream resources: %v", err)
 			return nil, nil, err
 		}
 
-		// Tek resource için ConfigDiscovery'leri işliyoruz
 		protoMessages = append(protoMessages, typedProtoMsg)
 		finalConfigDiscoveries = resource.General.ConfigDiscovery
-		ar.processConfigDiscoveries(resource.General.ConfigDiscovery, context, logger)
+		ar.processConfigDiscoveries(ctx, resource.General.ConfigDiscovery, context, logger)
 	}
 
-	// Döngü tamamlandıktan sonra sonuçları döndürüyoruz
 	return protoMessages, finalConfigDiscoveries, nil
 }
 
-// Process typed configs and upstream paths.
-func (ar *AllResources) processTypedConfigsAndUpstream(protoMsg proto.Message, jsonStringStr *string, gtype models.GTypes, parentName string, context *db.AppContext, logger *logrus.Logger) error {
+// processTypedConfigsAndUpstream processes typed configurations and upstream settings.
+// It reads the typed configurations and upstream settings, then applies necessary transformations or actions.
+// Parameters:
+// - ctx: context for controlling the request lifetime
+// - typedConfigs: a slice of typed configurations to be processed
+// - upstreamSettings: settings related to upstream configurations
+// Returns:
+// - error: an error if any occurred during the processing of the configurations and settings
+func (ar *AllResources) processTypedConfigsAndUpstream(ctx context.Context, protoMsg proto.Message, jsonStringStr *string, gtype models.GTypes, parentName string, context *db.AppContext, logger *logrus.Logger) error {
 	typedConfigPaths := gtype.TypedConfigPaths()
 
-	if gtype == models.FluentdAccessLog {
-		fmt.Println("FluentdAccessLog")
-	}
-	ar.processTypedConfigPaths(typedConfigPaths, jsonStringStr, context, logger)
-	ar.processUpstreamPaths(gtype.UpstreamPaths(), jsonStringStr, parentName, context, logger)
+	ar.processTypedConfigPaths(ctx, typedConfigPaths, jsonStringStr, context, logger)
+	ar.processUpstreamPaths(ctx, gtype.UpstreamPaths(), jsonStringStr, parentName, context, logger)
 
 	if err := helper.Unmarshaler.Unmarshal([]byte(*jsonStringStr), protoMsg); err != nil {
 		logger.Errorf("Error unmarshalling to proto message after processing nested configs: %v", err)
@@ -196,35 +244,53 @@ func (ar *AllResources) processTypedConfigsAndUpstream(protoMsg proto.Message, j
 	return nil
 }
 
-// Process typed config paths.
-func (ar *AllResources) processTypedConfigPaths(configPaths []models.TypedConfigPath, jsonStringStr *string, context *db.AppContext, logger *logrus.Logger) {
+// processTypedConfigPaths processes the paths for typed configurations.
+// It iterates through the provided paths and processes each one to collect and apply the configurations.
+// Parameters:
+// - ctx: context for controlling the request lifetime
+// - paths: a slice of paths to the typed configurations to be processed
+// Returns:
+// - error: an error if any occurred during the processing of the configuration paths
+func (ar *AllResources) processTypedConfigPaths(ctx context.Context, configPaths []models.TypedConfigPath, jsonStringStr *string, context *db.AppContext, logger *logrus.Logger) {
 	for _, path := range configPaths {
-		if err := ar.processTypedConfigPath(path, jsonStringStr, context); err != nil {
+		if err := ar.processTypedConfigPath(ctx, path, jsonStringStr, context); err != nil {
 			logger.Warnf("Error processing typed config path: %v", err)
 		}
 	}
 }
 
-// Process upstream paths recursively.
-func (ar *AllResources) processUpstreamPaths(upstreamPaths map[string]models.GTypes, jsonStringStr *string, parentName string, context *db.AppContext, logger *logrus.Logger) {
+// processUpstreamPaths processes the paths for upstream configurations.
+// It iterates through the provided paths and processes each one to collect and apply the upstream configurations.
+// Parameters:
+// - ctx: context for controlling the request lifetime
+// - paths: a slice of paths to the upstream configurations to be processed
+// Returns:
+// - error: an error if any occurred during the processing of the upstream paths
+func (ar *AllResources) processUpstreamPaths(ctx context.Context, upstreamPaths map[string]models.GTypes, jsonStringStr *string, parentName string, context *db.AppContext, logger *logrus.Logger) {
 	for jsonPath, upstreamType := range upstreamPaths {
 		result := gjson.Get(*jsonStringStr, jsonPath)
 		if result.Exists() {
-			processUpstreamPaths(result, upstreamType, parentName, ar, context, logger)
+			processUpstreamPaths(ctx, result, upstreamType, parentName, ar, context, logger)
 		}
 	}
 }
 
-// Process upstream paths recursively.
-func processUpstreamPaths(result gjson.Result, upstreamType models.GTypes, parentName string, ar *AllResources, context *db.AppContext, logger *logrus.Logger) {
+// processUpstreamPaths processes the paths for upstream configurations.
+// It iterates through the provided paths and processes each one to collect and apply the upstream configurations.
+// Parameters:
+// - ctx: context for controlling the request lifetime
+// - paths: a slice of paths to the upstream configurations to be processed
+// Returns:
+// - error: an error if any occurred during the processing of the upstream paths
+func processUpstreamPaths(ctx context.Context, result gjson.Result, upstreamType models.GTypes, parentName string, ar *AllResources, context *db.AppContext, logger *logrus.Logger) {
 	if result.IsArray() {
 		result.ForEach(func(_, item gjson.Result) bool {
-			processUpstreamPaths(item, upstreamType, parentName, ar, context, logger)
+			processUpstreamPaths(ctx, item, upstreamType, parentName, ar, context, logger)
 			return true
 		})
 	} else {
 		resourceName := result.String()
-		upstreamResourceProtoMsgs, additionalExtResources, err := ar.CollectAllResourcesWithParent(upstreamType, resourceName, parentName, context, logger)
+		upstreamResourceProtoMsgs, additionalExtResources, err := ar.CollectAllResourcesWithParent(ctx, upstreamType, resourceName, parentName, context, logger)
 		if err != nil {
 			logger.Errorf("Error collecting upstream resources: %v", err)
 			return
@@ -237,12 +303,18 @@ func processUpstreamPaths(result gjson.Result, upstreamType models.GTypes, paren
 			}
 		}
 		if additionalExtResources != nil {
-			ar.processConfigDiscoveries(additionalExtResources, context, logger)
+			ar.processConfigDiscoveries(ctx, additionalExtResources, context, logger)
 		}
 	}
 }
 
-// Add a resource to the appropriate collection in AllResources.
+// AddToCollection adds an item to the specified collection.
+// It takes the item and the collection as input and appends the item to the collection.
+// Parameters:
+// - collection: the collection to which the item will be added
+// - item: the item to be added to the collection
+// Returns:
+// - error: an error if any occurred during the addition of the item to the collection
 func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTypes, uniqName string, parentName *string, resourceName string) {
 	if ar.checkAndMarkDuplicate(uniqName) {
 		fmt.Printf("Skipping duplicate collection of resource: %s", uniqName)
@@ -251,18 +323,30 @@ func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTy
 
 	switch gtype {
 	case models.Cluster:
-		newCluster := proto.Clone(resource).(*cluster.Cluster)
-		ar.Cluster = append(ar.Cluster, newCluster)
+		if newCluster, ok := proto.Clone(resource).(*cluster.Cluster); ok {
+			ar.Cluster = append(ar.Cluster, newCluster)
+		} else {
+			fmt.Printf("Type assertion failed for Cluster")
+		}
 	case models.Route:
-		newRoute := proto.Clone(resource).(*route.RouteConfiguration)
-		ar.Route = append(ar.Route, newRoute)
+		if newRoute, ok := proto.Clone(resource).(*route.RouteConfiguration); ok {
+			ar.Route = append(ar.Route, newRoute)
+		} else {
+			fmt.Printf("Type assertion failed for RouteConfiguration")
+		}
 	case models.Endpoint:
-		newEndpoint := proto.Clone(resource).(*endpoint.ClusterLoadAssignment)
-		ar.Endpoint = append(ar.Endpoint, newEndpoint)
+		if newEndpoint, ok := proto.Clone(resource).(*endpoint.ClusterLoadAssignment); ok {
+			ar.Endpoint = append(ar.Endpoint, newEndpoint)
+		} else {
+			fmt.Printf("Type assertion failed for ClusterLoadAssignment")
+		}
 	case models.VirtualHost:
-		newVirtualHost := proto.Clone(resource).(*route.VirtualHost)
-		newVirtualHost.Name = fmt.Sprintf("%s/%s", *parentName, newVirtualHost.Name)
-		ar.VirtualHost = append(ar.VirtualHost, newVirtualHost)
+		if newVirtualHost, ok := proto.Clone(resource).(*route.VirtualHost); ok {
+			newVirtualHost.Name = fmt.Sprintf("%s/%s", *parentName, newVirtualHost.Name)
+			ar.VirtualHost = append(ar.VirtualHost, newVirtualHost)
+		} else {
+			fmt.Printf("Type assertion failed for VirtualHost")
+		}
 	case models.CertificateValidationContext, models.TLSCertificate, models.TLSSessionTicketKeys, models.GenericSecret:
 		newSecret := GetSecret(resourceName, resource)
 		ar.AppendSecret(newSecret)

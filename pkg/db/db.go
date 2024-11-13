@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"reflect"
 	"strings"
 	"time"
@@ -22,7 +23,6 @@ import (
 
 type AppContext struct {
 	Client *mongo.Database
-	Ctx    context.Context
 	Logger *logrus.Logger
 	Config *config.AppConfig
 }
@@ -38,9 +38,45 @@ var (
 	generalNameProject             = "general_name_project_1"
 )
 
+func buildMongoDBConnectionString(config *config.AppConfig) string {
+	u := &url.URL{
+		Scheme: config.MongodbScheme,
+		Host:   config.MongodbHosts,
+		Path:   config.MongodbDatabase,
+	}
+
+	// Kullanıcı adı ve parola ayarlanıyor
+	if config.MongodbUsername != "" && config.MongodbPassword != "" {
+		u.User = url.UserPassword(config.MongodbUsername, config.MongodbPassword)
+	}
+
+	// Port ekleniyor (eğer MongodbHosts içinde port yoksa ve MongodbPort belirtilmişse)
+	if !strings.Contains(config.MongodbHosts, ":") && config.MongodbPort != "" {
+		u.Host = fmt.Sprintf("%s:%s", config.MongodbHosts, config.MongodbPort)
+	}
+
+	// Sorgu parametreleri ekleniyor
+	query := url.Values{}
+	if config.MongodbReplicaSet != "" {
+		query.Add("replicaSet", config.MongodbReplicaSet)
+	}
+	if config.MongodbTimeoutMs != "" {
+		query.Add("connectTimeoutMS", config.MongodbTimeoutMs)
+	}
+
+	query.Add("retryWrites", "true")
+	query.Add("w", "majority")
+	query.Add("tls", config.MongodbTLSEnabled)
+
+	u.RawQuery = query.Encode()
+
+	return u.String()
+}
+
 func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *AppContext {
-	// connectionString := fmt.Sprintf("%s://%s%s", config.MongoDB.Scheme, hosts, config.MongoDB.Port)
-	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", config.MongodbScheme, config.MongodbUsername, config.MongodbPassword, config.MongodbHosts, config.MongodbPort)
+	connectionString := buildMongoDBConnectionString(config)
+	//connectionString := fmt.Sprintf("%s://%s:%s@%s%s/navigazer?connectTimeoutMS=5000", config.MongodbScheme, config.MongodbUsername, config.MongodbPassword, config.MongodbHosts, config.MongodbPort)
+	fmt.Println(connectionString)
 	tM := reflect.TypeOf(bson.M{})
 	reg := bson.NewRegistry()
 	reg.RegisterTypeMapEntry(bson.TypeEmbeddedDocument, tM)
@@ -59,33 +95,32 @@ func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *AppContext {
 
 	context := &AppContext{
 		Client: database,
-		Ctx:    ctx,
 		Logger: logger,
 		Config: config,
 	}
 
-	userID, err := createAdminUser(context)
+	userID, err := createAdminUser(ctx, context)
 	if err != nil {
 		logger.Infof("Admin user not created: %s", err)
 	}
 
-	if err := createAdminGroup(context, userID); err != nil {
+	if err := createAdminGroup(ctx, context, userID); err != nil {
 		logger.Infof("Admin group not created: %s", err)
 	}
 
-	if err := createDefaultProject(context, userID); err != nil {
+	if err := createDefaultProject(ctx, context, userID); err != nil {
 		logger.Infof("Default project not created: %s", err)
 	}
 
 	return context
 }
 
-func (db *AppContext) GetGenerals(collectionName string) (*mongo.Cursor, error) {
+func (db *AppContext) GetGenerals(ctx context.Context, collectionName string) (*mongo.Cursor, error) {
 	collection := db.Client.Collection(collectionName)
 	findOptions := options.Find()
 	findOptions.SetProjection(bson.D{{Key: "general", Value: 1}})
 
-	cur, err := collection.Find(db.Ctx, bson.D{{}}, findOptions)
+	cur, err := collection.Find(ctx, bson.D{{}}, findOptions)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, errstr.ErrListenerNotFound
@@ -194,10 +229,10 @@ func getIndexName(index mongo.IndexModel) string {
 	return strings.Join(nameParts, "_")
 }
 
-func createAdminUser(db *AppContext) (string, error) {
+func createAdminUser(ctx context.Context, db *AppContext) (string, error) {
 	collection := db.Client.Collection("users")
 	var user models.User
-	err := collection.FindOne(db.Ctx, bson.M{"username": "admin"}).Decode(&user)
+	err := collection.FindOne(ctx, bson.M{"username": "admin"}).Decode(&user)
 
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		hashedPassword := helper.HashPassword("admin")
@@ -218,7 +253,7 @@ func createAdminUser(db *AppContext) (string, error) {
 		user.Token = &token
 		user.RefreshToken = &refreshToken
 
-		_, insertErr := collection.InsertOne(db.Ctx, user)
+		_, insertErr := collection.InsertOne(ctx, user)
 		if insertErr != nil {
 			return "", insertErr
 		}
@@ -226,18 +261,18 @@ func createAdminUser(db *AppContext) (string, error) {
 	return user.UserID, nil
 }
 
-func createAdminGroup(db *AppContext, userID string) error {
+func createAdminGroup(ctx context.Context, db *AppContext, userID string) error {
 	if userID == "" {
 		return errstr.ErrUserIDEmpty
 	}
 
 	collection := db.Client.Collection("groups")
 	var group models.Group
-	err := collection.FindOne(db.Ctx, bson.M{"groupname": "admin"}).Decode(&group)
+	err := collection.FindOne(ctx, bson.M{"groupname": "admin"}).Decode(&group)
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
-		_, err = collection.InsertOne(db.Ctx, bson.M{
+		_, err = collection.InsertOne(ctx, bson.M{
 			"groupname":  "admin",
 			"members":    []string{userID},
 			"created_at": primitive.NewDateTimeFromTime(time.Now()),
@@ -261,18 +296,18 @@ func createAdminGroup(db *AppContext, userID string) error {
 	return nil
 }
 
-func createDefaultProject(db *AppContext, userID string) error {
+func createDefaultProject(ctx context.Context, db *AppContext, userID string) error {
 	if userID == "" {
 		return errstr.ErrUserIDEmpty
 	}
 
 	collection := db.Client.Collection("projects")
 	var project models.Project
-	err := collection.FindOne(db.Ctx, bson.M{"projectname": "default"}).Decode(&project)
+	err := collection.FindOne(ctx, bson.M{"projectname": "default"}).Decode(&project)
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
-		_, err = collection.InsertOne(db.Ctx, bson.M{
+		_, err = collection.InsertOne(ctx, bson.M{
 			"projectname": "default",
 			"members":     []string{userID},
 			"created_at":  primitive.NewDateTimeFromTime(time.Now()),

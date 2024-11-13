@@ -1,6 +1,7 @@
 package extension
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -12,20 +13,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (extension *AppHandler) GetExtensions(_ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) GetExtensions(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	var records []bson.M
 	filter := bson.M{"general.type": requestDetails.Type, "general.project": requestDetails.Project}
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
 	collection := extension.Context.Client.Collection(requestDetails.Collection)
 
 	opts := options.Find().SetProjection(bson.M{"resource": 0})
-	cursor, err := collection.Find(extension.Context.Ctx, filterWithRestriction, opts)
+	cursor, err := collection.Find(ctx, filterWithRestriction, opts)
 	if err != nil {
 		return nil, fmt.Errorf("db find error: %w", err)
 	}
-	defer cursor.Close(extension.Context.Ctx)
+	defer cursor.Close(ctx)
 
-	if err = cursor.All(extension.Context.Ctx, &records); err != nil {
+	if err = cursor.All(ctx, &records); err != nil {
 		return nil, fmt.Errorf("cursor all error: %w", err)
 	}
 
@@ -33,25 +34,25 @@ func (extension *AppHandler) GetExtensions(_ models.DBResourceClass, requestDeta
 	return generals, nil
 }
 
-func (extension *AppHandler) GetExtension(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
-	return getExtensionByFilter(resource, extension, requestDetails, bson.M{
+func (extension *AppHandler) GetExtension(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+	return getExtensionByFilter(ctx, resource, extension, requestDetails, bson.M{
 		"general.name":           requestDetails.Name,
 		"general.canonical_name": requestDetails.CanonicalName,
 		"general.project":        requestDetails.Project,
 	})
 }
 
-func (extension *AppHandler) GetOtherExtension(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
-	return getExtensionByFilter(resource, extension, requestDetails, bson.M{
+func (extension *AppHandler) GetOtherExtension(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+	return getExtensionByFilter(ctx, resource, extension, requestDetails, bson.M{
 		"general.name":    requestDetails.Name,
 		"general.project": requestDetails.Project,
 	})
 }
 
-func getExtensionByFilter(resource models.DBResourceClass, extension *AppHandler, requestDetails models.RequestDetails, filter bson.M) (interface{}, error) {
+func getExtensionByFilter(ctx context.Context, resource models.DBResourceClass, extension *AppHandler, requestDetails models.RequestDetails, filter bson.M) (interface{}, error) {
 	collection := extension.Context.Client.Collection(requestDetails.Collection)
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
-	result := collection.FindOne(extension.Context.Ctx, filterWithRestriction)
+	result := collection.FindOne(ctx, filterWithRestriction)
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {

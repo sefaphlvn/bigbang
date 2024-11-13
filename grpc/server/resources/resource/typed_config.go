@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -14,14 +15,14 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 )
 
-func (ar *AllResources) GetTypedConfigs(paths []models.TypedConfigPath, jsonData interface{}, context *db.AppContext) (interface{}, error) {
+func (ar *AllResources) GetTypedConfigs(ctx context.Context, paths []models.TypedConfigPath, jsonData interface{}, context *db.AppContext) (interface{}, error) {
 	jsonStringStr, err := helper.MarshalJSON(jsonData, context.Logger)
 	if err != nil {
 		return jsonData, err
 	}
 
 	for _, pathd := range paths {
-		if err := ar.processTypedConfigPath(pathd, &jsonStringStr, context); err != nil {
+		if err := ar.processTypedConfigPath(ctx, pathd, &jsonStringStr, context); err != nil {
 			context.Logger.Debugf("Error processing typed config path: %v", err)
 		}
 	}
@@ -35,11 +36,11 @@ func (ar *AllResources) GetTypedConfigs(paths []models.TypedConfigPath, jsonData
 	return updatedJSONData, nil
 }
 
-func (ar *AllResources) processTypedConfigPath(pathd models.TypedConfigPath, jsonStringStr *string, context *db.AppContext) error {
+func (ar *AllResources) processTypedConfigPath(ctx context.Context, pathd models.TypedConfigPath, jsonStringStr *string, context *db.AppContext) error {
 	_, typedConfigsMap := resources.ProcessTypedConfigs(*jsonStringStr, pathd, context.Logger)
 
 	for path, tempTypedConfig := range typedConfigsMap {
-		conf, err := resources.GetResourceNGeneral(context, tempTypedConfig.Collection, tempTypedConfig.Name, ar.Project)
+		conf, err := resources.GetResourceNGeneral(ctx, context, tempTypedConfig.Collection, tempTypedConfig.Name, ar.Project)
 		if err != nil {
 			context.Logger.Warnf("Error getting resource from DB: %v", err)
 			return err
@@ -53,7 +54,7 @@ func (ar *AllResources) processTypedConfigPath(pathd models.TypedConfigPath, jso
 			return err
 		}
 		typedConfigStr := string(typedConfigJSON)
-		ar.processUpstreamPaths(tempTypedConfig.Gtype.UpstreamPaths(), &typedConfigStr, tempTypedConfig.ParentName, context, context.Logger)
+		ar.processUpstreamPaths(ctx, tempTypedConfig.Gtype.UpstreamPaths(), &typedConfigStr, tempTypedConfig.ParentName, context, context.Logger)
 
 		typedConfig, err := decodeTypedConfig([]byte(typedConfigStr), tempTypedConfig.Gtype)
 		if err != nil {

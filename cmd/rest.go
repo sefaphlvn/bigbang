@@ -19,7 +19,12 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/handlers"
 )
 
-// restCmd represents the rest command.
+// restCmd represents the command for starting the REST API server.
+// It initializes the server, sets up routes, and starts listening for incoming HTTP requests.
+// Parameters:
+// - none
+// Returns:
+// - *cobra.Command: a Cobra command instance for the REST API server
 var restCmd = &cobra.Command{
 	Use:   "server-rest",
 	Short: "Start Bigbang REST Server",

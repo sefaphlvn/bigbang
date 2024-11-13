@@ -1,6 +1,7 @@
 package extension
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/typedconfigs"
 )
 
-func (extension *AppHandler) SetExtension(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) SetExtension(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	general := resource.GetGeneral()
 	now := time.Now()
 	general.CreatedAt = primitive.NewDateTimeFromTime(now)
@@ -30,7 +31,7 @@ func (extension *AppHandler) SetExtension(resource models.DBResourceClass, reque
 	common.DetectSetPermissions(resource, requestDetails)
 
 	collection := extension.Context.Client.Collection(requestDetails.Collection)
-	_, err = collection.InsertOne(extension.Context.Ctx, resource)
+	_, err = collection.InsertOne(ctx, resource)
 	if err != nil {
 		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
 			return nil, errstr.ErrNameAlreadyExists

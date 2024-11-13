@@ -20,7 +20,12 @@ var (
 	nodeID string
 )
 
-// grpcCmd represents the grpc command.
+// grpcCmd represents the command for starting the gRPC server.
+// It initializes the server, sets up the necessary services, and starts listening for incoming gRPC requests.
+// Parameters:
+// - none
+// Returns:
+// - *cobra.Command: a Cobra command instance for the gRPC server
 var grpcCmd = &cobra.Command{
 	Use:   "server-grpc",
 	Short: "Start Bigbang GRPC Server",

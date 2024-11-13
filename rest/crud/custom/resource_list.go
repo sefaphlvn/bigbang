@@ -21,7 +21,7 @@ type Record struct {
 	Collection    string `json:"collection" bson:"collection"`
 }
 
-func (custom *AppHandler) GetCustomResourceList(_ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (custom *AppHandler) GetCustomResourceList(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	collection := custom.Context.Client.Collection(requestDetails.Collection)
 
 	opts := options.Find().SetProjection(bson.M{
@@ -34,13 +34,13 @@ func (custom *AppHandler) GetCustomResourceList(_ models.DBResourceClass, reques
 
 	filters := buildFilters(requestDetails)
 
-	cursor, err := collection.Find(custom.Context.Ctx, filters, opts)
+	cursor, err := collection.Find(ctx, filters, opts)
 	if err != nil {
 		return nil, fmt.Errorf("db error: %w", err)
 	}
-	defer cursor.Close(custom.Context.Ctx)
+	defer cursor.Close(ctx)
 
-	results, decodeErr := decodeResults(cursor, requestDetails.Collection, custom.Context.Logger)
+	results, decodeErr := decodeResults(ctx, cursor, requestDetails.Collection, custom.Context.Logger)
 	if decodeErr != nil {
 		return nil, decodeErr
 	}
@@ -69,10 +69,10 @@ func buildFilters(details models.RequestDetails) bson.M {
 	return filters
 }
 
-func decodeResults(cursor *mongo.Cursor, collectionName string, logger *logrus.Logger) ([]Record, error) {
+func decodeResults(ctx context.Context, cursor *mongo.Cursor, collectionName string, logger *logrus.Logger) ([]Record, error) {
 	var results []Record
 
-	for cursor.Next(context.TODO()) {
+	for cursor.Next(ctx) {
 		var doc struct {
 			General struct {
 				Name          string `bson:"name"`

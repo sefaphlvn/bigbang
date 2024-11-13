@@ -1,12 +1,14 @@
 package dependency
 
 import (
+	"context"
+
 	"github.com/tidwall/gjson"
 
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
-func parseConfigDiscovery(ctx *AppHandler, rootResult gjson.Result, activeResource Depend) []Depend {
+func parseConfigDiscovery(ctx context.Context, appCtx *AppHandler, rootResult gjson.Result, activeResource Depend) []Depend {
 	var dependencies []Depend
 
 	rootResult.Get("general.config_discovery").ForEach(func(_, discoveryItem gjson.Result) bool {
@@ -17,7 +19,7 @@ func parseConfigDiscovery(ctx *AppHandler, rootResult gjson.Result, activeResour
 
 		gtype := models.GTypes(gtypeStr)
 		cdName := discoveryItem.Get("name").String()
-		cdID, _ := ctx.getResourceData(gtype.CollectionString(), cdName, activeResource.Project)
+		cdID, _ := appCtx.getResourceData(ctx, gtype.CollectionString(), cdName, activeResource.Project)
 		dependencies = append(dependencies, Depend{Name: cdName, Gtype: gtype, Collection: gtype.CollectionString(), Project: activeResource.Project, ID: cdID})
 		return true
 	})
@@ -25,7 +27,7 @@ func parseConfigDiscovery(ctx *AppHandler, rootResult gjson.Result, activeResour
 	return dependencies
 }
 
-func parseTypedConfig(ctx *AppHandler, rootResult gjson.Result, activeResource Depend) []Depend {
+func parseTypedConfig(ctx context.Context, appCtx *AppHandler, rootResult gjson.Result, activeResource Depend) []Depend {
 	var dependencies []Depend
 
 	rootResult.Get("general.typed_config").ForEach(func(_, typedItem gjson.Result) bool {
@@ -36,7 +38,7 @@ func parseTypedConfig(ctx *AppHandler, rootResult gjson.Result, activeResource D
 
 		gtype := models.GTypes(gtypeStr)
 		tcName := typedItem.Get("name").String()
-		tcID, _ := ctx.getResourceData(gtype.CollectionString(), tcName, activeResource.Project)
+		tcID, _ := appCtx.getResourceData(ctx, gtype.CollectionString(), tcName, activeResource.Project)
 		dependencies = append(dependencies, Depend{Name: tcName, Gtype: gtype, Collection: gtype.CollectionString(), Project: activeResource.Project, ID: tcID})
 		return true
 	})

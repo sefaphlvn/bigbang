@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
@@ -28,6 +29,7 @@ const (
 )
 
 func (handler *AppHandler) ListGroups(c *gin.Context) {
+	ctx := c.Request.Context()
 	var groupCollection *mongo.Collection = handler.Context.Client.Collection("groups")
 	filter := bson.M{"project": c.Query("project")}
 
@@ -37,13 +39,13 @@ func (handler *AppHandler) ListGroups(c *gin.Context) {
 	}
 
 	opts := options.Find().SetProjection(bson.M{"groupname": 1, "members": 1, "created_at": 1, "updated_at": 1})
-	cursor, err := groupCollection.Find(handler.Context.Ctx, filter, opts)
+	cursor, err := groupCollection.Find(ctx, filter, opts)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not find records"})
 	}
 
 	var records []bson.M
-	if err = cursor.All(handler.Context.Ctx, &records); err != nil {
+	if err = cursor.All(ctx, &records); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not decode records"})
 	}
 
@@ -51,6 +53,7 @@ func (handler *AppHandler) ListGroups(c *gin.Context) {
 }
 
 func (handler *AppHandler) GetGroup(c *gin.Context) {
+	ctx := c.Request.Context()
 	var userCollection *mongo.Collection = handler.Context.Client.Collection("groups")
 	groupID := c.Param("group_id")
 	objectID, err := primitive.ObjectIDFromHex(groupID)
@@ -68,7 +71,7 @@ func (handler *AppHandler) GetGroup(c *gin.Context) {
 
 	opts := options.FindOne().SetProjection(bson.M{"groupname": 1, "email": 1, "created_at": 1, "updated_at": 1, "members": 1})
 	var record bson.M
-	err = userCollection.FindOne(handler.Context.Ctx, filter, opts).Decode(&record)
+	err = userCollection.FindOne(ctx, filter, opts).Decode(&record)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not find records"})
 	}
@@ -76,23 +79,23 @@ func (handler *AppHandler) GetGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, record)
 }
 
-func (handler *AppHandler) GetBaseGroup(userID string) *string {
+func (handler *AppHandler) GetBaseGroup(ctx context.Context, userID string) *string {
 	var usersCollection *mongo.Collection = handler.Context.Client.Collection("users")
 	filters := bson.M{"user_id": userID}
 	opts := options.Find()
 	opts.SetProjection(bson.M{"base_group": 1})
-	cursor, err := usersCollection.Find(handler.Context.Ctx, filters, opts)
+	cursor, err := usersCollection.Find(ctx, filters, opts)
 	if err != nil {
 		handler.Context.Logger.Info(err)
 		return nil
 	}
-	defer cursor.Close(handler.Context.Ctx)
+	defer cursor.Close(ctx)
 
 	var result struct {
 		BaseGroup *string `bson:"base_group"`
 	}
 
-	if cursor.Next(handler.Context.Ctx) {
+	if cursor.Next(ctx) {
 		err := cursor.Decode(&result)
 		if err != nil {
 			handler.Context.Logger.Info(err)
@@ -104,23 +107,23 @@ func (handler *AppHandler) GetBaseGroup(userID string) *string {
 	return nil
 }
 
-func (handler *AppHandler) GetUserGroups(userID string) (*[]string, *string, bool) {
+func (handler *AppHandler) GetUserGroups(ctx context.Context, userID string) (*[]string, *string, bool) {
 	var groupCollection *mongo.Collection = handler.Context.Client.Collection("groups")
 	filters := bson.M{"members": userID}
 	adminGroup := false
 
 	opts := options.Find()
 	opts.SetProjection(bson.M{"_id": 1, "groupname": 1})
-	cursor, err := groupCollection.Find(handler.Context.Ctx, filters, opts)
+	cursor, err := groupCollection.Find(ctx, filters, opts)
 	if err != nil {
 		handler.Context.Logger.Info(err)
 		return nil, nil, false
 	}
 
-	defer cursor.Close(handler.Context.Ctx)
+	defer cursor.Close(ctx)
 
 	var results []string
-	for cursor.Next(handler.Context.Ctx) {
+	for cursor.Next(ctx) {
 		var group models.Group
 		if err := cursor.Decode(&group); err != nil {
 			handler.Context.Logger.Info(err)
@@ -132,7 +135,7 @@ func (handler *AppHandler) GetUserGroups(userID string) (*[]string, *string, boo
 		}
 	}
 
-	baseGroup := handler.GetBaseGroup(userID)
+	baseGroup := handler.GetBaseGroup(ctx, userID)
 	if baseGroup != nil {
 		results = append(results, *baseGroup)
 	}
@@ -145,8 +148,9 @@ func (handler *AppHandler) GetUserGroups(userID string) (*[]string, *string, boo
 }
 
 func (handler *AppHandler) SetUpdateGroup(c *gin.Context) {
+	ctx := c.Request.Context()
 	var userCollection *mongo.Collection = handler.Context.Client.Collection("groups")
-	ctx, cancel := context.WithTimeout(handler.Context.Ctx, 100*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 100*time.Second)
 	var status int
 	var msg, groupID string
 	defer cancel()
@@ -216,15 +220,20 @@ func (handler *AppHandler) UpdateGroup(ctx context.Context, groupCollection *mon
 		"$set": bson.M{},
 	}
 
+	updateMap, ok := update["$set"].(bson.M)
+	if !ok {
+		return http.StatusInternalServerError, errstr.ErrUnexpectedTypeBsonM.Error()
+	}
+
 	if groupWA.GroupName != nil {
-		update["$set"].(bson.M)["groupname"] = groupWA.GroupName
+		updateMap["groupname"] = groupWA.GroupName
 	}
 
 	if groupWA.Members != nil {
-		update["$set"].(bson.M)["members"] = groupWA.Members
+		updateMap["members"] = groupWA.Members
 	}
 
-	update["$set"].(bson.M)["updated_at"] = primitive.NewDateTimeFromTime(time.Now())
+	updateMap["updated_at"] = primitive.NewDateTimeFromTime(time.Now())
 	result, err := groupCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Sprintf("error updating group: %v", err)

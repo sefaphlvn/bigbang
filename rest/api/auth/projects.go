@@ -22,13 +22,14 @@ type ProjectWithActiveStatus struct {
 }
 
 func (handler *AppHandler) ListProjects(c *gin.Context) {
+	ctx := c.Request.Context()
 	UserID, _ := c.Get("user_id")
 	userID, ok := UserID.(string)
 	if !ok {
 		userID = ""
 	}
 	var projectCollection *mongo.Collection = handler.Context.Client.Collection("projects")
-	projects, _ := handler.GetUserProject(userID)
+	projects, _ := handler.GetUserProject(ctx, userID)
 
 	var projectIDs []primitive.ObjectID
 	if projects != nil {
@@ -50,13 +51,13 @@ func (handler *AppHandler) ListProjects(c *gin.Context) {
 	}
 
 	opts := options.Find().SetProjection(bson.M{"projectname": 1, "members": 1, "created_at": 1, "updated_at": 1})
-	cursor, err := projectCollection.Find(handler.Context.Ctx, filter, opts)
+	cursor, err := projectCollection.Find(ctx, filter, opts)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not find records"})
 	}
 
 	var records []bson.M
-	if err = cursor.All(handler.Context.Ctx, &records); err != nil {
+	if err = cursor.All(ctx, &records); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not decode records"})
 	}
 
@@ -64,6 +65,7 @@ func (handler *AppHandler) ListProjects(c *gin.Context) {
 }
 
 func (handler *AppHandler) GetProject(c *gin.Context) {
+	ctx := c.Request.Context()
 	var userCollection *mongo.Collection = handler.Context.Client.Collection("projects")
 	var record bson.M
 
@@ -76,7 +78,7 @@ func (handler *AppHandler) GetProject(c *gin.Context) {
 
 	filter := bson.M{"_id": objectID}
 	opts := options.FindOne().SetProjection(bson.M{"projectname": 1, "email": 1, "created_at": 1, "updated_at": 1, "members": 1})
-	err = userCollection.FindOne(handler.Context.Ctx, filter, opts).Decode(&record)
+	err = userCollection.FindOne(ctx, filter, opts).Decode(&record)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not find records"})
 	}
@@ -84,17 +86,17 @@ func (handler *AppHandler) GetProject(c *gin.Context) {
 	c.JSON(http.StatusOK, record)
 }
 
-func (handler *AppHandler) GetBaseProjectAndRole(userID string) (*string, bool) {
+func (handler *AppHandler) GetBaseProjectAndRole(ctx context.Context, userID string) (*string, bool) {
 	var usersCollection *mongo.Collection = handler.Context.Client.Collection("users")
 	filters := bson.M{"user_id": userID}
 	opts := options.Find()
 	opts.SetProjection(bson.M{"base_project": 1, "username": 1, "role": 1})
-	cursor, err := usersCollection.Find(handler.Context.Ctx, filters, opts)
+	cursor, err := usersCollection.Find(ctx, filters, opts)
 	if err != nil {
 		handler.Context.Logger.Info(err)
 		return nil, false
 	}
-	defer cursor.Close(handler.Context.Ctx)
+	defer cursor.Close(ctx)
 
 	var result struct {
 		BaseProject *string `bson:"base_project"`
@@ -102,7 +104,7 @@ func (handler *AppHandler) GetBaseProjectAndRole(userID string) (*string, bool) 
 		Role        string  `bson:"role"`
 	}
 
-	if cursor.Next(handler.Context.Ctx) {
+	if cursor.Next(ctx) {
 		err := cursor.Decode(&result)
 		if err != nil {
 			handler.Context.Logger.Info(err)
@@ -115,58 +117,61 @@ func (handler *AppHandler) GetBaseProjectAndRole(userID string) (*string, bool) 
 	return nil, false
 }
 
-func (handler *AppHandler) GetUserProject(userID string) (*[]models.CombinedProjects, *string) {
+func (handler *AppHandler) GetUserProject(ctx context.Context, userID string) (*[]models.CombinedProjects, *string) {
 	projectCollection := handler.Context.Client.Collection("projects")
 	var projects []models.CombinedProjects
 
-	baseProject, isOwner := handler.GetBaseProjectAndRole(userID)
+	baseProject, isOwner := handler.GetBaseProjectAndRole(ctx, userID)
 	if baseProject != nil {
 		projects = append(projects, models.CombinedProjects{
 			ProjectID:   *baseProject,
-			ProjectName: handler.getProjectName(projectCollection, *baseProject),
+			ProjectName: handler.getProjectName(ctx, projectCollection, *baseProject),
 		})
 	}
 
 	if isOwner {
-		allProjects, err := handler.getAllProjectNamesAndIDs(projectCollection)
+		allProjects, err := handler.getAllProjectNamesAndIDs(ctx, projectCollection)
 		if err != nil {
 			handler.Context.Logger.Info("Error getting all project names and IDs:", err)
 			return nil, baseProject
 		}
 		projects = append(projects, allProjects...)
-	} else {
-		filters := bson.M{"members": userID}
-		opts := options.Find().SetProjection(bson.M{"_id": 1, "projectname": 1})
-		cursor, err := projectCollection.Find(handler.Context.Ctx, filters, opts)
-		if err != nil {
-			handler.Context.Logger.Info("Error finding projects:", err)
-			return nil, baseProject
-		}
-		defer cursor.Close(handler.Context.Ctx)
+		return helper.RemoveDuplicatesP(&projects), baseProject
+	}
 
-		for cursor.Next(handler.Context.Ctx) {
-			var project models.Project
-			if err := cursor.Decode(&project); err != nil {
-				handler.Context.Logger.Info("Error decoding project:", err)
-				continue
-			}
-			projects = append(projects, models.CombinedProjects{
-				ProjectID:   project.ID.Hex(),
-				ProjectName: *project.ProjectName,
-			})
-		}
+	// `isOwner` değilse, üye olduğu projeleri buluyoruz
+	filters := bson.M{"members": userID}
+	opts := options.Find().SetProjection(bson.M{"_id": 1, "projectname": 1})
+	cursor, err := projectCollection.Find(ctx, filters, opts)
+	if err != nil {
+		handler.Context.Logger.Info("Error finding projects:", err)
+		return nil, baseProject
+	}
+	defer cursor.Close(ctx)
 
-		if err := cursor.Err(); err != nil {
-			handler.Context.Logger.Info("Cursor error:", err)
+	for cursor.Next(ctx) {
+		var project models.Project
+		if err := cursor.Decode(&project); err != nil {
+			handler.Context.Logger.Info("Error decoding project:", err)
+			continue
 		}
+		projects = append(projects, models.CombinedProjects{
+			ProjectID:   project.ID.Hex(),
+			ProjectName: *project.ProjectName,
+		})
+	}
+
+	if err := cursor.Err(); err != nil {
+		handler.Context.Logger.Info("Cursor error:", err)
 	}
 
 	return helper.RemoveDuplicatesP(&projects), baseProject
 }
 
 func (handler *AppHandler) SetUpdateProject(c *gin.Context) {
+	ctx := c.Request.Context()
 	var userCollection *mongo.Collection = handler.Context.Client.Collection("projects")
-	ctx, cancel := context.WithTimeout(handler.Context.Ctx, 100*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 100*time.Second)
 	var status int
 	var msg, projectID string
 	defer cancel()
@@ -231,14 +236,19 @@ func (handler *AppHandler) UpdateProject(ctx context.Context, projectCollection 
 		"$set": bson.M{},
 	}
 
-	if projectWA.ProjectName != nil {
-		update["$set"].(bson.M)["projectname"] = projectWA.ProjectName
-	}
-	if projectWA.Members != nil {
-		update["$set"].(bson.M)["members"] = projectWA.Members
+	setMap, ok := update["$set"].(bson.M)
+	if !ok {
+		return http.StatusInternalServerError, "unexpected type for update['$set'], expected bson.M"
 	}
 
-	update["$set"].(bson.M)["updated_at"] = primitive.NewDateTimeFromTime(time.Now())
+	if projectWA.ProjectName != nil {
+		setMap["projectname"] = projectWA.ProjectName
+	}
+	if projectWA.Members != nil {
+		setMap["members"] = projectWA.Members
+	}
+
+	setMap["updated_at"] = primitive.NewDateTimeFromTime(time.Now())
 	result, err := projectCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Sprintf("error updating project: %v", err)
@@ -251,7 +261,7 @@ func (handler *AppHandler) UpdateProject(ctx context.Context, projectCollection 
 	return http.StatusOK, "project successfully updated"
 }
 
-func (handler *AppHandler) getProjectName(projectCollection *mongo.Collection, projectID string) string {
+func (handler *AppHandler) getProjectName(ctx context.Context, projectCollection *mongo.Collection, projectID string) string {
 	opts := options.FindOne().SetProjection(bson.M{"projectname": 1, "_id": 0})
 	objectID, err := primitive.ObjectIDFromHex(projectID)
 	if err != nil {
@@ -264,7 +274,7 @@ func (handler *AppHandler) getProjectName(projectCollection *mongo.Collection, p
 		ProjectName string `bson:"projectname"`
 	}
 
-	err = projectCollection.FindOne(handler.Context.Ctx, filter, opts).Decode(&result)
+	err = projectCollection.FindOne(ctx, filter, opts).Decode(&result)
 	if err != nil {
 		return ""
 	}
@@ -272,15 +282,15 @@ func (handler *AppHandler) getProjectName(projectCollection *mongo.Collection, p
 	return result.ProjectName
 }
 
-func (handler *AppHandler) getAllProjectNamesAndIDs(projectCollection *mongo.Collection) ([]models.CombinedProjects, error) {
+func (handler *AppHandler) getAllProjectNamesAndIDs(ctx context.Context, projectCollection *mongo.Collection) ([]models.CombinedProjects, error) {
 	opts := options.Find().SetProjection(bson.M{"_id": 1, "projectname": 1})
 	var projects []models.CombinedProjects
-	cursor, err := projectCollection.Find(handler.Context.Ctx, bson.M{}, opts)
+	cursor, err := projectCollection.Find(ctx, bson.M{}, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	for cursor.Next(handler.Context.Ctx) {
+	for cursor.Next(ctx) {
 		var result struct {
 			ID          primitive.ObjectID `bson:"_id"`
 			ProjectName string             `bson:"projectname"`

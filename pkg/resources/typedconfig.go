@@ -50,38 +50,46 @@ func ProcessTypedConfigs(jsonStringStr string, typedConfigPath models.TypedConfi
 	seenConfigs := make(map[string]struct{})
 
 	if typedConfigPath.IsPerTypedConfig {
-		if len(typedConfigPath.ArrayPaths) == 0 {
-			result := gjson.Get(jsonStringStr, typedConfigPath.PathTemplate)
-			if result.Exists() {
-				result.ForEach(func(key, _ gjson.Result) bool {
-					dynamicKey := key.String()
-					dynamicPath := fmt.Sprintf("%s.%s", typedConfigPath.PathTemplate, helper.EscapePointKey(dynamicKey))
-					processPath(jsonStringStr, dynamicPath, &typedConfigs, typedConfigsMap, seenConfigs, logger)
-					return true
-				})
-			}
-		} else {
-			result := gjson.Get(jsonStringStr, typedConfigPath.ArrayPaths[0].ParentPath)
-			if result.IsArray() {
-				processPerTypedConfigArray(result.Array(), jsonStringStr, typedConfigPath.PathTemplate, typedConfigPath.ArrayPaths, &typedConfigs, typedConfigsMap, seenConfigs, logger)
-			} else if result.Exists() {
-				processDynamicKey(result, typedConfigPath.ArrayPaths[0].ParentPath, &typedConfigs, typedConfigsMap, seenConfigs, logger)
-			}
-		}
+		handlePerTypedConfig(jsonStringStr, typedConfigPath, &typedConfigs, typedConfigsMap, seenConfigs, logger)
 	} else {
-		if len(typedConfigPath.ArrayPaths) == 0 {
-			processPath(jsonStringStr, typedConfigPath.PathTemplate, &typedConfigs, typedConfigsMap, seenConfigs, logger)
-		} else {
-			result := gjson.Get(jsonStringStr, typedConfigPath.ArrayPaths[0].ParentPath)
-			if result.IsArray() {
-				processArray(result.Array(), jsonStringStr, typedConfigPath.PathTemplate, typedConfigPath.ArrayPaths, &typedConfigs, typedConfigsMap, seenConfigs, logger)
-			} else if result.Exists() {
-				processPath(result.String(), typedConfigPath.ArrayPaths[0].ParentPath, &typedConfigs, typedConfigsMap, seenConfigs, logger)
-			}
-		}
+		handleNonPerTypedConfig(jsonStringStr, typedConfigPath, &typedConfigs, typedConfigsMap, seenConfigs, logger)
 	}
 
 	return typedConfigs, typedConfigsMap
+}
+
+func handlePerTypedConfig(jsonStringStr string, typedConfigPath models.TypedConfigPath, typedConfigs *[]*models.TypedConfig, typedConfigsMap map[string]*models.TypedConfig, seenConfigs map[string]struct{}, logger *logrus.Logger) {
+	if len(typedConfigPath.ArrayPaths) == 0 {
+		result := gjson.Get(jsonStringStr, typedConfigPath.PathTemplate)
+		if result.Exists() {
+			result.ForEach(func(key, _ gjson.Result) bool {
+				dynamicKey := key.String()
+				dynamicPath := fmt.Sprintf("%s.%s", typedConfigPath.PathTemplate, helper.EscapePointKey(dynamicKey))
+				processPath(jsonStringStr, dynamicPath, typedConfigs, typedConfigsMap, seenConfigs, logger)
+				return true
+			})
+		}
+	} else {
+		result := gjson.Get(jsonStringStr, typedConfigPath.ArrayPaths[0].ParentPath)
+		if result.IsArray() {
+			processPerTypedConfigArray(result.Array(), jsonStringStr, typedConfigPath.PathTemplate, typedConfigPath.ArrayPaths, typedConfigs, typedConfigsMap, seenConfigs, logger)
+		} else if result.Exists() {
+			processDynamicKey(result, typedConfigPath.ArrayPaths[0].ParentPath, typedConfigs, typedConfigsMap, seenConfigs, logger)
+		}
+	}
+}
+
+func handleNonPerTypedConfig(jsonStringStr string, typedConfigPath models.TypedConfigPath, typedConfigs *[]*models.TypedConfig, typedConfigsMap map[string]*models.TypedConfig, seenConfigs map[string]struct{}, logger *logrus.Logger) {
+	if len(typedConfigPath.ArrayPaths) == 0 {
+		processPath(jsonStringStr, typedConfigPath.PathTemplate, typedConfigs, typedConfigsMap, seenConfigs, logger)
+	} else {
+		result := gjson.Get(jsonStringStr, typedConfigPath.ArrayPaths[0].ParentPath)
+		if result.IsArray() {
+			processArray(result.Array(), jsonStringStr, typedConfigPath.PathTemplate, typedConfigPath.ArrayPaths, typedConfigs, typedConfigsMap, seenConfigs, logger)
+		} else if result.Exists() {
+			processPath(result.String(), typedConfigPath.ArrayPaths[0].ParentPath, typedConfigs, typedConfigsMap, seenConfigs, logger)
+		}
+	}
 }
 
 func processDynamicKey(result gjson.Result, basePath string, typedConfigs *[]*models.TypedConfig, typedConfigsMap map[string]*models.TypedConfig, seenConfigs map[string]struct{}, logger *logrus.Logger) {

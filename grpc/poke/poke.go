@@ -35,21 +35,35 @@ func NewPokeServer(ctx *snapshot.Context, db *db.AppContext, logger *logrus.Logg
 	}
 }
 
+// Run starts the main execution of the program.
+// It initializes necessary components and begins processing based on the provided configuration.
+// Parameters:
+// - ctx: context for controlling the request lifetime
+// Returns:
+// - error: an error if any occurred during the execution process
 func (p *Poke) Run() {
-	p.initialSnapshots()
+	ctx := context.Background()
+	p.initialSnapshots(ctx)
 }
 
-func (p *Poke) initialSnapshots() {
-	nodes := p.getListenerList()
+// initialSnapshots initializes the snapshots for the given context and database.
+// It retrieves the initial state of the resources and prepares them for further processing.
+// Parameters:
+// - ctx: context for controlling the request lifetime
+// - db: database connection to fetch the resources from
+// Returns:
+// - error: an error if any occurred during the initialization process
+func (p *Poke) initialSnapshots(ctx context.Context) {
+	nodes := p.getListenerList(ctx)
 	for _, node := range nodes {
 		p.logger.Debugf("start serve snapshot: (%s) Project: (%s)", node.Service, node.Project)
 
-		allResource, err := p.getAllResourcesFromListener(node.Service, node.Project)
+		allResource, err := p.getAllResourcesFromListener(ctx, node.Service, node.Project)
 		if err != nil {
 			p.logger.Errorf("BULK GetConfigurationFromListener(%v): %v", node.Service, err)
 		}
 
-		err = p.ctx.SetSnapshot(context.Background(), allResource, p.logger)
+		err = p.ctx.SetSnapshot(ctx, allResource, p.logger)
 		if err != nil {
 			p.logger.Errorf("%s", err)
 		}
@@ -57,14 +71,21 @@ func (p *Poke) initialSnapshots() {
 	p.logger.Infof("All snapshots are loaded")
 }
 
-func (p *Poke) getListenerList() []Nodes {
+// getListenerList retrieves a list of listeners from the database.
+// It fetches the general information of each listener and appends it to the serviceNamesWithProject slice.
+// Parameters:
+// - ctx: context for controlling the request lifetime
+// Returns:
+// - []Nodes: a slice containing the project and service names of the listeners
+// - error: an error if any occurred during the process
+func (p *Poke) getListenerList(ctx context.Context) []Nodes {
 	var serviceNamesWithProject []Nodes
-	cur, err := p.db.GetGenerals("listeners")
+	cur, err := p.db.GetGenerals(ctx, "listeners")
 	if err != nil {
 		p.logger.Fatal(err)
 	}
 
-	for cur.Next(p.db.Ctx) {
+	for cur.Next(ctx) {
 		var result bson.M
 		err = cur.Decode(&result)
 		if err != nil {
@@ -85,13 +106,22 @@ func (p *Poke) getListenerList() []Nodes {
 	return serviceNamesWithProject
 }
 
-func (p *Poke) getAllResourcesFromListener(serviceName, project string) (*resource.AllResources, error) {
-	rawListenerResource, err := resources.GetResourceNGeneral(p.db, "listeners", serviceName, project)
+// getAllResourcesFromListener retrieves all resources from a listener based on the provided service name and project.
+// It fetches the raw listener resource and generates a snapshot of the resource.
+// Parameters:
+// - ctx: context for controlling the request lifetime
+// - serviceName: name of the service to fetch resources for
+// - project: name of the project to fetch resources for
+// Returns:
+// - *resource.AllResources: a pointer to the structure containing all resources
+// - error: an error if any occurred during the process
+func (p *Poke) getAllResourcesFromListener(ctx context.Context, serviceName, project string) (*resource.AllResources, error) {
+	rawListenerResource, err := resources.GetResourceNGeneral(ctx, p.db, "listeners", serviceName, project)
 	if err != nil {
 		return nil, err
 	}
 
-	lis, err := resource.GenerateSnapshot(rawListenerResource, serviceName, p.db, p.logger, project)
+	lis, err := resource.GenerateSnapshot(ctx, rawListenerResource, serviceName, p.db, p.logger, project)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package dependency
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -9,26 +10,26 @@ var (
 	visitedDownstream = make(map[string]bool)
 )
 
-func (h *AppHandler) ProcessResource(activeResource Depend) {
+func (h *AppHandler) ProcessResource(ctx context.Context, activeResource Depend) {
 	visitedUpstream = make(map[string]bool)
-	h.ProcessUpstream(activeResource)
+	h.ProcessUpstream(ctx, activeResource)
 
 	visitedDownstream = make(map[string]bool)
-	h.ProcessDownstream(activeResource)
+	h.ProcessDownstream(ctx, activeResource)
 }
 
 func generateUniqueKey(resource Depend) string {
 	return fmt.Sprintf("%s_%s_%s_%s", resource.Name, resource.Gtype, resource.Collection, resource.Project)
 }
 
-func (h *AppHandler) ProcessUpstream(activeResource Depend) {
+func (h *AppHandler) ProcessUpstream(ctx context.Context, activeResource Depend) {
 	uniqueKey := generateUniqueKey(activeResource)
 	if visitedUpstream[uniqueKey] {
 		return
 	}
 
 	visitedUpstream[uniqueKey] = true
-	node, upstreams := h.CallUpstreamFunction(activeResource)
+	node, upstreams := h.CallUpstreamFunction(ctx, activeResource)
 	if node.ID != "" && node.Name != "" && node.Gtype != "" {
 		h.AddNode(node)
 		activeResource.First = false
@@ -39,14 +40,14 @@ func (h *AppHandler) ProcessUpstream(activeResource Depend) {
 	for _, up := range upstreams {
 		if up.ID != "" && up.Name != "" && up.Gtype != "" {
 			h.AddNodeAndEdge(node, up, true)
-			h.ProcessUpstream(up) // Sadece upstream keşfi yap
+			h.ProcessUpstream(ctx, up) // Sadece upstream keşfi yap
 		} else {
 			h.Context.Logger.Infof("Upstream is missing required fields, not adding: %+v\n", up)
 		}
 	}
 }
 
-func (h *AppHandler) ProcessDownstream(activeResource Depend) {
+func (h *AppHandler) ProcessDownstream(ctx context.Context, activeResource Depend) {
 	uniqueKey := generateUniqueKey(activeResource)
 	if visitedDownstream[uniqueKey] {
 		return
@@ -54,7 +55,7 @@ func (h *AppHandler) ProcessDownstream(activeResource Depend) {
 
 	visitedDownstream[uniqueKey] = true
 
-	node, downstreams := h.CallDownstreamFunction(activeResource)
+	node, downstreams := h.CallDownstreamFunction(ctx, activeResource)
 	if h.isNodeValid(node) {
 		h.AddNode(node)
 		activeResource.First = false
@@ -65,7 +66,7 @@ func (h *AppHandler) ProcessDownstream(activeResource Depend) {
 	for _, down := range downstreams {
 		if h.isValidDownstream(node, down) {
 			h.AddNodeAndEdge(node, down, false)
-			h.ProcessDownstream(down)
+			h.ProcessDownstream(ctx, down)
 		} else {
 			h.Context.Logger.Infof("Downstream is missing required fields, not directly connected, or from incorrect source, not adding: %+v\n", down)
 		}

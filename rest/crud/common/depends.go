@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -10,20 +11,20 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
-func IsDeletable(ctx *db.AppContext, gtype models.GTypes, name string) []string {
+func IsDeletable(ctx context.Context, appCtx *db.AppContext, gtype models.GTypes, name string) []string {
 	downstreamFilters := gtype.DownstreamFilters(name)
 	var deletableNames []string
 
 	for _, filter := range downstreamFilters {
 		fmt.Println("Filter: ", filter)
-		collection := ctx.Client.Collection(filter.Collection)
-		cursor, err := collection.Find(ctx.Ctx, filter.Filter, options.Find())
+		collection := appCtx.Client.Collection(filter.Collection)
+		cursor, err := collection.Find(ctx, filter.Filter, options.Find())
 		if err != nil {
 			log.Printf("Error finding documents: %v", err)
 			continue
 		}
-		defer cursor.Close(ctx.Ctx)
-		for cursor.Next(ctx.Ctx) {
+		defer cursor.Close(ctx)
+		for cursor.Next(ctx) {
 			var result struct {
 				General struct {
 					Name  string `bson:"name"`

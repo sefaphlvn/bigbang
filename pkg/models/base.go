@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -23,15 +25,15 @@ func (kt KnownTYPES) String() string {
 type DBResourceClass interface {
 	GetGeneral() General
 	GetGtype() GTypes
-	SetGeneral(*General)
+	SetGeneral(general *General)
 	GetResource() interface{}
-	SetResource(interface{})
+	SetResource(resource interface{})
 	GetVersion() interface{}
 	GetConfigDiscovery() []*ConfigDiscovery
 	GetTypedConfig() []*TypedConfig
-	SetTypedConfig([]*TypedConfig)
-	SetVersion(interface{})
-	SetPermissions(*Permissions)
+	SetTypedConfig(typedConfig []*TypedConfig)
+	SetVersion(versionRaw interface{})
+	SetPermissions(permissions *Permissions)
 }
 
 type RequestDetails struct {
@@ -148,22 +150,28 @@ func (d *DBResource) GetTypedConfig() []*TypedConfig {
 	return d.General.TypedConfig
 }
 
-func (d *DBResource) SetTypedConfig(res []*TypedConfig) {
-	d.General.TypedConfig = res
+func (d *DBResource) SetTypedConfig(typedConfig []*TypedConfig) {
+	d.General.TypedConfig = typedConfig
 }
 
-func (d *DBResource) SetVersion(res interface{}) {
-	d.Resource.Version = res.(string)
+func (d *DBResource) SetVersion(versionRaw interface{}) {
+	version, ok := versionRaw.(string)
+	if !ok {
+		d.Resource.Version = "0"
+		fmt.Println("Warning: versionRaw is not of type string, setting version to empty string.")
+		return
+	}
+	d.Resource.Version = version
 }
 
-func (d *DBResource) SetResource(res interface{}) {
-	d.Resource.Resource = res
+func (d *DBResource) SetResource(resource interface{}) {
+	d.Resource.Resource = resource
 }
 
-func (d *DBResource) SetGeneral(g *General) {
-	d.General = *g
+func (d *DBResource) SetGeneral(general *General) {
+	d.General = *general
 }
 
-func (d *DBResource) SetPermissions(p *Permissions) {
-	d.General.Permissions = *p
+func (d *DBResource) SetPermissions(permissions *Permissions) {
+	d.General.Permissions = *permissions
 }

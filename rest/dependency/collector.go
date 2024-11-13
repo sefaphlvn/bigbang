@@ -1,6 +1,7 @@
 package dependency
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/tidwall/gjson"
@@ -9,9 +10,9 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models/downstreamfilters"
 )
 
-func GenericUpstreamCollector(ctx *AppHandler, activeResource Depend) (Node, []Depend) {
+func GenericUpstreamCollector(ctx context.Context, appCtx *AppHandler, activeResource Depend) (Node, []Depend) {
 	var dependencies []Depend
-	id, jsonData := ctx.getResourceData(activeResource.Collection, activeResource.Name, activeResource.Project)
+	id, jsonData := appCtx.getResourceData(ctx, activeResource.Collection, activeResource.Name, activeResource.Project)
 	rootResult := gjson.Parse(jsonData)
 
 	node := Node{
@@ -27,60 +28,60 @@ func GenericUpstreamCollector(ctx *AppHandler, activeResource Depend) (Node, []D
 	jsonPaths := getDynamicJSONPaths(activeResource.Gtype)
 	for path, gtype := range jsonPaths {
 		resourcePath := fmt.Sprintf("%s.%s", "resource.resource", path)
-		collectDependenciesFromPath(ctx, rootResult, resourcePath, gtype, activeResource, &dependencies)
+		collectDependenciesFromPath(ctx, appCtx, rootResult, resourcePath, gtype, activeResource, &dependencies)
 	}
 
-	dependencies = append(dependencies, parseTypedConfig(ctx, rootResult, activeResource)...)
-	dependencies = append(dependencies, parseConfigDiscovery(ctx, rootResult, activeResource)...)
+	dependencies = append(dependencies, parseTypedConfig(ctx, appCtx, rootResult, activeResource)...)
+	dependencies = append(dependencies, parseConfigDiscovery(ctx, appCtx, rootResult, activeResource)...)
 
 	if len(dependencies) == 0 {
-		ctx.Context.Logger.Debugf("No dependencies found for resource: %s of type %s", activeResource.Name, activeResource.Gtype)
+		appCtx.Context.Logger.Debugf("No dependencies found for resource: %s of type %s", activeResource.Name, activeResource.Gtype)
 	}
 
 	return node, dependencies
 }
 
-func collectDependenciesFromPath(ctx *AppHandler, rootResult gjson.Result, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend) {
+func collectDependenciesFromPath(ctx context.Context, appCtx *AppHandler, rootResult gjson.Result, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend) {
 	results := rootResult.Get(path)
 
 	if !results.Exists() {
-		ctx.Context.Logger.Debugf("Result does not exist at path: %s", path)
+		appCtx.Context.Logger.Debugf("Result does not exist at path: %s", path)
 		return
 	}
 
 	results.ForEach(func(_, item gjson.Result) bool {
 		if item.IsArray() {
 			item.ForEach(func(_, subItem gjson.Result) bool {
-				processItem(ctx, subItem, path, gtype, activeResource, dependencies)
+				processItem(ctx, appCtx, subItem, path, gtype, activeResource, dependencies)
 				return true
 			})
 		} else {
-			processItem(ctx, item, path, gtype, activeResource, dependencies)
+			processItem(ctx, appCtx, item, path, gtype, activeResource, dependencies)
 		}
 		return true
 	})
 }
 
-func processItem(ctx *AppHandler, item gjson.Result, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend) {
+func processItem(ctx context.Context, appCtx *AppHandler, item gjson.Result, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend) {
 	if item.IsArray() {
 		item.ForEach(func(_, subItem gjson.Result) bool {
-			addDependency(ctx, subItem.String(), path, gtype, activeResource, dependencies)
+			addDependency(ctx, appCtx, subItem.String(), path, gtype, activeResource, dependencies)
 			return true
 		})
 	} else {
-		addDependency(ctx, item.String(), path, gtype, activeResource, dependencies)
+		addDependency(ctx, appCtx, item.String(), path, gtype, activeResource, dependencies)
 	}
 }
 
-func addDependency(ctx *AppHandler, name, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend) {
+func addDependency(ctx context.Context, appCtx *AppHandler, name, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend) {
 	if name == "" {
-		ctx.Context.Logger.Debugf("Name not found at path: %s for gtype: %s", path, gtype)
+		appCtx.Context.Logger.Debugf("Name not found at path: %s for gtype: %s", path, gtype)
 		return
 	}
 
-	itemID, _ := ctx.getResourceData(gtype.CollectionString(), name, activeResource.Project)
+	itemID, _ := appCtx.getResourceData(ctx, gtype.CollectionString(), name, activeResource.Project)
 	if itemID == "" {
-		ctx.Context.Logger.Debugf("ID not found for %s of type %s, skipping... Path: %s", name, gtype, path)
+		appCtx.Context.Logger.Debugf("ID not found for %s of type %s, skipping... Path: %s", name, gtype, path)
 		return
 	}
 
@@ -94,13 +95,13 @@ func addDependency(ctx *AppHandler, name, path string, gtype models.GTypes, acti
 	}
 
 	*dependencies = append(*dependencies, dependency)
-	ctx.Context.Logger.Debugf("Added dependency: %s of type %s with ID: %s", dependency.Name, dependency.Gtype, dependency.ID)
+	appCtx.Context.Logger.Debugf("Added dependency: %s of type %s with ID: %s", dependency.Name, dependency.Gtype, dependency.ID)
 }
 
-func GenericDownstreamCollector(ctx *AppHandler, activeResource Depend, visited map[string]bool) (Node, []Depend) {
+func GenericDownstreamCollector(ctx context.Context, appCtx *AppHandler, activeResource Depend, visited map[string]bool) (Node, []Depend) {
 	var dependencies []Depend
 	if activeResource.ID == "" {
-		id, _ := ctx.getResourceData(activeResource.Collection, activeResource.Name, activeResource.Project)
+		id, _ := appCtx.getResourceData(ctx, activeResource.Collection, activeResource.Name, activeResource.Project)
 		activeResource.ID = id
 	}
 
@@ -122,12 +123,12 @@ func GenericDownstreamCollector(ctx *AppHandler, activeResource Depend, visited 
 
 	downstreamFilters := activeResource.Gtype.DownstreamFilters(activeResource.Name)
 	for _, filter := range downstreamFilters {
-		collectDependenciesFromFilter(ctx, filter, activeResource, &dependencies)
+		collectDependenciesFromFilter(ctx, appCtx, filter, activeResource, &dependencies)
 	}
 
 	for _, dep := range dependencies {
 		if dep.Direction == "downstream" {
-			_, downstreamDeps := GenericDownstreamCollector(ctx, dep, visited)
+			_, downstreamDeps := GenericDownstreamCollector(ctx, appCtx, dep, visited)
 			dependencies = append(dependencies, downstreamDeps...)
 		}
 	}
@@ -135,20 +136,20 @@ func GenericDownstreamCollector(ctx *AppHandler, activeResource Depend, visited 
 	return node, dependencies
 }
 
-func collectDependenciesFromFilter(ctx *AppHandler, filter downstreamfilters.MongoFilters, activeResource Depend, dependencies *[]Depend) {
+func collectDependenciesFromFilter(ctx context.Context, appCtx *AppHandler, filter downstreamfilters.MongoFilters, activeResource Depend, dependencies *[]Depend) {
 	collection := filter.Collection
 	query := filter.Filter
 
-	cursor, err := ctx.Context.Client.Collection(collection).Find(ctx.Context.Ctx, query)
+	cursor, err := appCtx.Context.Client.Collection(collection).Find(ctx, query)
 	if err != nil {
-		ctx.Context.Logger.Debugf("Error fetching downstream dependencies: %v", err)
+		appCtx.Context.Logger.Debugf("Error fetching downstream dependencies: %v", err)
 		return
 	}
 
-	for cursor.Next(ctx.Context.Ctx) {
+	for cursor.Next(ctx) {
 		var resource models.DBResource
 		if err := cursor.Decode(&resource); err != nil {
-			ctx.Context.Logger.Debugf("Error decoding downstream resource: %v", err)
+			appCtx.Context.Logger.Debugf("Error decoding downstream resource: %v", err)
 			continue
 		}
 
@@ -167,6 +168,6 @@ func collectDependenciesFromFilter(ctx *AppHandler, filter downstreamfilters.Mon
 		}
 
 		*dependencies = append(*dependencies, dependency)
-		ctx.Context.Logger.Debugf("Added downstream dependency: %s of type %s with ID: %s", dependency.Name, dependency.Gtype, dependency.ID)
+		appCtx.Context.Logger.Debugf("Added downstream dependency: %s of type %s with ID: %s", dependency.Name, dependency.Gtype, dependency.ID)
 	}
 }

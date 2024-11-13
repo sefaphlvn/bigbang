@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +15,7 @@ import (
 var generalName = "general.name"
 
 func (handler *AppHandler) GetPermissions(c *gin.Context) {
+	ctx := c.Request.Context()
 	project := c.Query("project")
 	userOrGroup := c.Param("kind")
 	filter := bson.M{"general.project": project}
@@ -26,13 +26,13 @@ func (handler *AppHandler) GetPermissions(c *gin.Context) {
 		filter["general.permissions.groups"] = c.Param("id")
 	}
 
-	all, err := handler.GetData(bson.M{"general.project": project}, c.Param("type"))
+	all, err := handler.GetData(ctx, bson.M{"general.project": project}, c.Param("type"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
 
-	selected, err := handler.GetData(filter, c.Param("type"))
+	selected, err := handler.GetData(ctx, filter, c.Param("type"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -43,33 +43,10 @@ func (handler *AppHandler) GetPermissions(c *gin.Context) {
 }
 
 func (handler *AppHandler) SetPermission(permissions models.Permission, userOrGroupID, kind string) {
-	checkAndAct := func(name string, p *models.InnerPermission) {
-		if p != nil {
-			if len(p.Added) > 0 || len(p.Removed) > 0 {
-				collection := handler.Context.Client.Collection(name)
-				for _, addedName := range p.Added {
-					filter := bson.M{generalName: addedName}
-					update := bson.M{
-						"$addToSet": bson.M{"general.permissions." + kind: userOrGroupID},
-					}
-					_, err := collection.UpdateMany(context.TODO(), filter, update)
-					if err != nil {
-						handler.Context.Logger.Warnf("failed to add user/group to %s: %v", name, err)
-					}
-					fmt.Printf("User/Group %s added to %s: %v\n", userOrGroupID, name, addedName)
-				}
-				for _, removedName := range p.Removed {
-					filter := bson.M{generalName: removedName}
-					update := bson.M{
-						"$pull": bson.M{"general.permissions." + kind: userOrGroupID},
-					}
-					_, err := collection.UpdateMany(context.TODO(), filter, update)
-					if err != nil {
-						handler.Context.Logger.Warnf("failed to remove user/group from %s: %v", name, err)
-					}
-					fmt.Printf("User/Group %s removed from %s: %v\n", userOrGroupID, name, removedName)
-				}
-			}
+	updatePermissions := func(collection *mongo.Collection, filter, update bson.M, action, name string) {
+		_, err := collection.UpdateMany(context.TODO(), filter, update)
+		if err != nil {
+			handler.Context.Logger.Warnf("failed to %s user/group for %s: %v", action, name, err)
 		}
 	}
 
@@ -84,22 +61,40 @@ func (handler *AppHandler) SetPermission(permissions models.Permission, userOrGr
 		"bootstrap":  permissions.Bootstrap,
 	}
 
-	for name, field := range fields {
-		checkAndAct(name, field)
+	for name, p := range fields {
+		if p == nil || (len(p.Added) == 0 && len(p.Removed) == 0) {
+			continue
+		}
+
+		collection := handler.Context.Client.Collection(name)
+		for _, addedName := range p.Added {
+			filter := bson.M{generalName: addedName}
+			update := bson.M{
+				"$addToSet": bson.M{"general.permissions." + kind: userOrGroupID},
+			}
+			updatePermissions(collection, filter, update, "add", name)
+		}
+		for _, removedName := range p.Removed {
+			filter := bson.M{generalName: removedName}
+			update := bson.M{
+				"$pull": bson.M{"general.permissions." + kind: userOrGroupID},
+			}
+			updatePermissions(collection, filter, update, "remove", name)
+		}
 	}
 }
 
-func (handler *AppHandler) GetData(filter bson.M, typ string) ([]bson.M, error) {
+func (handler *AppHandler) GetData(ctx context.Context, filter bson.M, typ string) ([]bson.M, error) {
 	var resourceCollection *mongo.Collection = handler.Context.Client.Collection(typ)
 	opts := options.Find().SetProjection(bson.M{generalName: 1})
 
-	cursor, err := resourceCollection.Find(handler.Context.Ctx, filter, opts)
+	cursor, err := resourceCollection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
 
 	var records []bson.M
-	if err = cursor.All(handler.Context.Ctx, &records); err != nil {
+	if err = cursor.All(ctx, &records); err != nil {
 		return nil, err
 	}
 

@@ -1,6 +1,7 @@
 package xds
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"time"
@@ -17,10 +18,10 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/typedconfigs"
 )
 
-func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) UpdateResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	filter := bson.M{"general.name": requestDetails.Name}
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
-	result := xds.Context.Client.Collection(requestDetails.Collection).FindOne(xds.Context.Ctx, filterWithRestriction)
+	result := xds.Context.Client.Collection(requestDetails.Collection).FindOne(ctx, filterWithRestriction)
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
@@ -51,13 +52,13 @@ func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, requestDe
 	}
 
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
-	_, err = collection.UpdateOne(xds.Context.Ctx, filterWithRestriction, update)
+	_, err = collection.UpdateOne(ctx, filterWithRestriction, update)
 	if err != nil {
 		return nil, err
 	}
 
 	project := resource.GetGeneral().Project
-	changedResources := crud.HandleResourceChange(resource, requestDetails, xds.Context, project, xds.Poke)
+	changedResources := crud.HandleResourceChange(ctx, resource, requestDetails, xds.Context, project, xds.Poke)
 
 	return gin.H{"message": "Success", "data": changedResources}, nil
 }

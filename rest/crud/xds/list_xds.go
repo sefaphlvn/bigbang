@@ -1,6 +1,7 @@
 package xds
 
 import (
+	"context"
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,7 +18,7 @@ type Field struct {
 
 type ResourceSchema map[string][]Field
 
-func (xds *AppHandler) ListResource(_ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) ListResource(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	filter := bson.M{"general.project": requestDetails.Project}
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
 	opts := options.Find().SetProjection(bson.M{"resource": 0})
@@ -27,13 +28,13 @@ func (xds *AppHandler) ListResource(_ models.DBResourceClass, requestDetails mod
 	}
 
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
-	cursor, err := collection.Find(xds.Context.Ctx, filterWithRestriction, opts)
+	cursor, err := collection.Find(ctx, filterWithRestriction, opts)
 	if err != nil {
 		return nil, fmt.Errorf("could not find records: %w", err)
 	}
 
 	var records []bson.M
-	if err = cursor.All(xds.Context.Ctx, &records); err != nil {
+	if err = cursor.All(ctx, &records); err != nil {
 		return nil, fmt.Errorf("could not decode records: %w", err)
 	}
 
