@@ -4,21 +4,22 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sefaphlvn/bigbang/pkg/helper"
-	"github.com/sirupsen/logrus"
 )
 
 func NewLogger(appConfig *config.AppConfig) *logrus.Logger {
 	var formatter logrus.Formatter
 
-	if appConfig.LOG_FORMATTER == "text" {
+	if appConfig.LogFormatter == "text" {
 		formatter = &logrus.TextFormatter{FullTimestamp: true}
 	} else {
 		formatter = &logrus.JSONFormatter{}
 	}
 
-	logLevel, err := logrus.ParseLevel(appConfig.LOG_LEVEL)
+	logLevel, err := logrus.ParseLevel(appConfig.LogLevel)
 	if err != nil {
 		fmt.Println(appConfig)
 		panic(err)
@@ -27,7 +28,7 @@ func NewLogger(appConfig *config.AppConfig) *logrus.Logger {
 	return &logrus.Logger{
 		Out:          os.Stdout,
 		Formatter:    formatter,
-		ReportCaller: helper.ToBool(appConfig.LOG_REPORTCALLER),
+		ReportCaller: helper.ToBool(appConfig.LogReportCaller),
 		Level:        logLevel,
 	}
 }

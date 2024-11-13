@@ -4,13 +4,12 @@ import (
 	"context"
 	"sync"
 
-	xdsResource "github.com/sefaphlvn/bigbang/grpc/server/resources/resource"
+	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/sirupsen/logrus"
 
-	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
-
-	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
-	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	xdsResource "github.com/sefaphlvn/bigbang/grpc/server/resources/resource"
 )
 
 var (

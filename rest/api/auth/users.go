@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/pkg/helper"
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/sefaphlvn/bigbang/pkg/helper"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 type UserWithGroups struct {
@@ -65,7 +66,7 @@ func (handler *AppHandler) SetUpdateUser(c *gin.Context) {
 func (handler *AppHandler) CreateUser(ctx context.Context, userCollection *mongo.Collection, userWG UserWithGroups) (int, string, string) {
 	count, err := userCollection.CountDocuments(ctx, bson.M{"username": userWG.Username})
 	if err != nil {
-		return http.StatusBadRequest, "error occured while checking for the username", "0"
+		return http.StatusBadRequest, "error occurred while checking for the username", "0"
 	}
 
 	if count > 0 {
@@ -81,25 +82,25 @@ func (handler *AppHandler) CreateUser(ctx context.Context, userCollection *mongo
 	userWG.Password = &password
 	now := time.Now()
 
-	userWG.Created_at = primitive.NewDateTimeFromTime(now)
-	userWG.Updated_at = primitive.NewDateTimeFromTime(now)
+	userWG.CreatedAt = primitive.NewDateTimeFromTime(now)
+	userWG.UpdatedAt = primitive.NewDateTimeFromTime(now)
 	userWG.ID = primitive.NewObjectID()
-	userWG.User_id = userWG.ID.Hex()
-	token, refreshToken, _ := helper.GenerateAllTokens(userWG.Email, userWG.Username, userWG.User_id, nil, nil, nil, nil, false, userWG.Role)
+	userWG.UserID = userWG.ID.Hex()
+	token, refreshToken, _ := helper.GenerateAllTokens(userWG.Email, userWG.Username, userWG.UserID, nil, nil, nil, nil, false, userWG.Role)
 	userWG.Token = &token
-	userWG.Refresh_token = &refreshToken
+	userWG.RefreshToken = &refreshToken
 
 	insertOneResult, insertErr := userCollection.InsertOne(ctx, userWG.User)
 
 	if insertErr != nil {
-		return http.StatusBadRequest, "User item was not created", userWG.User_id
+		return http.StatusBadRequest, "User item was not created", userWG.UserID
 	}
 
 	if userWG.Groups != nil {
 		fmt.Println(insertOneResult.InsertedID, userWG.Groups)
 	}
 
-	return http.StatusOK, "Successfully created user", userWG.User_id
+	return http.StatusOK, "Successfully created user", userWG.UserID
 }
 
 func (handler *AppHandler) UpdateUser(c *gin.Context, userCollection *mongo.Collection, userWG UserWithGroups, userID string) (int, string) {
@@ -213,7 +214,7 @@ func (handler *AppHandler) GetUser(c *gin.Context) {
 func (handler *AppHandler) Login() gin.HandlerFunc {
 	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
 	return func(c *gin.Context) {
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 		var user models.User
 		var foundUser models.User
@@ -224,7 +225,6 @@ func (handler *AppHandler) Login() gin.HandlerFunc {
 		}
 
 		err := userCollection.FindOne(ctx, bson.M{"username": user.Username}).Decode(&foundUser)
-
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "username or password is incorrect"})
 			return
@@ -237,15 +237,15 @@ func (handler *AppHandler) Login() gin.HandlerFunc {
 			return
 		}
 
-		groups, base_group, adminGroup := handler.GetUserGroups(foundUser.User_id)
-		projects, base_project := handler.GetUserProject(foundUser.User_id)
+		groups, baseGroup, adminGroup := handler.GetUserGroups(foundUser.UserID)
+		projects, baseProject := handler.GetUserProject(foundUser.UserID)
 
-		token, refreshToken, _ := helper.GenerateAllTokens(foundUser.Email, foundUser.Username, foundUser.User_id, groups, projects, base_group, base_project, adminGroup, foundUser.Role)
+		token, refreshToken, _ := helper.GenerateAllTokens(foundUser.Email, foundUser.Username, foundUser.UserID, groups, projects, baseGroup, baseProject, adminGroup, foundUser.Role)
 
 		foundUser.Token = &token
-		foundUser.Refresh_token = &refreshToken
+		foundUser.RefreshToken = &refreshToken
 
-		UpdateAllTokens(handler, token, refreshToken, foundUser.User_id)
+		UpdateAllTokens(handler, token, refreshToken, foundUser.UserID)
 
 		c.JSON(http.StatusOK, foundUser)
 	}
@@ -254,17 +254,17 @@ func (handler *AppHandler) Login() gin.HandlerFunc {
 func (handler *AppHandler) Logout() gin.HandlerFunc {
 	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
 	return func(c *gin.Context) {
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 
-		userId, ok := c.Get("user_id")
+		userID, ok := c.Get("user_id")
 		if !ok {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "Could not retrieve user id"})
 			c.Abort()
 			return
 		}
 
-		filter := bson.M{"user_id": userId}
+		filter := bson.M{"user_id": userID}
 		update := bson.M{
 			"$unset": bson.M{
 				"token":         "",
@@ -285,7 +285,7 @@ func (handler *AppHandler) Logout() gin.HandlerFunc {
 func (handler *AppHandler) Refresh() gin.HandlerFunc {
 	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
 	return func(c *gin.Context) {
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 		var token models.User
 
@@ -295,18 +295,17 @@ func (handler *AppHandler) Refresh() gin.HandlerFunc {
 		}
 
 		var foundUser models.User
-		err := userCollection.FindOne(ctx, bson.M{"refresh-token": token.Refresh_token}).Decode(&foundUser)
-
+		err := userCollection.FindOne(ctx, bson.M{"refresh-token": token.RefreshToken}).Decode(&foundUser)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "invalid refresh token"})
 			return
 		}
 
-		groups, base_group, admin_group := handler.GetUserGroups(foundUser.User_id)
-		projects, base_project := handler.GetUserProject(foundUser.User_id)
+		groups, baseGroup, adminGroup := handler.GetUserGroups(foundUser.UserID)
+		projects, baseProject := handler.GetUserProject(foundUser.UserID)
 
-		signedToken, signedRefreshToken, _ := helper.GenerateAllTokens(foundUser.Email, foundUser.Username, foundUser.User_id, groups, projects, base_group, base_project, admin_group, foundUser.Role)
-		UpdateAllTokens(handler, signedToken, signedRefreshToken, foundUser.User_id)
+		signedToken, signedRefreshToken, _ := helper.GenerateAllTokens(foundUser.Email, foundUser.Username, foundUser.UserID, groups, projects, baseGroup, baseProject, adminGroup, foundUser.Role)
+		UpdateAllTokens(handler, signedToken, signedRefreshToken, foundUser.UserID)
 
 		c.JSON(http.StatusOK, gin.H{
 			"token":         signedToken,
@@ -322,12 +321,12 @@ func (handler *AppHandler) CheckUserProjectPermission(c *gin.Context) bool {
 		return true
 	}
 
-	userID, _ := c.Get("user_id")
-	userId, ok := userID.(string)
+	UserID, _ := c.Get("user_id")
+	userID, ok := UserID.(string)
 	if !ok {
-		userId = ""
+		userID = ""
 	}
-	projects, _ := handler.GetUserProject(userId)
+	projects, _ := handler.GetUserProject(userID)
 
 	for _, project := range *projects {
 		if project.ProjectID == c.Query("project") {
@@ -397,7 +396,6 @@ func (handler *AppHandler) OwnerGuard(c *gin.Context, userID string) bool {
 	var user models.User
 	userCollection := handler.Context.Client.Collection("users")
 	err := userCollection.FindOne(handler.Context.Ctx, bson.M{"user_id": userID}).Decode(&user)
-
 	if err != nil {
 		return false
 	}
@@ -428,7 +426,7 @@ func (handler *AppHandler) OwnerGuard(c *gin.Context, userID string) bool {
 }
 
 func isSelfUpdatingAdmin(user models.User, c *gin.Context) bool {
-	return *user.Username == "admin" && c.GetString("user_id") == user.User_id
+	return *user.Username == "admin" && c.GetString("user_id") == user.UserID
 }
 
 func isOwnerUpdatingNonOwner(currentUserRole models.Role, user models.User) bool {

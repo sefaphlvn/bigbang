@@ -8,13 +8,13 @@ import (
 func NewDependencyHandler(context *db.AppContext) *AppHandler {
 	return &AppHandler{
 		Context:      context,
-		Dependencies: &DependencyGraph{},
+		Dependencies: &Graph{},
 		Cache:        make(map[string]CacheEntry),
 	}
 }
 
-func (h *AppHandler) GetResourceDependencies(requestDetails models.RequestDetails) (*DependencyGraph, error) {
-	var activeResource = Depend{
+func (h *AppHandler) GetResourceDependencies(requestDetails models.RequestDetails) (*Graph, error) {
+	activeResource := Depend{
 		Collection: requestDetails.Collection,
 		Name:       requestDetails.Name,
 		Gtype:      requestDetails.GType,
@@ -22,7 +22,7 @@ func (h *AppHandler) GetResourceDependencies(requestDetails models.RequestDetail
 		First:      true,
 	}
 
-	h.Dependencies = &DependencyGraph{}
+	h.Dependencies = &Graph{}
 	h.ProcessResource(activeResource)
 
 	return h.Dependencies, nil

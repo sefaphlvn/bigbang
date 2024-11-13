@@ -6,13 +6,15 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/pkg/models"
-	"github.com/sefaphlvn/bigbang/rest/crud"
-	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/crud/typedConfigs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/rest/crud"
+	"github.com/sefaphlvn/bigbang/rest/crud/common"
+	"github.com/sefaphlvn/bigbang/rest/crud/typedconfigs"
 )
 
 func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
@@ -22,22 +24,21 @@ func (xds *AppHandler) UpdateResource(resource models.DBResourceClass, requestDe
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			return nil, errors.New("document not found or no permission to update")
-		} else {
-			return nil, errors.New("unknown db error")
+			return nil, errstr.ErrNoDocumentsUpdate
 		}
+		return nil, errstr.ErrUnknownDBError
 	}
 
 	newResource := resource.GetResource()
 	version, _ := strconv.Atoi(resource.GetVersion().(string))
-	validateErr, err, isErr := crud.Validate(resource.GetGeneral().GType, newResource)
+	validateErr, isErr, err := crud.Validate(resource.GetGeneral().GType, newResource)
 	//	validateErr, err, isErr := crud.Validate(models.GTypes(resource.GetGeneral().GType), newResource)
 	if isErr {
 		return validateErr, err
 	}
 
 	resource.SetVersion(strconv.Itoa(version + 1))
-	resource.SetTypedConfig(typedConfigs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
+	resource.SetTypedConfig(typedconfigs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
 
 	update := bson.M{
 		"$set": bson.M{

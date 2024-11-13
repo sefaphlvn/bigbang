@@ -1,4 +1,4 @@
-package downstream_filters
+package downstreamfilters
 
 import (
 	"go.mongodb.org/mongo-driver/bson"

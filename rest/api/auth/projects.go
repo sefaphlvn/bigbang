@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/pkg/helper"
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/sefaphlvn/bigbang/pkg/helper"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 type ProjectWithActiveStatus struct {
@@ -22,21 +23,24 @@ type ProjectWithActiveStatus struct {
 
 func (handler *AppHandler) ListProjects(c *gin.Context) {
 	UserID, _ := c.Get("user_id")
-	userId, ok := UserID.(string)
+	userID, ok := UserID.(string)
 	if !ok {
-		userId = ""
+		userID = ""
 	}
 	var projectCollection *mongo.Collection = handler.Context.Client.Collection("projects")
-	projects, _ := handler.GetUserProject(userId)
+	projects, _ := handler.GetUserProject(userID)
 
 	var projectIDs []primitive.ObjectID
-	for _, projectID := range *projects {
-		objID, err := primitive.ObjectIDFromHex(projectID.ProjectID)
-		if err != nil {
-			handler.Context.Logger.Infof("Invalid ObjectID: %s", projectID.ProjectID)
-			continue
+	if projects != nil {
+		projectIDs = make([]primitive.ObjectID, 0, len(*projects))
+		for _, projectID := range *projects {
+			objID, err := primitive.ObjectIDFromHex(projectID.ProjectID)
+			if err != nil {
+				handler.Context.Logger.Infof("Invalid ObjectID: %s", projectID.ProjectID)
+				continue
+			}
+			projectIDs = append(projectIDs, objID)
 		}
-		projectIDs = append(projectIDs, objID)
 	}
 
 	filter := bson.M{
@@ -82,7 +86,7 @@ func (handler *AppHandler) GetProject(c *gin.Context) {
 
 func (handler *AppHandler) GetBaseProjectAndRole(userID string) (*string, bool) {
 	var usersCollection *mongo.Collection = handler.Context.Client.Collection("users")
-	var filters = bson.M{"user_id": userID}
+	filters := bson.M{"user_id": userID}
 	opts := options.Find()
 	opts.SetProjection(bson.M{"base_project": 1, "username": 1, "role": 1})
 	cursor, err := usersCollection.Find(handler.Context.Ctx, filters, opts)
@@ -162,7 +166,7 @@ func (handler *AppHandler) GetUserProject(userID string) (*[]models.CombinedProj
 
 func (handler *AppHandler) SetUpdateProject(c *gin.Context) {
 	var userCollection *mongo.Collection = handler.Context.Client.Collection("projects")
-	var ctx, cancel = context.WithTimeout(handler.Context.Ctx, 100*time.Second)
+	ctx, cancel := context.WithTimeout(handler.Context.Ctx, 100*time.Second)
 	var status int
 	var msg, projectID string
 	defer cancel()
@@ -190,7 +194,7 @@ func (handler *AppHandler) SetUpdateProject(c *gin.Context) {
 func (handler *AppHandler) CreateProject(ctx context.Context, projectCollection *mongo.Collection, projectWA ProjectWithActiveStatus) (int, string, string) {
 	count, err := projectCollection.CountDocuments(ctx, bson.M{"projectname": projectWA.ProjectName})
 	if err != nil {
-		return http.StatusBadRequest, "error occured while checking for the projectname", "0"
+		return http.StatusBadRequest, "error occurred while checking for the projectname", "0"
 	}
 
 	if count > 0 {
@@ -204,8 +208,8 @@ func (handler *AppHandler) CreateProject(ctx context.Context, projectCollection 
 
 	now := time.Now()
 
-	projectWA.Created_at = primitive.NewDateTimeFromTime(now)
-	projectWA.Updated_at = primitive.NewDateTimeFromTime(now)
+	projectWA.CreatedAt = primitive.NewDateTimeFromTime(now)
+	projectWA.UpdatedAt = primitive.NewDateTimeFromTime(now)
 	projectWA.ID = primitive.NewObjectID()
 
 	_, insertErr := projectCollection.InsertOne(ctx, projectWA.Project)

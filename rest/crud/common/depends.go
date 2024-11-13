@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"log"
 
+	"go.mongodb.org/mongo-driver/mongo/options"
+
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/models"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func IsDeletable(ctx *db.AppContext, gtype models.GTypes, name string) []string {

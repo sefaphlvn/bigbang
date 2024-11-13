@@ -30,7 +30,7 @@ func Authentication() gin.HandlerFunc {
 
 		c.Set("email", claims.Email)
 		c.Set("username", claims.Username)
-		c.Set("user_id", claims.UserId)
+		c.Set("user_id", claims.UserID)
 		c.Set("groups", claims.Groups)
 		c.Set("projects", claims.Projects)
 		c.Set("role", claims.Role)
@@ -68,7 +68,7 @@ func Refresh() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("user_id", claims.UserId)
+		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 		c.Set("email", claims.Email)
 		c.Set("groups", claims.Groups)
@@ -80,7 +80,7 @@ func Refresh() gin.HandlerFunc {
 	}
 }
 
-// PathCheck Path Allow
+// PathCheck Path Allow.
 func PathCheck() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path

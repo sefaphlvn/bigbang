@@ -20,7 +20,7 @@ var (
 	nodeID string
 )
 
-// grpcCmd represents the grpc command
+// grpcCmd represents the grpc command.
 var grpcCmd = &cobra.Command{
 	Use:   "server-grpc",
 	Short: "Start Bigbang GRPC Server",
@@ -32,7 +32,7 @@ var grpcCmd = &cobra.Command{
 		ctxCache := snapshot.GetContext(logger)
 
 		pokeServer := poke.NewPokeServer(ctxCache, db, logger, appConfig)
-		go pokeServer.Run(pokeServer)
+		go pokeServer.Run()
 		errorContext := bridge.NewErrorContext(10)
 
 		callbacks := grpcserver.NewCallbacks(logger, errorContext)

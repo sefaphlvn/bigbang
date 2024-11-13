@@ -18,6 +18,18 @@ linters:
     - unparam
     - unused
     - whitespace
+    - govet
+    - goconst
+    - prealloc
+    - nakedret
+    - sqlclosecheck
+    - perfsprint
+    - gocritic
+    - funlen
+    - containedctx
+    # - nestif
+    # - err113
+    # - cyclop
 
 linters-settings:
   exhaustive:
@@ -31,21 +43,6 @@ linters-settings:
       - G115
   misspell:
     locale: US
-  testifylint:
-    disable:
-      - float-compare
-      - go-require
-    enable:
-      - bool-compare
-      - compares
-      - empty
-      - error-is-as
-      - error-nil
-      - expected-actual
-      - len
-      - require-error
-      - suite-dont-use-pkg
-      - suite-extra-assert-call
 
   unparam:
     check-exported: false

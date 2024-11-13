@@ -1,17 +1,18 @@
 package bridge
 
 import (
+	"github.com/sirupsen/logrus"
+
 	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"
 	"github.com/sefaphlvn/bigbang/pkg/bridge"
 	"github.com/sefaphlvn/bigbang/pkg/db"
-	"github.com/sirupsen/logrus"
 )
 
 type BaseServiceServer struct {
 	context *snapshot.Context
 }
 
-// SnapshotKeyServiceServer service
+// SnapshotKeyServiceServer service.
 type SnapshotKeyServiceServer struct {
 	bridge.UnimplementedSnapshotKeyServiceServer
 	*BaseServiceServer
@@ -23,7 +24,7 @@ func NewSnapshotKeyServiceServer(context *snapshot.Context) *SnapshotKeyServiceS
 	}
 }
 
-// SnapshotResourceServiceServer service
+// SnapshotResourceServiceServer service.
 type SnapshotResourceServiceServer struct {
 	bridge.UnimplementedSnapshotResourceServiceServer
 	*BaseServiceServer
@@ -35,7 +36,7 @@ func NewSnapshotResourceServiceServer(context *snapshot.Context) *SnapshotResour
 	}
 }
 
-// PokeServiceServer service
+// PokeServiceServer service.
 type PokeServiceServer struct {
 	bridge.UnimplementedPokeServiceServer
 	*BaseServiceServer

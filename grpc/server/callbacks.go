@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sefaphlvn/bigbang/grpc/server/bridge"
-	"github.com/sirupsen/logrus"
-
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	"github.com/sirupsen/logrus"
+
+	"github.com/sefaphlvn/bigbang/grpc/server/bridge"
 )
 
 type Callbacks struct {
@@ -58,7 +58,7 @@ func (c *Callbacks) OnDeltaStreamClosed(id int64, node *core.Node) {
 func (c *Callbacks) OnStreamRequest(_ int64, _ *discovery.DiscoveryRequest) error { return nil }
 
 func (c *Callbacks) OnStreamDeltaResponse(_ int64, req *discovery.DeltaDiscoveryRequest, resp *discovery.DeltaDiscoveryResponse) {
-	//Testit(nil, resp)
+	// Testit(nil, resp)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	fmt.Println(req.ErrorDetail)
@@ -76,7 +76,7 @@ func (c *Callbacks) OnStreamDeltaResponse(_ int64, req *discovery.DeltaDiscovery
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(_ int64, req *discovery.DeltaDiscoveryRequest) error {
-	//Testit(req, nil)
+	// Testit(req, nil)
 
 	nodeID := req.GetNode().GetId()
 	typeURL := req.GetTypeUrl()

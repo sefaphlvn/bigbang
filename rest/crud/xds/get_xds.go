@@ -3,10 +3,12 @@ package xds
 import (
 	"errors"
 
-	"github.com/sefaphlvn/bigbang/pkg/models"
-	"github.com/sefaphlvn/bigbang/rest/crud/common"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
 func (xds *AppHandler) GetResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
@@ -18,9 +20,8 @@ func (xds *AppHandler) GetResource(resource models.DBResourceClass, requestDetai
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
 			return nil, errors.New("not found: (" + requestDetails.Name + ")")
-		} else {
-			return nil, errors.New("unknown db error")
 		}
+		return nil, errstr.ErrUnknownDBError
 	}
 
 	// GetSnapshotsFromServer("localhost:18000")

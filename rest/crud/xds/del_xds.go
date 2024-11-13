@@ -2,24 +2,25 @@ package xds
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/pkg/models"
-	"github.com/sefaphlvn/bigbang/rest/crud/common"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (xds *AppHandler) DelResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) DelResource(_ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	resourceType := requestDetails.Collection
 	collection := xds.Context.Client.Collection(resourceType)
 
 	dependList := common.IsDeletable(xds.Context, requestDetails.GType, requestDetails.Name)
 	if len(dependList) > 0 {
-		message := fmt.Sprintf("Resource has dependencies: \n %s", strings.Join(dependList, ", "))
+		message := "Resource has dependencies: \n " + strings.Join(dependList, ", ")
 		return nil, errors.New(message)
 	}
 
@@ -73,9 +74,9 @@ func checkDocumentExists(xds *AppHandler, collection *mongo.Collection, filter b
 	result := collection.FindOne(xds.Context.Ctx, filter)
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			return errors.New("document not found or no permission to delete")
+			return errstr.ErrNoDocumentsDelete
 		}
-		return errors.New("unknown db error")
+		return errstr.ErrUnknownDBError
 	}
 	return nil
 }
@@ -83,11 +84,11 @@ func checkDocumentExists(xds *AppHandler, collection *mongo.Collection, filter b
 func deleteDocument(xds *AppHandler, collection *mongo.Collection, filter bson.M) error {
 	res, err := collection.DeleteOne(xds.Context.Ctx, filter)
 	if err != nil {
-		return errors.New("unknown db error")
+		return errstr.ErrUnknownDBError
 	}
 
 	if res.DeletedCount == 0 {
-		return errors.New("document not found")
+		return errstr.ErrNoDocuments
 	}
 
 	return nil

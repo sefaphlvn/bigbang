@@ -8,15 +8,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sefaphlvn/bigbang/pkg/config"
-	"github.com/sefaphlvn/bigbang/pkg/helper"
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/sefaphlvn/bigbang/pkg/config"
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 type AppContext struct {
@@ -27,19 +28,19 @@ type AppContext struct {
 }
 
 var (
-	admin_user                       = "admin"
-	admin_email                      = "admin@elchi.io"
-	admin_role           models.Role = "owner"
-	admin_active                     = true
-	admin_baseGroup                  = ""
-	general_project                  = "general.project"
-	general_name                     = "general.name"
-	general_name_project             = "general_name_project_1"
+	adminUser                      = "admin"
+	adminEmail                     = "admin@elchi.io"
+	adminRole          models.Role = "owner"
+	adminActive                    = true
+	adminBaseGroup                 = ""
+	generalProject                 = "general.project"
+	generalName                    = "general.name"
+	generalNameProject             = "general_name_project_1"
 )
 
 func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *AppContext {
 	// connectionString := fmt.Sprintf("%s://%s%s", config.MongoDB.Scheme, hosts, config.MongoDB.Port)
-	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", config.MONGODB_SCHEME, config.MONGODB_USERNAME, config.MONGODB_PASSWORD, config.MONGODB_HOSTS, config.MONGODB_PORT)
+	connectionString := fmt.Sprintf("%s://%s:%s@%s%s", config.MongodbScheme, config.MongodbUsername, config.MongodbPassword, config.MongodbHosts, config.MongodbPort)
 	tM := reflect.TypeOf(bson.M{})
 	reg := bson.NewRegistry()
 	reg.RegisterTypeMapEntry(bson.TypeEmbeddedDocument, tM)
@@ -50,8 +51,8 @@ func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *AppContext {
 		logger.Fatalf("%s", err)
 	}
 
-	database := client.Database(config.MONGODB_DATABASE)
-	_, err = collectCreateIndex(database, ctx, logger)
+	database := client.Database(config.MongodbDatabase)
+	err = collectCreateIndex(ctx, database, logger)
 	if err != nil {
 		logger.Fatalf("%s", err)
 	}
@@ -87,10 +88,9 @@ func (db *AppContext) GetGenerals(collectionName string) (*mongo.Cursor, error) 
 	cur, err := collection.Find(db.Ctx, bson.D{{}}, findOptions)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, errors.New("listener not found")
-		} else {
-			return nil, errors.New("unknown db error")
+			return nil, errstr.ErrListenerNotFound
 		}
+		return nil, errstr.ErrUnknownDBError
 	}
 
 	return cur, err
@@ -114,20 +114,20 @@ func indexExists(ctx context.Context, collection *mongo.Collection, indexName st
 	return false, nil
 }
 
-func collectCreateIndex(database *mongo.Database, ctx context.Context, logger *logrus.Logger) (interface{}, error) {
+func collectCreateIndex(ctx context.Context, database *mongo.Database, logger *logrus.Logger) error {
 	indices := map[string]mongo.IndexModel{
 		"users":        {Keys: bson.M{"username": 1}, Options: options.Index().SetUnique(true).SetName("username_1")},
 		"groups":       {Keys: bson.D{{Key: "groupname", Value: 1}, {Key: "project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("groupname_project_1")},
 		"service":      {Keys: bson.D{{Key: "name", Value: 1}, {Key: "project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("name_project_1")},
-		"clusters":     {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
-		"listeners":    {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
-		"endpoints":    {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
-		"routes":       {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
-		"virtual_host": {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
-		"filters":      {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
-		"secrets":      {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
-		"extensions":   {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
-		"bootstrap":    {Keys: bson.D{{Key: general_name, Value: 1}, {Key: general_project, Value: 1}}, Options: options.Index().SetUnique(true).SetName(general_name_project)},
+		"clusters":     {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+		"listeners":    {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+		"endpoints":    {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+		"routes":       {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+		"virtual_host": {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+		"filters":      {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+		"secrets":      {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+		"extensions":   {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+		"bootstrap":    {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
 		"projects":     {Keys: bson.M{"projectname": 1}, Options: options.Index().SetUnique(true).SetName("projectname_1")},
 	}
 
@@ -136,15 +136,16 @@ func collectCreateIndex(database *mongo.Database, ctx context.Context, logger *l
 		indexName := getIndexName(index)
 		if err := createIndex(ctx, collection, index, indexName); err != nil {
 			logger.Fatalf("Failed to create index for %s: %v\n", collectionName, err)
+			return err
 		}
 	}
 
-	return nil, nil
+	return nil
 }
 
 func createIndex(ctx context.Context, collection *mongo.Collection, index mongo.IndexModel, indexName string) error {
 	if indexName == "" {
-		return errors.New("invalid index name")
+		return errstr.ErrInvalidIndexName
 	}
 	exists, err := indexExists(ctx, collection, indexName)
 	if err != nil {
@@ -203,38 +204,39 @@ func createAdminUser(db *AppContext) (string, error) {
 		user.Password = &hashedPassword
 		now := time.Now()
 
-		user.Created_at = primitive.NewDateTimeFromTime(now)
-		user.Updated_at = primitive.NewDateTimeFromTime(now)
+		user.CreatedAt = primitive.NewDateTimeFromTime(now)
+		user.UpdatedAt = primitive.NewDateTimeFromTime(now)
 		user.ID = primitive.NewObjectID()
-		user.User_id = user.ID.Hex()
-		user.Email = &admin_email
-		user.Username = &admin_user
-		user.Role = &admin_role
-		user.BaseGroup = &admin_baseGroup
-		user.Active = &admin_active
+		user.UserID = user.ID.Hex()
+		user.Email = &adminEmail
+		user.Username = &adminUser
+		user.Role = &adminRole
+		user.BaseGroup = &adminBaseGroup
+		user.Active = &adminActive
 
-		token, refreshToken, _ := helper.GenerateAllTokens(user.Email, user.Username, user.User_id, nil, nil, nil, nil, false, user.Role)
+		token, refreshToken, _ := helper.GenerateAllTokens(user.Email, user.Username, user.UserID, nil, nil, nil, nil, false, user.Role)
 		user.Token = &token
-		user.Refresh_token = &refreshToken
+		user.RefreshToken = &refreshToken
 
 		_, insertErr := collection.InsertOne(db.Ctx, user)
 		if insertErr != nil {
 			return "", insertErr
 		}
 	}
-	return user.User_id, nil
+	return user.UserID, nil
 }
 
 func createAdminGroup(db *AppContext, userID string) error {
 	if userID == "" {
-		return fmt.Errorf("userID cannot be empty")
+		return errstr.ErrUserIDEmpty
 	}
 
 	collection := db.Client.Collection("groups")
 	var group models.Group
 	err := collection.FindOne(db.Ctx, bson.M{"groupname": "admin"}).Decode(&group)
 
-	if errors.Is(err, mongo.ErrNoDocuments) {
+	switch {
+	case errors.Is(err, mongo.ErrNoDocuments):
 		_, err = collection.InsertOne(db.Ctx, bson.M{
 			"groupname":  "admin",
 			"members":    []string{userID},
@@ -250,9 +252,9 @@ func createAdminGroup(db *AppContext, userID string) error {
 		} else {
 			db.Logger.Info("admin group created successfully")
 		}
-	} else if err != nil {
+	case err != nil:
 		return fmt.Errorf("failed to check for admin group: %w", err)
-	} else {
+	default:
 		db.Logger.Info("admin group already exists")
 	}
 
@@ -261,13 +263,15 @@ func createAdminGroup(db *AppContext, userID string) error {
 
 func createDefaultProject(db *AppContext, userID string) error {
 	if userID == "" {
-		return fmt.Errorf("userID cannot be empty")
+		return errstr.ErrUserIDEmpty
 	}
 
 	collection := db.Client.Collection("projects")
 	var project models.Project
 	err := collection.FindOne(db.Ctx, bson.M{"projectname": "default"}).Decode(&project)
-	if errors.Is(err, mongo.ErrNoDocuments) {
+
+	switch {
+	case errors.Is(err, mongo.ErrNoDocuments):
 		_, err = collection.InsertOne(db.Ctx, bson.M{
 			"projectname": "default",
 			"members":     []string{userID},
@@ -283,9 +287,9 @@ func createDefaultProject(db *AppContext, userID string) error {
 		} else {
 			db.Logger.Info("default project created successfully")
 		}
-	} else if err != nil {
+	case err != nil:
 		return fmt.Errorf("failed to check for default project: %w", err)
-	} else {
+	default:
 		db.Logger.Info("default project already exists")
 	}
 

@@ -3,13 +3,14 @@ package poker
 import (
 	"strings"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/sefaphlvn/bigbang/pkg/bridge"
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 	bridgeClient "github.com/sefaphlvn/bigbang/rest/bridge"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Processed struct {
@@ -18,7 +19,7 @@ type Processed struct {
 	Depends            []string
 }
 
-func DetectChangedResource(gType models.GTypes, resourceName string, project string, context *db.AppContext, processed *Processed, poke *bridge.PokeServiceClient) *Processed {
+func DetectChangedResource(gType models.GTypes, resourceName, project string, context *db.AppContext, processed *Processed, poke *bridge.PokeServiceClient) *Processed {
 	pathWithGtype := gType.String() + "===" + resourceName
 	if gType != models.Listener {
 		processed.Depends = append(processed.Depends, pathWithGtype)
@@ -47,7 +48,7 @@ func DetectChangedResource(gType models.GTypes, resourceName string, project str
 	return processed
 }
 
-func ProcessResource(context *db.AppContext, gType models.GTypes, resourceName string, project string, processed *Processed, poke *bridge.PokeServiceClient) {
+func ProcessResource(context *db.AppContext, gType models.GTypes, resourceName, project string, processed *Processed, poke *bridge.PokeServiceClient) {
 	filterResults := gType.DownstreamFilters(resourceName)
 
 	for _, filterResult := range filterResults {
@@ -55,7 +56,7 @@ func ProcessResource(context *db.AppContext, gType models.GTypes, resourceName s
 	}
 }
 
-func CheckResource(context *db.AppContext, filter primitive.D, collection string, project string, processed *Processed, poke *bridge.PokeServiceClient) {
+func CheckResource(context *db.AppContext, filter primitive.D, collection, project string, processed *Processed, poke *bridge.PokeServiceClient) {
 	rGeneral, err := resources.GetGenerals(context, collection, filter)
 	if err != nil {
 		context.Logger.Debug(err)

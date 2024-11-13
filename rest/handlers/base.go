@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"errors"
+	"context"
 	"net/http"
 
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/api/auth"
 	"github.com/sefaphlvn/bigbang/rest/bridge"
@@ -15,8 +16,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type DBFunc func(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error)
-type DepFunc func(requestDetails models.RequestDetails) (*dependency.DependencyGraph, error)
+const (
+	MethodGet    = "GET"
+	MethodDelete = "DELETE"
+)
+
+type (
+	DBFunc  func(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error)
+	DepFunc func(ctx context.Context, requestDetails models.RequestDetails) (*dependency.Graph, error)
+)
 
 type Handler struct {
 	XDS        *xds.AppHandler
@@ -27,9 +35,9 @@ type Handler struct {
 	Bridge     *bridge.AppHandler
 }
 
-func NewHandler(XDS *xds.AppHandler, extension *extension.AppHandler, custom *custom.AppHandler, auth *auth.AppHandler, dependency *dependency.AppHandler, stats *bridge.AppHandler) *Handler {
+func NewHandler(xds *xds.AppHandler, extension *extension.AppHandler, custom *custom.AppHandler, auth *auth.AppHandler, dependency *dependency.AppHandler, stats *bridge.AppHandler) *Handler {
 	return &Handler{
-		XDS:        XDS,
+		XDS:        xds,
 		Extension:  extension,
 		Custom:     custom,
 		Auth:       auth,
@@ -40,7 +48,7 @@ func NewHandler(XDS *xds.AppHandler, extension *extension.AppHandler, custom *cu
 
 func decodeResource(c *gin.Context) (models.DBResourceClass, error) {
 	var body models.DBResource
-	if c.Request.Method != "GET" && c.Request.Method != "DELETE" {
+	if c.Request.Method != MethodGet && c.Request.Method != MethodDelete {
 		err := c.BindJSON(&body)
 		if err != nil {
 			return nil, err
@@ -55,6 +63,7 @@ func decodeResource(c *gin.Context) (models.DBResourceClass, error) {
 // It then calls the dbFunc with the resource and requestDetails, and stores the response in the response variable.
 // Finally, it returns the response as a JSON object with the status OK.
 func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
+	ctx := c.Request.Context()
 	userDetails, _ := GetUserDetails(c)
 
 	requestDetails := models.RequestDetails{
@@ -82,7 +91,7 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 		return
 	}
 
-	response, err := dbFunc(resource, requestDetails)
+	response, err := dbFunc(ctx, resource, requestDetails)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error(), "data": response})
 		return
@@ -123,9 +132,9 @@ func GetUserDetails(c *gin.Context) (models.UserDetails, error) {
 		userRoleIs = models.RoleViewer
 	}
 
-	userId, ok := UserID.(string)
+	userID, ok := UserID.(string)
 	if !ok {
-		userId = ""
+		userID = ""
 	}
 
 	user, ok := userName.(string)
@@ -142,7 +151,7 @@ func GetUserDetails(c *gin.Context) (models.UserDetails, error) {
 		Groups:    userGroup,
 		Role:      userRoleIs,
 		IsOwner:   userIsOwner,
-		UserID:    userId,
+		UserID:    userID,
 		Projects:  userProjects,
 		UserName:  user,
 		BaseGroup: userBaseGroup,
@@ -160,19 +169,21 @@ func checkRole(c *gin.Context, userDetail models.UserDetails) (err error) {
 		if method == "GET" || method == "POST" || method == "PUT" || method == "DELETE" {
 			return nil
 		}
-		return errors.New("you are not authorized to perform this action")
+		return errstr.ErrNotAuthorized
 	case models.RoleViewer:
 		if method == "GET" {
 			return nil
 		}
-		return errors.New("you are not authorized to perform this action")
+		return errstr.ErrNotAuthorized
 	default:
-		return errors.New("you are not authorized to perform this action")
+		return errstr.ErrNotAuthorized
 	}
 }
 
 func (h *Handler) handleDepRequest(c *gin.Context, depFunc DepFunc) {
+	ctx := c.Request.Context()
 	userDetails, _ := GetUserDetails(c)
+
 	requestDetails := models.RequestDetails{
 		GType:      models.GTypes(c.Query("gtype")),
 		Name:       c.Param("name"),
@@ -187,7 +198,7 @@ func (h *Handler) handleDepRequest(c *gin.Context, depFunc DepFunc) {
 		return
 	}
 
-	response, err := depFunc(requestDetails)
+	response, err := depFunc(ctx, requestDetails)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return

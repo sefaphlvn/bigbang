@@ -22,7 +22,7 @@ func GinLog(logger *logrus.Logger) gin.HandlerFunc {
 		clientIP := c.ClientIP()
 		clientUserAgent := c.Request.UserAgent()
 		referer := c.Request.Referer()
-		requestUri := c.Request.RequestURI
+		requestURI := c.Request.RequestURI
 
 		matchKubeProbeUserAgent, _ := regexp.MatchString("^(kube-probe.*)$", clientUserAgent)
 
@@ -38,18 +38,19 @@ func GinLog(logger *logrus.Logger) gin.HandlerFunc {
 			"requestPath":    path,
 			"requestReferer": referer,
 			"userAgent":      clientUserAgent,
-			"requestUri":     requestUri,
+			"requestUri":     requestURI,
 		}
 
 		if len(c.Errors) > 0 {
 			err := c.Errors.ByType(gin.ErrorTypePrivate).String()
 			logger.WithFields(fields).Error(err)
 		} else {
-			if statusCode > 499 {
+			switch {
+			case statusCode > 499:
 				logger.WithFields(fields).Errorf("HTTP Status Failed")
-			} else if statusCode > 399 {
+			case statusCode > 399:
 				logger.WithFields(fields).Warnf("HTTP Status Failed")
-			} else {
+			default:
 				logger.WithFields(fields).Infof("HTTP Status OK")
 			}
 		}

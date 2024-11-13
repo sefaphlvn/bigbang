@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sefaphlvn/bigbang/pkg/helper"
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/sefaphlvn/bigbang/pkg/helper"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 type GroupWithActiveStatus struct {
@@ -20,6 +21,11 @@ type GroupWithActiveStatus struct {
 	IsCreate    bool               `json:"is_create"`
 	Permissions *models.Permission `json:"permissions"`
 }
+
+const (
+	ErrUserNotCreated  = "User item was not created"
+	SuccessUserCreated = "Successfully created user"
+)
 
 func (handler *AppHandler) ListGroups(c *gin.Context) {
 	var groupCollection *mongo.Collection = handler.Context.Client.Collection("groups")
@@ -72,7 +78,7 @@ func (handler *AppHandler) GetGroup(c *gin.Context) {
 
 func (handler *AppHandler) GetBaseGroup(userID string) *string {
 	var usersCollection *mongo.Collection = handler.Context.Client.Collection("users")
-	var filters = bson.M{"user_id": userID}
+	filters := bson.M{"user_id": userID}
 	opts := options.Find()
 	opts.SetProjection(bson.M{"base_group": 1})
 	cursor, err := usersCollection.Find(handler.Context.Ctx, filters, opts)
@@ -100,8 +106,8 @@ func (handler *AppHandler) GetBaseGroup(userID string) *string {
 
 func (handler *AppHandler) GetUserGroups(userID string) (*[]string, *string, bool) {
 	var groupCollection *mongo.Collection = handler.Context.Client.Collection("groups")
-	var filters = bson.M{"members": userID}
-	var adminGroup = false
+	filters := bson.M{"members": userID}
+	adminGroup := false
 
 	opts := options.Find()
 	opts.SetProjection(bson.M{"_id": 1, "groupname": 1})
@@ -140,7 +146,7 @@ func (handler *AppHandler) GetUserGroups(userID string) (*[]string, *string, boo
 
 func (handler *AppHandler) SetUpdateGroup(c *gin.Context) {
 	var userCollection *mongo.Collection = handler.Context.Client.Collection("groups")
-	var ctx, cancel = context.WithTimeout(handler.Context.Ctx, 100*time.Second)
+	ctx, cancel := context.WithTimeout(handler.Context.Ctx, 100*time.Second)
 	var status int
 	var msg, groupID string
 	defer cancel()
@@ -173,7 +179,7 @@ func (handler *AppHandler) SetUpdateGroup(c *gin.Context) {
 func (handler *AppHandler) CreateGroup(ctx context.Context, groupCollection *mongo.Collection, groupWA GroupWithActiveStatus) (int, string, string) {
 	count, err := groupCollection.CountDocuments(ctx, bson.M{"groupname": groupWA.GroupName})
 	if err != nil {
-		return http.StatusBadRequest, "error occured while checking for the groupname", "0"
+		return http.StatusBadRequest, "error occurred while checking for the groupname", "0"
 	}
 
 	if count > 0 {
@@ -187,17 +193,17 @@ func (handler *AppHandler) CreateGroup(ctx context.Context, groupCollection *mon
 
 	now := time.Now()
 
-	groupWA.Created_at = primitive.NewDateTimeFromTime(now)
-	groupWA.Updated_at = primitive.NewDateTimeFromTime(now)
+	groupWA.CreatedAt = primitive.NewDateTimeFromTime(now)
+	groupWA.UpdatedAt = primitive.NewDateTimeFromTime(now)
 	groupWA.ID = primitive.NewObjectID()
 
 	_, insertErr := groupCollection.InsertOne(ctx, groupWA.Group)
 
 	if insertErr != nil {
-		return http.StatusBadRequest, "User item was not created", "0"
+		return http.StatusBadRequest, ErrUserNotCreated, "0"
 	}
 
-	return http.StatusOK, "Successfully created user", groupWA.ID.String()
+	return http.StatusOK, SuccessUserCreated, groupWA.ID.String()
 }
 
 func (handler *AppHandler) UpdateGroup(ctx context.Context, groupCollection *mongo.Collection, groupWA GroupWithActiveStatus, groupID string) (int, string) {

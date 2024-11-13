@@ -3,23 +3,23 @@ package resource
 import (
 	"fmt"
 
+	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
-	"github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 )
 
 // DecodeListener processes a raw listener resource and collects extensions.
@@ -36,7 +36,7 @@ func (ar *AllResources) DecodeListener(rawListenerResource *models.DBResource, c
 func (ar *AllResources) initializeListener(rawListenerResource *models.DBResource, context *db.AppContext, logger *logrus.Logger) error {
 	resArray, ok := rawListenerResource.Resource.Resource.(primitive.A)
 	if !ok {
-		return fmt.Errorf("unexpected resource format")
+		return errstr.ErrUnexpectedResource
 	}
 
 	newVersion, err := resources.IncrementResourceVersion(context, rawListenerResource.General.Name, rawListenerResource.General.Project)
@@ -46,7 +46,7 @@ func (ar *AllResources) initializeListener(rawListenerResource *models.DBResourc
 	ar.SetVersion(newVersion)
 	ar.SetProject(rawListenerResource.General.Project)
 
-	var listeners []types.Resource
+	listeners := make([]types.Resource, 0, len(resArray))
 	for _, lstnr := range resArray {
 		listenerWithTransportSocket, _ := ar.GetTypedConfigs(rawListenerResource.GetGtype().TypedConfigPaths(), lstnr, context)
 
@@ -142,7 +142,7 @@ func (ar *AllResources) CollectAllResourcesWithParent(gtype models.GTypes, resou
 			// Array'in her elemanını işleyerek JSON string'e çeviriyoruz
 			jsonStringStr, err := helper.MarshalJSON(item, context.Logger)
 			if err != nil {
-				logger.Errorf("Error marshalling array item: %v", err)
+				logger.Errorf("Error marshaling array item: %v", err)
 				return nil, nil, err
 			}
 
@@ -263,7 +263,7 @@ func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTy
 		newVirtualHost := proto.Clone(resource).(*route.VirtualHost)
 		newVirtualHost.Name = fmt.Sprintf("%s/%s", *parentName, newVirtualHost.Name)
 		ar.VirtualHost = append(ar.VirtualHost, newVirtualHost)
-	case models.CertificateValidationContext, models.TlsCertificate, models.TlsSessionTicketKeys, models.GenericSecret:
+	case models.CertificateValidationContext, models.TLSCertificate, models.TLSSessionTicketKeys, models.GenericSecret:
 		newSecret := GetSecret(resourceName, resource)
 		ar.AppendSecret(newSecret)
 	default:

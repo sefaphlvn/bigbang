@@ -1,8 +1,9 @@
 package common
 
 import (
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 func TransformGenerals(records []bson.M) interface{} {

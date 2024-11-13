@@ -4,19 +4,21 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/sefaphlvn/bigbang/pkg/db"
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 type GeneralResponse struct {
 	General models.General `bson:"general"`
 }
 
-func GetResourceNGeneral(db *db.AppContext, collectionName string, name string, project string) (*models.DBResource, error) {
+func GetResourceNGeneral(db *db.AppContext, collectionName, name, project string) (*models.DBResource, error) {
 	var doc models.DBResource
 
 	collection := db.Client.Collection(collectionName)
@@ -29,15 +31,14 @@ func GetResourceNGeneral(db *db.AppContext, collectionName string, name string, 
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, errors.New("not found: (" + name + ")")
-		} else {
-			return nil, errors.New("unknown db error")
 		}
+		return nil, errstr.ErrUnknownDBError
 	}
 
 	return &doc, nil
 }
 
-func IncrementResourceVersion(db *db.AppContext, name string, project string) (string, error) {
+func IncrementResourceVersion(db *db.AppContext, name, project string) (string, error) {
 	collection := db.Client.Collection("listeners")
 
 	var doc models.DBResource
@@ -50,13 +51,13 @@ func IncrementResourceVersion(db *db.AppContext, name string, project string) (s
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return "", errors.New("not found: (" + name + ")")
 		}
-		return "", errors.New("unknown db error")
+		return "", errstr.ErrUnknownDBError
 	}
 
 	// Mevcut version değerini int'e çevir ve artır
 	versionInt, err := strconv.Atoi(doc.Resource.Version)
 	if err != nil {
-		return "", errors.New("invalid version format")
+		return "", errstr.ErrInvalidVersion
 	}
 
 	// Version'u 1 artır
@@ -70,7 +71,7 @@ func IncrementResourceVersion(db *db.AppContext, name string, project string) (s
 
 	_, err = collection.UpdateOne(db.Ctx, filter, update)
 	if err != nil {
-		return "", errors.New("failed to update resource version")
+		return "", errstr.ErrFailedToUpdateVersion
 	}
 
 	return newVersion, nil

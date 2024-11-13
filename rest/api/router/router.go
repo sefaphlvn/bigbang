@@ -2,9 +2,10 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+
 	"github.com/sefaphlvn/bigbang/rest/api/middleware"
 	"github.com/sefaphlvn/bigbang/rest/handlers"
-	"github.com/sirupsen/logrus"
 )
 
 func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
@@ -106,7 +107,7 @@ func initCustomRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		handler gin.HandlerFunc
 	}{
 		{"GET", "/resource_list", h.GetCustomResourceList},
-		{"GET", "/http_filter_list", h.GetCustomHttpFilterList},
+		{"GET", "/http_filter_list", h.GetCustomHTTPFilterList},
 	}
 
 	initRoutes(rg, routes)
@@ -136,7 +137,6 @@ func initExtensionRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		{"PUT", "/:collection/extensions/:type/:name", h.UpdateOtherExtensions},
 		{"DELETE", "/:collection/extensions/:type/:name", h.DelExtension},
 
-		//{"GET", "/:collection/:type", h.GetExtensions},
 		{"GET", "/:collection/:type/:canonical_name", h.ListExtensions},
 		{"POST", "/:collection/:type/:canonical_name", h.SetExtension},
 		{"GET", "/:collection/:type/:canonical_name/:name", h.GetExtension},
@@ -167,7 +167,8 @@ func initRoutes(rg *gin.RouterGroup, routes []struct {
 	method  string
 	path    string
 	handler gin.HandlerFunc
-}) {
+},
+) {
 	for _, route := range routes {
 		switch route.method {
 		case "GET":

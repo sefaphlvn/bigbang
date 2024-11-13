@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var SECRET_KEY string = os.Getenv("secret")
+var SecretKey = os.Getenv("secret")
 
 func GetFromContext[T any](c *gin.Context, key string) (T, bool) {
 	value, exists := c.Get(key)

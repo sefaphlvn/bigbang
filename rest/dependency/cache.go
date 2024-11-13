@@ -80,7 +80,7 @@ func (h *AppHandler) getResourceData(collection, name, project string) (string, 
 	return resourceID, jsonResource
 }
 
-func getDynamicJsonPaths(gtype models.GTypes) map[string]models.GTypes {
+func getDynamicJSONPaths(gtype models.GTypes) map[string]models.GTypes {
 	paths := gtype.UpstreamPaths()
 
 	if len(paths) == 0 {

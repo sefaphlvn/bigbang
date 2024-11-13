@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 type Record struct {
@@ -20,7 +21,7 @@ type Record struct {
 	Collection    string `json:"collection" bson:"collection"`
 }
 
-func (custom *AppHandler) GetCustomResourceList(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (custom *AppHandler) GetCustomResourceList(_ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	collection := custom.Context.Client.Collection(requestDetails.Collection)
 
 	opts := options.Find().SetProjection(bson.M{

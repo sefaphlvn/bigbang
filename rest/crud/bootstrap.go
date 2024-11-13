@@ -4,22 +4,34 @@ import (
 	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sefaphlvn/bigbang/pkg/models"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[string]interface{} {
 	now := time.Now()
 	CreatedAt := primitive.NewDateTimeFromTime(now)
 	UpdatedAt := primitive.NewDateTimeFromTime(now)
-	authority := config.BIGBANG_ADDRESS
 	nodeID := fmt.Sprintf("%s:%s", listenerGeneral.Name, listenerGeneral.Project)
+
+	cluster := createClusterConfig(config)
+	admin := createAdminConfig()
+	data := createDataConfig(nodeID, config.BigbangAddress, cluster, admin)
+	general := createGeneralConfig(listenerGeneral, CreatedAt, UpdatedAt)
+
+	return map[string]interface{}{
+		"general":  general,
+		"resource": map[string]interface{}{"version": "1", "resource": data},
+	}
+}
+
+func createClusterConfig(config *config.AppConfig) map[string]interface{} {
 	portValue := 80
-	if config.BIGBANG_TLS_ENABLED == "true" {
+	if config.BigbangTLSEnabled == "true" {
 		portValue = 443
 	}
-
 	cluster := map[string]interface{}{
 		"name":            "bigbang-controller",
 		"type":            "STRICT_DNS",
@@ -34,7 +46,7 @@ func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[
 							"endpoint": map[string]interface{}{
 								"address": map[string]interface{}{
 									"socket_address": map[string]interface{}{
-										"address":    authority,
+										"address":    config.BigbangAddress,
 										"port_value": portValue,
 									},
 								},
@@ -46,24 +58,14 @@ func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[
 		},
 		"http2_protocol_options": map[string]interface{}{},
 	}
-
-	if config.BIGBANG_TLS_ENABLED == "true" {
-		cluster["transport_socket"] = map[string]interface{}{
-			"name": "envoy.transport_sockets.tls",
-			"typed_config": map[string]interface{}{
-				"@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext",
-				"common_tls_context": map[string]interface{}{
-					"validation_context": map[string]interface{}{
-						"trusted_ca": map[string]interface{}{
-							"filename": "/etc/ssl/certs/ca-certificates.crt",
-						},
-					},
-				},
-			},
-		}
+	if config.BigbangTLSEnabled == "true" {
+		cluster["transport_socket"] = createTLSTransportSocket()
 	}
+	return cluster
+}
 
-	data := map[string]interface{}{
+func createDataConfig(nodeID, authority string, cluster, admin map[string]interface{}) map[string]interface{} {
+	return map[string]interface{}{
 		"node": map[string]interface{}{
 			"id":      nodeID,
 			"cluster": "aadsa",
@@ -92,44 +94,59 @@ func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[
 				"set_node_on_first_message_only": false,
 			},
 		},
-		"admin": map[string]interface{}{
-			"access_log": []interface{}{
-				map[string]interface{}{
-					"name": "envoy.access_loggers.stdout",
-					"typed_config": map[string]interface{}{
-						"@type": "type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog",
-					},
-				},
-			},
-			"address": map[string]interface{}{
-				"socket_address": map[string]interface{}{
-					"address":    "127.0.0.1",
-					"port_value": 9090,
+		"admin": admin,
+	}
+}
+
+func createAdminConfig() map[string]interface{} {
+	return map[string]interface{}{
+		"access_log": []interface{}{
+			map[string]interface{}{
+				"name": "envoy.access_loggers.stdout",
+				"typed_config": map[string]interface{}{
+					"@type": "type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog",
 				},
 			},
 		},
+		"address": map[string]interface{}{
+			"socket_address": map[string]interface{}{
+				"address":    "127.0.0.1",
+				"port_value": 9090,
+			},
+		},
 	}
+}
 
-	general := map[string]interface{}{
+func createGeneralConfig(listenerGeneral models.General, createdAt, updatedAt primitive.DateTime) map[string]interface{} {
+	return map[string]interface{}{
 		"name":                 listenerGeneral.Name,
 		"version":              listenerGeneral.Version,
 		"type":                 "bootstrap",
 		"gtype":                "envoy.config.bootstrap.v3.Bootstrap",
 		"canonical_name":       "config.bootstrap.v3.Bootstrap",
-		"category":             "",
+		"category":             "bootstrap",
 		"project":              listenerGeneral.Project,
 		"permissions":          map[string]interface{}{"users": []interface{}{}, "groups": []interface{}{}},
 		"additional_resources": []interface{}{},
-		"created_at":           CreatedAt,
-		"updated_at":           UpdatedAt,
+		"created_at":           createdAt,
+		"updated_at":           updatedAt,
 		"config_discovery":     []interface{}{},
 		"typed_config":         []interface{}{},
 	}
+}
 
-	result := map[string]interface{}{
-		"general":  general,
-		"resource": map[string]interface{}{"version": "1", "resource": data},
+func createTLSTransportSocket() map[string]interface{} {
+	return map[string]interface{}{
+		"name": "envoy.transport_sockets.tls",
+		"typed_config": map[string]interface{}{
+			"@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext",
+			"common_tls_context": map[string]interface{}{
+				"validation_context": map[string]interface{}{
+					"trusted_ca": map[string]interface{}{
+						"filename": "/etc/ssl/certs/ca-certificates.crt",
+					},
+				},
+			},
+		},
 	}
-
-	return result
 }

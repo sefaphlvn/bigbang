@@ -5,12 +5,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/crud/typedConfigs"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/sefaphlvn/bigbang/rest/crud/typedconfigs"
 )
 
 func (extension *AppHandler) SetExtension(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
@@ -19,19 +21,19 @@ func (extension *AppHandler) SetExtension(resource models.DBResourceClass, reque
 	general.CreatedAt = primitive.NewDateTimeFromTime(now)
 	general.UpdatedAt = primitive.NewDateTimeFromTime(now)
 	resource.SetGeneral(&general)
-	validateErr, err, isErr := crud.Validate(models.GTypes(resource.GetGeneral().GType), resource.GetResource())
+	validateErr, isErr, err := crud.Validate(resource.GetGeneral().GType, resource.GetResource())
 	if isErr {
 		return validateErr, err
 	}
 
-	resource.SetTypedConfig(typedConfigs.DecodeSetTypedConfigs(resource, extension.Context.Logger))
+	resource.SetTypedConfig(typedconfigs.DecodeSetTypedConfigs(resource, extension.Context.Logger))
 	common.DetectSetPermissions(resource, requestDetails)
 
 	collection := extension.Context.Client.Collection(requestDetails.Collection)
 	_, err = collection.InsertOne(extension.Context.Ctx, resource)
 	if err != nil {
 		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
-			return nil, errors.New("name already exists")
+			return nil, errstr.ErrNameAlreadyExists
 		}
 		return nil, err
 	}

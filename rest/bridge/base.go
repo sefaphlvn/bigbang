@@ -3,10 +3,11 @@ package bridge
 import (
 	"log"
 
-	"github.com/sefaphlvn/bigbang/pkg/bridge"
-	"github.com/sefaphlvn/bigbang/pkg/db"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/sefaphlvn/bigbang/pkg/bridge"
+	"github.com/sefaphlvn/bigbang/pkg/db"
 )
 
 type AppHandler struct {

@@ -3,6 +3,8 @@ package cmd
 import (
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	server "github.com/sefaphlvn/bigbang/pkg/httpserver"
@@ -15,11 +17,9 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/xds"
 	"github.com/sefaphlvn/bigbang/rest/dependency"
 	"github.com/sefaphlvn/bigbang/rest/handlers"
-
-	"github.com/spf13/cobra"
 )
 
-// restCmd represents the rest command
+// restCmd represents the rest command.
 var restCmd = &cobra.Command{
 	Use:   "server-rest",
 	Short: "Start Bigbang REST Server",
@@ -38,7 +38,7 @@ var restCmd = &cobra.Command{
 
 		h := handlers.NewHandler(xdsHandler, extensionHandler, customHandler, userHandler, dependencyHandler, bridgeHandler)
 		r := router.InitRouter(h, logger)
-		if err := server.NewHttpServer(r).Run(appConfig, logger); err != nil {
+		if err := server.NewHTTPServer(r).Run(appConfig, logger); err != nil {
 			logger.Fatalf("Server failed to run: %v", err)
 		}
 	},

@@ -8,6 +8,6 @@ func (h *Handler) GetCustomResourceList(c *gin.Context) {
 	h.handleRequest(c, h.Custom.GetCustomResourceList)
 }
 
-func (h *Handler) GetCustomHttpFilterList(c *gin.Context) {
-	h.handleRequest(c, h.Custom.GetCustomHttpFilterList)
+func (h *Handler) GetCustomHTTPFilterList(c *gin.Context) {
+	h.handleRequest(c, h.Custom.GetCustomHTTPFilterList)
 }

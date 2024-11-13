@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
@@ -28,10 +29,10 @@ func extractValidationErrors(err error) []string {
 	return result
 }
 
-func Validate(gtype models.GTypes, resource interface{}) ([]string, error, bool) {
+func Validate(gtype models.GTypes, resource interface{}) ([]string, bool, error) {
 	msg := gtype.ProtoMessage()
 	if msg == nil {
-		return nil, fmt.Errorf("no message found for GType %v", gtype), true
+		return nil, true, fmt.Errorf("no message found for GType %v", gtype)
 	}
 
 	switch reflect.TypeOf(resource).Kind() {
@@ -45,15 +46,15 @@ func Validate(gtype models.GTypes, resource interface{}) ([]string, error, bool)
 			}
 		}
 		if len(allErrors) > 0 {
-			return allErrors, fmt.Errorf("validation failed"), true
+			return allErrors, true, errstr.ErrValidationFailed
 		}
 	default:
 		if err := validateSingleResource(gtype, resource); err != nil {
-			return extractValidationErrors(err), fmt.Errorf("validation failed"), true
+			return extractValidationErrors(err), true, errstr.ErrValidationFailed
 		}
 	}
 
-	return nil, nil, false
+	return nil, false, nil
 }
 
 func validateSingleResource(gtype models.GTypes, resource interface{}) error {

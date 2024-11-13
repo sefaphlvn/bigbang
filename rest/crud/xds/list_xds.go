@@ -3,10 +3,11 @@ package xds
 import (
 	"fmt"
 
-	"github.com/sefaphlvn/bigbang/pkg/models"
-	"github.com/sefaphlvn/bigbang/rest/crud/common"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
 type Field struct {
@@ -16,7 +17,7 @@ type Field struct {
 
 type ResourceSchema map[string][]Field
 
-func (xds *AppHandler) ListResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) ListResource(_ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	filter := bson.M{"general.project": requestDetails.Project}
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
 	opts := options.Find().SetProjection(bson.M{"resource": 0})

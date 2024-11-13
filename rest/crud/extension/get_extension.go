@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (extension *AppHandler) GetExtensions(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) GetExtensions(_ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	var records []bson.M
 	filter := bson.M{"general.type": requestDetails.Type, "general.project": requestDetails.Project}
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)

@@ -10,11 +10,12 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 var Unmarshaler = protojson.UnmarshalOptions{
@@ -96,11 +97,11 @@ func HashPassword(password string) string {
 	return string(bytes)
 }
 
-func GenerateAllTokens(email *string, Username *string, userID string, groups *[]string, projects *[]models.CombinedProjects, baseGroup *string, baseProject *string, adminGroup bool, role *models.Role) (signedToken string, signedRefreshToken string, err error) {
+func GenerateAllTokens(email, username *string, userID string, groups *[]string, projects *[]models.CombinedProjects, baseGroup, baseProject *string, adminGroup bool, role *models.Role) (signedToken, signedRefreshToken string, err error) {
 	claims := &models.SignedDetails{
 		Email:       email,
-		Username:    Username,
-		UserId:      userID,
+		Username:    username,
+		UserID:      userID,
 		Groups:      RemoveDuplicates(groups),
 		Projects:    projects,
 		BaseGroup:   baseGroup,
@@ -114,8 +115,8 @@ func GenerateAllTokens(email *string, Username *string, userID string, groups *[
 
 	refreshClaims := &models.SignedDetails{
 		Email:       email,
-		Username:    Username,
-		UserId:      userID,
+		Username:    username,
+		UserID:      userID,
 		Groups:      RemoveDuplicates(groups),
 		Projects:    projects,
 		BaseGroup:   baseGroup,
@@ -127,16 +128,14 @@ func GenerateAllTokens(email *string, Username *string, userID string, groups *[
 		},
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SECRET_KEY))
-
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SecretKey))
 	if err != nil {
 		log.Fatal(err)
 	}
-	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SECRET_KEY))
-
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SecretKey))
 	if err != nil {
-		log.Panic(err)
-		return
+		log.Fatal(err)
+		return "", "", err
 	}
 
 	return token, refreshToken, err
@@ -164,7 +163,7 @@ func RemoveDuplicates(strings *[]string) *[]string {
 func MarshalJSON(data interface{}, logger *logrus.Logger) (string, error) {
 	jsonString, err := json.Marshal(data)
 	if err != nil {
-		logger.Debugf("Error marshalling JSON: %v", err)
+		logger.Debugf("Error marshaling JSON: %v", err)
 		return "", err
 	}
 	return string(jsonString), nil

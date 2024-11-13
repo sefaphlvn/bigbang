@@ -3,15 +3,15 @@ package poke
 import (
 	"context"
 
-	"github.com/sefaphlvn/bigbang/grpc/server/resources/resource"
-	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"
-	"github.com/sefaphlvn/bigbang/pkg/config"
-	"github.com/sefaphlvn/bigbang/pkg/models"
-	"github.com/sefaphlvn/bigbang/pkg/resources"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 
+	"github.com/sefaphlvn/bigbang/grpc/server/resources/resource"
+	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"
+	"github.com/sefaphlvn/bigbang/pkg/config"
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/pkg/resources"
 )
 
 type Poke struct {
@@ -35,7 +35,7 @@ func NewPokeServer(ctx *snapshot.Context, db *db.AppContext, logger *logrus.Logg
 	}
 }
 
-func (p *Poke) Run(pokeHandler *Poke) {
+func (p *Poke) Run() {
 	p.initialSnapshots()
 }
 
@@ -85,7 +85,7 @@ func (p *Poke) getListenerList() []Nodes {
 	return serviceNamesWithProject
 }
 
-func (p *Poke) getAllResourcesFromListener(serviceName string, project string) (*resource.AllResources, error) {
+func (p *Poke) getAllResourcesFromListener(serviceName, project string) (*resource.AllResources, error) {
 	rawListenerResource, err := resources.GetResourceNGeneral(p.db, "listeners", serviceName, project)
 	if err != nil {
 		return nil, err

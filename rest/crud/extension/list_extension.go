@@ -1,15 +1,15 @@
 package extension
 
 import (
-	"errors"
-
-	"github.com/sefaphlvn/bigbang/pkg/models"
-	"github.com/sefaphlvn/bigbang/rest/crud/common"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (extension *AppHandler) ListExtensions(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) ListExtensions(_ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	var records []bson.M
 	collection := extension.Context.Client.Collection(requestDetails.Collection)
 	filter := bson.M{"general.canonical_name": requestDetails.CanonicalName, "general.project": requestDetails.Project}
@@ -19,11 +19,11 @@ func (extension *AppHandler) ListExtensions(resource models.DBResourceClass, req
 
 	cursor, err := collection.Find(extension.Context.Ctx, filterWithRestriction, opts)
 	if err != nil {
-		return nil, errors.New("unknown db error")
+		return nil, errstr.ErrUnknownDBError
 	}
 
 	if err = cursor.All(extension.Context.Ctx, &records); err != nil {
-		return nil, errors.New("unknown db error")
+		return nil, errstr.ErrUnknownDBError
 	}
 
 	generals := common.TransformGenerals(records)

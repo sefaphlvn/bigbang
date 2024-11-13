@@ -5,12 +5,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/crud/typedConfigs"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/sefaphlvn/bigbang/rest/crud/typedconfigs"
 )
 
 func (xds *AppHandler) SetResource(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
@@ -20,19 +22,19 @@ func (xds *AppHandler) SetResource(resource models.DBResourceClass, requestDetai
 	general.UpdatedAt = primitive.NewDateTimeFromTime(now)
 
 	resource.SetGeneral(&general)
-	validateErr, err, isErr := crud.Validate(models.GTypes(resource.GetGeneral().GType), resource.GetResource())
+	validateErr, isErr, err := crud.Validate(resource.GetGeneral().GType, resource.GetResource())
 	if isErr {
 		return validateErr, err
 	}
 
-	resource.SetTypedConfig(typedConfigs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
+	resource.SetTypedConfig(typedconfigs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
 	common.DetectSetPermissions(resource, requestDetails)
 
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
 	_, err = collection.InsertOne(xds.Context.Ctx, resource)
 	if err != nil {
 		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
-			return nil, errors.New("name already exists")
+			return nil, errstr.ErrNameAlreadyExists
 		}
 		return nil, err
 	}
@@ -59,7 +61,7 @@ func (xds *AppHandler) createService(serviceName string) error {
 	_, err := collection.InsertOne(xds.Context.Ctx, service)
 	if err != nil {
 		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
-			return errors.New("name already exists")
+			return errstr.ErrNameAlreadyExists
 		}
 		return err
 	}
@@ -73,7 +75,7 @@ func (xds *AppHandler) createBootstrap(listenerGeneral models.General) error {
 	_, err := collection.InsertOne(xds.Context.Ctx, bootstrap)
 	if err != nil {
 		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
-			return errors.New("name already exists")
+			return errstr.ErrNameAlreadyExists
 		}
 		return err
 	}

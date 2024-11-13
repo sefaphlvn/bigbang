@@ -3,11 +3,12 @@ package xds
 import (
 	"log"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/sefaphlvn/bigbang/pkg/bridge"
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/rest/crud"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 type AppHandler crud.Application

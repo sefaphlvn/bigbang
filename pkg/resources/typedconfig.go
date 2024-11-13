@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sefaphlvn/bigbang/pkg/helper"
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
+
+	"github.com/sefaphlvn/bigbang/pkg/helper"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 func DecodeBase64Config(encodedConfig string) (*models.TypedConfig, error) {
@@ -27,7 +28,7 @@ func DecodeBase64Config(encodedConfig string) (*models.TypedConfig, error) {
 	return &configData, nil
 }
 
-func GetTypedConfigValue(jsonStringStr string, path string, logger *logrus.Logger) *models.TypedConfig {
+func GetTypedConfigValue(jsonStringStr, path string, logger *logrus.Logger) *models.TypedConfig {
 	value := gjson.Get(jsonStringStr, path).String()
 
 	if value == "" {
@@ -52,7 +53,7 @@ func ProcessTypedConfigs(jsonStringStr string, typedConfigPath models.TypedConfi
 		if len(typedConfigPath.ArrayPaths) == 0 {
 			result := gjson.Get(jsonStringStr, typedConfigPath.PathTemplate)
 			if result.Exists() {
-				result.ForEach(func(key, value gjson.Result) bool {
+				result.ForEach(func(key, _ gjson.Result) bool {
 					dynamicKey := key.String()
 					dynamicPath := fmt.Sprintf("%s.%s", typedConfigPath.PathTemplate, helper.EscapePointKey(dynamicKey))
 					processPath(jsonStringStr, dynamicPath, &typedConfigs, typedConfigsMap, seenConfigs, logger)
@@ -84,7 +85,7 @@ func ProcessTypedConfigs(jsonStringStr string, typedConfigPath models.TypedConfi
 }
 
 func processDynamicKey(result gjson.Result, basePath string, typedConfigs *[]*models.TypedConfig, typedConfigsMap map[string]*models.TypedConfig, seenConfigs map[string]struct{}, logger *logrus.Logger) {
-	result.ForEach(func(key, value gjson.Result) bool {
+	result.ForEach(func(key, _ gjson.Result) bool {
 		dynamicKey := key.String()
 		dynamicPath := fmt.Sprintf("%s.%s", basePath, dynamicKey)
 		processPath(result.String(), dynamicPath, typedConfigs, typedConfigsMap, seenConfigs, logger)
@@ -92,7 +93,7 @@ func processDynamicKey(result gjson.Result, basePath string, typedConfigs *[]*mo
 	})
 }
 
-func processPerTypedConfigArray(array []gjson.Result, jsonStringStr string, pathTemplate string, arrayPaths []models.ArrayPath, typedConfigs *[]*models.TypedConfig, typedConfigsMap map[string]*models.TypedConfig, seenConfigs map[string]struct{}, logger *logrus.Logger) {
+func processPerTypedConfigArray(array []gjson.Result, jsonStringStr, pathTemplate string, arrayPaths []models.ArrayPath, typedConfigs *[]*models.TypedConfig, typedConfigsMap map[string]*models.TypedConfig, seenConfigs map[string]struct{}, logger *logrus.Logger) {
 	placeholderCount := strings.Count(pathTemplate, "%d")
 
 	for i := range array {
@@ -105,7 +106,7 @@ func processPerTypedConfigArray(array []gjson.Result, jsonStringStr string, path
 				dynamicResult := gjson.Get(jsonStringStr, finalPath)
 
 				if dynamicResult.Exists() {
-					dynamicResult.ForEach(func(key, value gjson.Result) bool {
+					dynamicResult.ForEach(func(key, _ gjson.Result) bool {
 						dynamicKey := key.String()
 						dynamicPath := fmt.Sprintf("%s.%s", finalPath, dynamicKey)
 						processPath(jsonStringStr, dynamicPath, typedConfigs, typedConfigsMap, seenConfigs, logger)
@@ -117,7 +118,7 @@ func processPerTypedConfigArray(array []gjson.Result, jsonStringStr string, path
 	}
 }
 
-func processArray(array []gjson.Result, jsonStringStr string, pathTemplate string, arrayPaths []models.ArrayPath, typedConfigs *[]*models.TypedConfig, typedConfigsMap map[string]*models.TypedConfig, seenConfigs map[string]struct{}, logger *logrus.Logger) {
+func processArray(array []gjson.Result, jsonStringStr, pathTemplate string, arrayPaths []models.ArrayPath, typedConfigs *[]*models.TypedConfig, typedConfigsMap map[string]*models.TypedConfig, seenConfigs map[string]struct{}, logger *logrus.Logger) {
 	placeholderCount := strings.Count(pathTemplate, "%d")
 
 	for i := range array {

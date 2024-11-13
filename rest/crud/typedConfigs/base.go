@@ -1,10 +1,11 @@
-package typedConfigs
+package typedconfigs
 
 import (
+	"github.com/sirupsen/logrus"
+
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
-	"github.com/sirupsen/logrus"
 )
 
 func DecodeSetTypedConfigs(resource models.DBResourceClass, logger *logrus.Logger) []*models.TypedConfig {

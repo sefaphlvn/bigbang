@@ -1,12 +1,10 @@
-package downstream_filters
+package downstreamfilters
 
 import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-var (
-	requestMirrorPoliciesCluster = "resource.resource.request_mirror_policies.cluster"
-)
+var requestMirrorPoliciesCluster = "resource.resource.request_mirror_policies.cluster"
 
 func ClusterDownstreamFilters(clusterName string) []MongoFilters {
 	return []MongoFilters{

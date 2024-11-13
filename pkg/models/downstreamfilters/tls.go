@@ -1,8 +1,8 @@
-package downstream_filters
+package downstreamfilters
 
 import "go.mongodb.org/mongo-driver/bson"
 
-func TlsCertificateDownstreamFilters(name string) []MongoFilters {
+func TLSCertificateDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "secrets",
@@ -20,7 +20,7 @@ func ContextValidateDownstreamFilters(name string) []MongoFilters {
 	}
 }
 
-func DownstreamTlsDownstreamFilters(name string) []MongoFilters {
+func DownstreamTLSDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "listeners",
@@ -29,7 +29,7 @@ func DownstreamTlsDownstreamFilters(name string) []MongoFilters {
 	}
 }
 
-func UpstreamTlsDownstreamFilters(name string) []MongoFilters {
+func UpstreamTLSDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "clusters",

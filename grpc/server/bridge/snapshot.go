@@ -10,19 +10,20 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"github.com/sefaphlvn/bigbang/pkg/bridge"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
+
+	"github.com/sefaphlvn/bigbang/pkg/bridge"
 )
 
-func (s *SnapshotKeyServiceServer) GetSnapshotKeys(ctx context.Context, req *bridge.Empty) (*bridge.SnapshotKeyList, error) {
+func (s *SnapshotKeyServiceServer) GetSnapshotKeys(_ context.Context, _ *bridge.Empty) (*bridge.SnapshotKeyList, error) {
 	snapshotKeys := s.context.Cache.Cache.GetStatusKeys()
 	return &bridge.SnapshotKeyList{Keys: snapshotKeys}, nil
 }
 
-func (s *SnapshotResourceServiceServer) GetSnapshotResources(ctx context.Context, req *bridge.SnapshotKey) (*bridge.SnapshotResourceList, error) {
+func (s *SnapshotResourceServiceServer) GetSnapshotResources(_ context.Context, req *bridge.SnapshotKey) (*bridge.SnapshotResourceList, error) {
 	snapshot, err := s.context.Cache.Cache.GetSnapshot(req.Key)
 	if err != nil {
 		logrus.Errorf("Error getting snapshot for key %s: %v", req.Key, err)
@@ -55,7 +56,7 @@ func (s *SnapshotResourceServiceServer) GetSnapshotResources(ctx context.Context
 		"virtual Host":  snapshot.GetResources(resource.VirtualHostType),
 	}
 
-	var resourceTypes []string
+	resourceTypes := make([]string, 0, len(resources))
 	for resourceType := range resources {
 		resourceTypes = append(resourceTypes, resourceType)
 	}

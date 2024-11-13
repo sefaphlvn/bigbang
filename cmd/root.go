@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// cfgFile config file variable
+// cfgFile config file variable.
 var cfgFile string
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "bigbang",
 	Short: "controller grpc & rest server",

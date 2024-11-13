@@ -1,8 +1,9 @@
 package dependency
 
 import (
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/tidwall/gjson"
+
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 func parseConfigDiscovery(ctx *AppHandler, rootResult gjson.Result, activeResource Depend) []Depend {

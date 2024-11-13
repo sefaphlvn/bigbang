@@ -1,4 +1,4 @@
-package downstream_filters
+package downstreamfilters
 
 import "go.mongodb.org/mongo-driver/bson"
 
@@ -50,7 +50,7 @@ func CompressorLibraryDownstreamFilters(name string) []MongoFilters {
 	}
 }
 
-func TypedHttpProtocolDownstreamFilters(name string) []MongoFilters {
+func TypedHTTPProtocolDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "clusters",

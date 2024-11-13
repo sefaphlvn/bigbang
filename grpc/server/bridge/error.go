@@ -92,7 +92,7 @@ func (b *BoundedCache) evictOldestError(nodeID string) {
 	b.errors[nodeID] = append(b.errors[nodeID][:oldestIndex], b.errors[nodeID][oldestIndex+1:]...)
 }
 
-// Hata çözülmüş olarak işaretler
+// Hata çözülmüş olarak işaretler.
 func (b *BoundedCache) ResolveErrorsForResource(nodeID, resourceID, nonce string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -107,7 +107,7 @@ func (b *BoundedCache) ResolveErrorsForResource(nodeID, resourceID, nonce string
 	}
 }
 
-// Çözülmüş hataları temizler
+// Çözülmüş hataları temizler.
 func (b *BoundedCache) ClearResolvedErrors(nodeID string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -121,7 +121,7 @@ func (b *BoundedCache) ClearResolvedErrors(nodeID string) {
 	b.errors[nodeID] = validErrors
 }
 
-func (s *ErrorServiceServer) GetNodeErrors(ctx context.Context, req *bridge.NodeErrorRequest) (*bridge.NodeErrorResponse, error) {
+func (s *ErrorServiceServer) GetNodeErrors(_ context.Context, req *bridge.NodeErrorRequest) (*bridge.NodeErrorResponse, error) {
 	nodeID := req.GetNodeId()
 	errors := s.errorContext.ErrorCache.GetErrors(nodeID)
 

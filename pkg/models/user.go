@@ -20,52 +20,52 @@ type CombinedProjects struct {
 }
 
 type User struct {
-	ID            primitive.ObjectID `bson:"_id"`
-	Username      *string            `json:"username" validate:"required,min=2,max=100"`
-	Password      *string            `json:"password" validate:"required,min=6"`
-	Email         *string            `json:"email" bson:"email" validate:"email,required"`
-	Role          *Role              `json:"role" bson:"role"`
-	Token         *string            `json:"token" bson:"token"`
-	BaseGroup     *string            `json:"base_group" bson:"base_group"`
-	BaseProject   *string            `json:"base_project" bson:"base_project"`
-	Active        *bool              `json:"active" bson:"active"`
-	Refresh_token *string            `json:"refresh_token" bson:"refresh_token"`
-	Created_at    primitive.DateTime `json:"created_at" bson:"created_at"`
-	Updated_at    primitive.DateTime `json:"updated_at" bson:"updated_at"`
-	User_id       string             `json:"user_id" bson:"user_id"`
+	ID           primitive.ObjectID `bson:"_id"`
+	Username     *string            `json:"username" validate:"required,min=2,max=100"`
+	Password     *string            `json:"password" validate:"required,min=6"`
+	Email        *string            `json:"email" bson:"email" validate:"email,required"`
+	Role         *Role              `json:"role" bson:"role"`
+	Token        *string            `json:"token" bson:"token"`
+	BaseGroup    *string            `json:"base_group" bson:"base_group"`
+	BaseProject  *string            `json:"base_project" bson:"base_project"`
+	Active       *bool              `json:"active" bson:"active"`
+	RefreshToken *string            `json:"refresh_token" bson:"refresh_token"`
+	CreatedAt    primitive.DateTime `json:"created_at" bson:"created_at"`
+	UpdatedAt    primitive.DateTime `json:"updated_at" bson:"updated_at"`
+	UserID       string             `json:"user_id" bson:"user_id"`
 }
 
 type Group struct {
-	ID         primitive.ObjectID `bson:"_id"`
-	GroupName  *string            `json:"groupname" bson:"groupname" validate:"required,min=2,max=100"`
-	Members    []string           `json:"members" bson:"members"`
-	Project    *string            `json:"project" bson:"project" validate:"required,min=2,max=100"`
-	Created_at primitive.DateTime `json:"created_at" bson:"created_at"`
-	Updated_at primitive.DateTime `json:"updated_at" bson:"updated_at"`
+	ID        primitive.ObjectID `bson:"_id"`
+	GroupName *string            `json:"groupname" bson:"groupname" validate:"required,min=2,max=100"`
+	Members   []string           `json:"members" bson:"members"`
+	Project   *string            `json:"project" bson:"project" validate:"required,min=2,max=100"`
+	CreatedAt primitive.DateTime `json:"created_at" bson:"created_at"`
+	UpdatedAt primitive.DateTime `json:"updated_at" bson:"updated_at"`
 }
 
 type Project struct {
 	ID          primitive.ObjectID `bson:"_id"`
 	ProjectName *string            `json:"projectname" bson:"projectname" validate:"required,min=2,max=100"`
 	Members     []string           `json:"members" bson:"members"`
-	Created_at  primitive.DateTime `json:"created_at" bson:"created_at"`
-	Updated_at  primitive.DateTime `json:"updated_at" bson:"updated_at"`
+	CreatedAt   primitive.DateTime `json:"created_at" bson:"created_at"`
+	UpdatedAt   primitive.DateTime `json:"updated_at" bson:"updated_at"`
 }
 
 type UserList struct {
-	ID         primitive.ObjectID `bson:"_id"`
-	Username   *string            `json:"username" validate:"required,min=2,max=100"`
-	Email      *string            `json:"email" validate:"email,required"`
-	Created_at primitive.DateTime `json:"created_at"`
-	Updated_at primitive.DateTime `json:"updated_at"`
-	User_id    string             `json:"user_id"`
-	Groups     []string           `json:"groups"`
+	ID        primitive.ObjectID `bson:"_id"`
+	Username  *string            `json:"username" validate:"required,min=2,max=100"`
+	Email     *string            `json:"email" validate:"email,required"`
+	CreatedAt primitive.DateTime `json:"created_at"`
+	UpdatedAt primitive.DateTime `json:"updated_at"`
+	UserID    string             `json:"user_id"`
+	Groups    []string           `json:"groups"`
 }
 
 type SignedDetails struct {
 	Email       *string
 	Username    *string
-	UserId      string
+	UserID      string
 	Groups      *[]string
 	Projects    *[]CombinedProjects
 	Role        *Role

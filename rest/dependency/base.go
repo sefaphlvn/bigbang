@@ -4,8 +4,10 @@ import (
 	"fmt"
 )
 
-var visitedUpstream = make(map[string]bool)
-var visitedDownstream = make(map[string]bool)
+var (
+	visitedUpstream   = make(map[string]bool)
+	visitedDownstream = make(map[string]bool)
+)
 
 func (h *AppHandler) ProcessResource(activeResource Depend) {
 	visitedUpstream = make(map[string]bool)
@@ -53,7 +55,7 @@ func (h *AppHandler) ProcessDownstream(activeResource Depend) {
 	visitedDownstream[uniqueKey] = true
 
 	node, downstreams := h.CallDownstreamFunction(activeResource)
-	if node.ID != "" && node.Name != "" && node.Gtype != "" {
+	if h.isNodeValid(node) {
 		h.AddNode(node)
 		activeResource.First = false
 	} else {
@@ -61,11 +63,21 @@ func (h *AppHandler) ProcessDownstream(activeResource Depend) {
 	}
 
 	for _, down := range downstreams {
-		if down.ID != "" && down.Name != "" && down.Gtype != "" && down.Direction == "downstream" && down.Source == node.ID {
+		if h.isValidDownstream(node, down) {
 			h.AddNodeAndEdge(node, down, false)
 			h.ProcessDownstream(down)
 		} else {
 			h.Context.Logger.Infof("Downstream is missing required fields, not directly connected, or from incorrect source, not adding: %+v\n", down)
 		}
 	}
+}
+
+// Yardımcı fonksiyonlar.
+func (h *AppHandler) isNodeValid(node Node) bool {
+	return node.ID != "" && node.Name != "" && node.Gtype != ""
+}
+
+func (h *AppHandler) isValidDownstream(node Node, down Depend) bool {
+	return down.ID != "" && down.Name != "" && down.Gtype != "" &&
+		down.Direction == "downstream" && down.Source == node.ID
 }

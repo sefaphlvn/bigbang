@@ -3,9 +3,10 @@ package dependency
 import (
 	"fmt"
 
-	"github.com/sefaphlvn/bigbang/pkg/models"
-	"github.com/sefaphlvn/bigbang/pkg/models/downstream_filters"
 	"github.com/tidwall/gjson"
+
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/pkg/models/downstreamfilters"
 )
 
 func GenericUpstreamCollector(ctx *AppHandler, activeResource Depend) (Node, []Depend) {
@@ -23,7 +24,7 @@ func GenericUpstreamCollector(ctx *AppHandler, activeResource Depend) (Node, []D
 		Direction:  "upstream",
 	}
 
-	jsonPaths := getDynamicJsonPaths(activeResource.Gtype)
+	jsonPaths := getDynamicJSONPaths(activeResource.Gtype)
 	for path, gtype := range jsonPaths {
 		resourcePath := fmt.Sprintf("%s.%s", "resource.resource", path)
 		collectDependenciesFromPath(ctx, rootResult, resourcePath, gtype, activeResource, &dependencies)
@@ -134,7 +135,7 @@ func GenericDownstreamCollector(ctx *AppHandler, activeResource Depend, visited 
 	return node, dependencies
 }
 
-func collectDependenciesFromFilter(ctx *AppHandler, filter downstream_filters.MongoFilters, activeResource Depend, dependencies *[]Depend) {
+func collectDependenciesFromFilter(ctx *AppHandler, filter downstreamfilters.MongoFilters, activeResource Depend, dependencies *[]Depend) {
 	collection := filter.Collection
 	query := filter.Filter
 

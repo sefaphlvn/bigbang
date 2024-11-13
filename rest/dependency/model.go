@@ -17,7 +17,7 @@ type CacheEntry struct {
 
 type AppHandler struct {
 	Context      *db.AppContext
-	Dependencies *DependencyGraph
+	Dependencies *Graph
 	Cache        map[string]CacheEntry
 	CacheMutex   sync.Mutex
 }
@@ -34,7 +34,7 @@ type Dependency struct {
 	} `json:"data"`
 }
 
-type DependencyGraph struct {
+type Graph struct {
 	Nodes []Dependency `json:"nodes"`
 	Edges []Edge       `json:"edges"`
 }

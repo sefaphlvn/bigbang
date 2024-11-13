@@ -15,14 +15,14 @@ type server struct {
 	pb.UnimplementedBootstrapServiceServer
 }
 
-// Bootstrap implements bootstrap.BootstrapServiceServer
-func (s *server) Bootstrap(ctx context.Context, in *pb.BootstrapRequest) (*pb.BootstrapResponse, error) {
+// Bootstrap implements bootstrap.BootstrapServiceServer.
+func (s *server) Bootstrap(_ context.Context, in *pb.BootstrapRequest) (*pb.BootstrapResponse, error) {
 	log.Printf("Received: %v", in.GetDomain())
 	return &pb.BootstrapResponse{Message: "Bootstrap successful for domain: " + in.GetDomain()}, nil
 }
 
 func Start() {
-	lis, err := net.Listen("tcp", ":50041")
+	lis, err := net.Listen("tcp", "localhost:50041")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

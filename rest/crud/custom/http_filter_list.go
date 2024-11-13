@@ -1,14 +1,16 @@
 package custom
 
 import (
-	"errors"
+	"context"
 
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
-func (custom *AppHandler) GetCustomHttpFilterList(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (custom *AppHandler) GetCustomHTTPFilterList(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	collection := custom.Context.Client.Collection(requestDetails.Collection)
 	opts := options.Find()
 	opts.SetProjection(bson.M{
@@ -19,20 +21,20 @@ func (custom *AppHandler) GetCustomHttpFilterList(resource models.DBResourceClas
 		"general.category":       1,
 	})
 
-	var filters = bson.M{
+	filters := bson.M{
 		"general.version":              requestDetails.Version,
 		"general.project":              requestDetails.Project,
 		"general.category":             requestDetails.Category,
 		"general.metadata.http_filter": bson.M{"$regex": requestDetails.Metadata["http_filter"], "$options": "i"},
 	}
 
-	cursor, err := collection.Find(custom.Context.Ctx, filters, opts)
+	cursor, err := collection.Find(ctx, filters, opts)
 	if err != nil {
-		return nil, errors.New("unknown db error")
+		return nil, errstr.ErrUnknownDBError
 	}
 
 	var results []Record
-	for cursor.Next(custom.Context.Ctx) {
+	for cursor.Next(ctx) {
 		var doc struct {
 			General struct {
 				Name          string `bson:"name"`

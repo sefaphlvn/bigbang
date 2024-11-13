@@ -46,7 +46,7 @@ type AllResources interface {
 	GetRoute() *route.RouteConfiguration
 	AppendRoute(route *route.RouteConfiguration)
 
-	SetVirtualHost(virtual_host *route.VirtualHost)
+	SetVirtualHost(virtualHost *route.VirtualHost)
 	GetVirtualHost() *route.VirtualHost
 	GetVirtualHostT() []types.Resource
 	AppendVirtualHost(route *route.VirtualHost)

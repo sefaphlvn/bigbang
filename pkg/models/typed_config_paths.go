@@ -13,9 +13,9 @@ type TypedConfigPath struct {
 }
 
 var (
-	access_log              = "access_log.%d"
-	access_log_typed_config = "access_log.%d.typed_config"
-	routes                  = "routes.%d"
+	accessLog            = "access_log.%d"
+	accessLogTypedConfig = "access_log.%d.typed_config"
+	routes               = "routes.%d"
 )
 
 var BootstrapTypedConfigPaths = []TypedConfigPath{
@@ -38,9 +38,9 @@ var ListenerTypedConfigPaths = []TypedConfigPath{
 	},
 	{
 		ArrayPaths: []ArrayPath{
-			{ParentPath: "access_log", IndexPath: access_log},
+			{ParentPath: "access_log", IndexPath: accessLog},
 		},
-		PathTemplate: access_log_typed_config,
+		PathTemplate: accessLogTypedConfig,
 		Kind:         "access_log",
 	},
 }
@@ -48,9 +48,9 @@ var ListenerTypedConfigPaths = []TypedConfigPath{
 var GeneralAccessLogTypedConfigPaths = []TypedConfigPath{
 	{
 		ArrayPaths: []ArrayPath{
-			{ParentPath: "access_log", IndexPath: access_log},
+			{ParentPath: "access_log", IndexPath: accessLog},
 		},
-		PathTemplate: access_log_typed_config,
+		PathTemplate: accessLogTypedConfig,
 		Kind:         "access_log",
 	},
 }
@@ -135,12 +135,12 @@ var VirtualHostTypedConfigPaths = []TypedConfigPath{
 	},
 }
 
-var HttpConnectionManagerTypedConfigPaths = []TypedConfigPath{
+var HTTPConnectionManagerTypedConfigPaths = []TypedConfigPath{
 	{
 		ArrayPaths: []ArrayPath{
-			{ParentPath: "access_log", IndexPath: access_log},
+			{ParentPath: "access_log", IndexPath: accessLog},
 		},
-		PathTemplate: access_log_typed_config,
+		PathTemplate: accessLogTypedConfig,
 		Kind:         "access_log",
 	},
 	{

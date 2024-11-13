@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/crud/typedConfigs"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/sefaphlvn/bigbang/rest/crud/typedconfigs"
 )
 
 func (extension *AppHandler) UpdateExtensions(resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
@@ -33,12 +34,12 @@ func updateResource(extension *AppHandler, resource models.DBResourceClass, requ
 	}
 	resource.SetVersion(strconv.Itoa(version + 1))
 	newResource := resource.GetResource()
-	validateErr, err, isErr := crud.Validate(models.GTypes(resource.GetGeneral().GType), newResource)
+	validateErr, isErr, err := crud.Validate(resource.GetGeneral().GType, newResource)
 	if isErr {
 		return validateErr, err
 	}
 
-	resource.SetTypedConfig(typedConfigs.DecodeSetTypedConfigs(resource, extension.Context.Logger))
+	resource.SetTypedConfig(typedconfigs.DecodeSetTypedConfigs(resource, extension.Context.Logger))
 
 	update := bson.M{
 		"$set": bson.M{

@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/tidwall/sjson"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/anypb"
+
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
-	"github.com/tidwall/sjson"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func (ar *AllResources) GetTypedConfigs(paths []models.TypedConfigPath, jsonData interface{}, context *db.AppContext) (interface{}, error) {
@@ -48,7 +49,7 @@ func (ar *AllResources) processTypedConfigPath(pathd models.TypedConfigPath, jso
 
 		typedConfigJSON, err := json.Marshal(resource)
 		if err != nil {
-			context.Logger.Warnf("Error marshalling typed config: %v", err)
+			context.Logger.Warnf("Error marshaling typed config: %v", err)
 			return err
 		}
 		typedConfigStr := string(typedConfigJSON)
@@ -81,11 +82,11 @@ func (ar *AllResources) updateJSONConfig(jsonStringStr *string, path string, typ
 	} else {
 		anyJSON, err := protojson.Marshal(typedConfig)
 		if err != nil {
-			return fmt.Errorf("error marshalling any typed config: %w", err)
+			return fmt.Errorf("error marshaling any typed config: %w", err)
 		}
 
 		if err := json.Unmarshal(anyJSON, &config); err != nil {
-			return fmt.Errorf("error unmarshalling any typed config: %w", err)
+			return fmt.Errorf("error marshaling any typed config: %w", err)
 		}
 	}
 

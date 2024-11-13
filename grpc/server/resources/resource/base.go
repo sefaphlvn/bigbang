@@ -3,10 +3,11 @@ package resource
 import (
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/sefaphlvn/bigbang/grpc/server/resources/common"
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/models"
-	"github.com/sirupsen/logrus"
 )
 
 type AllResources struct {
