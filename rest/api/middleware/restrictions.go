@@ -30,6 +30,8 @@ var AllowedEndpoints = []string{
 	"/api/v3/xds/listeners/:name",
 	"/api/v3/xds/routes",
 	"/api/v3/xds/routes/:name",
+	"/api/v3/xds/tls",
+	"/api/v3/xds/tls/:name",
 	"/api/v3/xds/virtual_hosts",
 	"/api/v3/xds/virtual_hosts/:name",
 	"/api/v3/xds/clusters",

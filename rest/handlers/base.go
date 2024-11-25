@@ -68,16 +68,16 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 
 	requestDetails := models.RequestDetails{
 		CanonicalName: getParamOrQuery(c, "canonical_name"),
-		GType:         models.GTypes(c.Query("gtype")),
+		Collection:    getParamOrQuery(c, "collection"),
+		Version:       getOptionalParam(c, "version"),
 		Category:      c.Query("category"),
 		Name:          c.Param("name"),
-		Collection:    getParamOrQuery(c, "collection"),
 		SaveOrPublish: c.Query("save_or_publish"),
-		User:          userDetails,
 		Project:       c.Query("project"),
 		Metadata:      extractMetadata(c),
-		Version:       getOptionalParam(c, "version"),
 		Type:          models.KnownTYPES(getOptionalParam(c, "type")),
+		GType:         models.GTypes(c.Query("gtype")),
+		User:          userDetails,
 	}
 
 	if err := checkRole(c, userDetails); err != nil {

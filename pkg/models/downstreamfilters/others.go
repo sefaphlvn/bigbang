@@ -41,7 +41,7 @@ func UTMDownstreamFilters(name string) []MongoFilters {
 	}
 }
 
-func CompressorLibraryDownstreamFilters(name string) []MongoFilters {
+func TypedConfigDownstreamFilters(name string) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "filters",

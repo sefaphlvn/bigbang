@@ -176,6 +176,22 @@ var HTTPConnectionManagerTypedConfigPaths = []TypedConfigPath{
 	},
 }
 
+var StatefulSessionTypedConfigPaths = []TypedConfigPath{
+	{
+		ArrayPaths:   []ArrayPath{},
+		PathTemplate: "session_state.typed_config",
+		Kind:         "session_state",
+	},
+}
+
+var StatefulSessionPerRouteTypedConfigPaths = []TypedConfigPath{
+	{
+		ArrayPaths:   []ArrayPath{},
+		PathTemplate: "stateful_session.session_state.typed_config",
+		Kind:         "session_state",
+	},
+}
+
 var CompressorTypedConfigPaths = []TypedConfigPath{
 	{
 		ArrayPaths:   []ArrayPath{},

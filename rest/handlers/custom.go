@@ -11,3 +11,15 @@ func (h *Handler) GetCustomResourceList(c *gin.Context) {
 func (h *Handler) GetCustomHTTPFilterList(c *gin.Context) {
 	h.handleRequest(c, h.Custom.GetCustomHTTPFilterList)
 }
+
+func (h *Handler) GetStatsHttpFilter(c *gin.Context) {
+	h.handleRequest(c, h.Custom.GetCustomHTTPFilterList)
+}
+
+func (h *Handler) GetStatsExtension(c *gin.Context) {
+	h.handleRequest(c, h.Custom.GetCustomHTTPFilterList)
+}
+
+func (h *Handler) GetStatsAllResource(c *gin.Context) {
+	h.handleRequest(c, h.Custom.GetCustomHTTPFilterList)
+}

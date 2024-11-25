@@ -13,18 +13,34 @@ import (
 	gzip_compressor "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
 	zstd_compressor "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/zstd/compressor/v3"
 	adaptive_concurrency "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/adaptive_concurrency/v3"
+	admission_control "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/admission_control/v3"
 	bandwidth_limit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/bandwidth_limit/v3"
 	basic_auth "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/basic_auth/v3"
 	buffer "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/buffer/v3"
 	compressor "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	cors "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	csrf_policy "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/csrf/v3"
+	h_local_ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
+	oauth2 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/oauth2/v3"
 	h_rbac "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	router "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
+	stateful_session "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/stateful_session/v3"
+	l_http_inspector "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/http_inspector/v3"
+	l_local_ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/local_ratelimit/v3"
+	l_original_dst "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/original_dst/v3"
+	l_original_src "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/original_src/v3"
+	l_proxy_protocol "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/proxy_protocol/v3"
+	l_tls_inspector "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/tls_inspector/v3"
+	connection_limit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/connection_limit/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	n_local_ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/local_ratelimit/v3"
 	n_rbac "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/rbac/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	l_dns_filter "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/udp/dns_filter/v3"
 	hcefs "github.com/envoyproxy/go-control-plane/envoy/extensions/health_check/event_sinks/file/v3"
+	stateful_session_cookie "github.com/envoyproxy/go-control-plane/envoy/extensions/http/stateful_session/cookie/v3"
+	stateful_session_header "github.com/envoyproxy/go-control-plane/envoy/extensions/http/stateful_session/header/v3"
 	utm "github.com/envoyproxy/go-control-plane/envoy/extensions/path/match/uri_template/v3"
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	http_protocol_options "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
@@ -70,6 +86,21 @@ var URLs = map[string]string{
 	"http_protocol_options": "/extensions/http_protocol_options/",
 	"lua":                   "/filters/http/lua/",
 	"adaptive_concurrency":  "/filters/http/adaptive_concurrency/",
+	"admission_control":     "/filters/http/admission_control/",
+	"session_state":         "/extensions/session_state/",
+	"stateful_session":      "/filters/http/stateful_session/",
+	"csrf_policy":           "/filters/http/csrf_policy/",
+	"l_local_ratelimit":     "/filters/listener/l_local_ratelimit/",
+	"l_http_inspector":      "/filters/listener/l_http_inspector/",
+	"l_original_dst":        "/filters/listener/l_original_dst/",
+	"l_original_src":        "/filters/listener/l_original_src/",
+	"l_tls_inspector":       "/filters/listener/l_tls_inspector/",
+	"l_dns_filter":          "/filters/listener/l_dns_filter/",
+	"l_proxy_protocol":      "/filters/listener/l_proxy_protocol/",
+	"connection_limit":      "/filters/network/connection_limit/",
+	"n_local_ratelimit":     "/filters/network/n_local_ratelimit/",
+	"h_local_ratelimit":     "/filters/http/h_local_ratelimit/",
+	"tls":                   "/resource/tls/",
 }
 
 var gTypeMappings = map[GTypes]GTypeMapping{
@@ -220,7 +251,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	DownstreamTLSContext: {
 		PrettyName:            "Downstream TLS",
 		Collection:            "secrets",
-		URL:                   URLs["secrets"],
+		URL:                   URLs["tls"],
 		Message:               &tls.DownstreamTlsContext{},
 		DownstreamFiltersFunc: downstreamfilters.DownstreamTLSDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -229,7 +260,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 	UpstreamTLSContext: {
 		PrettyName:            "Upstream TLS",
 		Collection:            "secrets",
-		URL:                   URLs["secrets"],
+		URL:                   URLs["tls"],
 		Message:               &tls.UpstreamTlsContext{},
 		DownstreamFiltersFunc: downstreamfilters.UpstreamTLSDownstreamFilters,
 		TypedConfigPaths:      nil,
@@ -339,7 +370,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   URLs["compressor_library"],
 		Message:               &gzip_compressor.Gzip{},
-		DownstreamFiltersFunc: downstreamfilters.CompressorLibraryDownstreamFilters,
+		DownstreamFiltersFunc: downstreamfilters.TypedConfigDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -348,7 +379,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   URLs["compressor_library"],
 		Message:               &brotli_compressor.Brotli{},
-		DownstreamFiltersFunc: downstreamfilters.CompressorLibraryDownstreamFilters,
+		DownstreamFiltersFunc: downstreamfilters.TypedConfigDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -357,7 +388,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "extensions",
 		URL:                   URLs["compressor_library"],
 		Message:               &zstd_compressor.Zstd{},
-		DownstreamFiltersFunc: downstreamfilters.CompressorLibraryDownstreamFilters,
+		DownstreamFiltersFunc: downstreamfilters.TypedConfigDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
@@ -411,6 +442,177 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		Collection:            "filters",
 		URL:                   URLs["adaptive_concurrency"],
 		Message:               &adaptive_concurrency.AdaptiveConcurrency{},
+		DownstreamFiltersFunc: downstreamfilters.TypedHTTPFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	AdmissionControl: {
+		PrettyName:            "Admission Control",
+		Collection:            "filters",
+		URL:                   URLs["admission_control"],
+		Message:               &admission_control.AdmissionControl{},
+		DownstreamFiltersFunc: downstreamfilters.TypedHTTPFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	CookieBasedSessionState: {
+		PrettyName:            "Cookie Based Session State",
+		Collection:            "extensions",
+		URL:                   URLs["session_state"],
+		Message:               &stateful_session_cookie.CookieBasedSessionState{},
+		DownstreamFiltersFunc: downstreamfilters.TypedConfigDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	HeaderBasedSessionState: {
+		PrettyName:            "Header Based Session State",
+		Collection:            "extensions",
+		URL:                   URLs["session_state"],
+		Message:               &stateful_session_header.HeaderBasedSessionState{},
+		DownstreamFiltersFunc: downstreamfilters.TypedConfigDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	StatefulSession: {
+		PrettyName:            "Stateful Session",
+		Collection:            "filters",
+		URL:                   URLs["stateful_session"],
+		Message:               &stateful_session.StatefulSession{},
+		DownstreamFiltersFunc: downstreamfilters.ConfigDiscoveryHTTPFilterDownstreamFilters,
+		TypedConfigPaths:      StatefulSessionTypedConfigPaths,
+		UpstreamPaths:         nil,
+	},
+	StatefulSessionPerRoute: {
+		PrettyName:            "Stateful Session Per Route",
+		Collection:            "filters",
+		URL:                   URLs["stateful_session"],
+		Message:               &stateful_session.StatefulSessionPerRoute{},
+		DownstreamFiltersFunc: downstreamfilters.TypedHTTPFilterDownstreamFilters,
+		TypedConfigPaths:      StatefulSessionPerRouteTypedConfigPaths,
+		UpstreamPaths:         nil,
+	},
+	CsrfPolicy: {
+		PrettyName:            "Csrf Policy",
+		Collection:            "filters",
+		URL:                   URLs["csrf_policy"],
+		Message:               &csrf_policy.CsrfPolicy{},
+		DownstreamFiltersFunc: downstreamfilters.TypedHTTPFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	ListenerLocalRatelimit: {
+		PrettyName:            "Local Ratelimit",
+		Collection:            "filters",
+		URL:                   URLs["l_local_ratelimit"],
+		Message:               &l_local_ratelimit.LocalRateLimit{},
+		DownstreamFiltersFunc: downstreamfilters.ConfigDiscoveryListenerDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	ListenerHttpInspector: {
+		PrettyName:            "Http Inspector",
+		Collection:            "filters",
+		URL:                   URLs["l_http_inspector"],
+		Message:               &l_http_inspector.HttpInspector{},
+		DownstreamFiltersFunc: downstreamfilters.ConfigDiscoveryListenerDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	ListenerOriginalDst: {
+		PrettyName:            "Original Dst",
+		Collection:            "filters",
+		URL:                   URLs["l_original_dst"],
+		Message:               &l_original_dst.OriginalDst{},
+		DownstreamFiltersFunc: downstreamfilters.ConfigDiscoveryListenerDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	ListenerOriginalSrc: {
+		PrettyName:            "Original Src",
+		Collection:            "filters",
+		URL:                   URLs["l_original_src"],
+		Message:               &l_original_src.OriginalSrc{},
+		DownstreamFiltersFunc: downstreamfilters.ConfigDiscoveryListenerDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	ListenerTlsInspector: {
+		PrettyName:            "Original Src",
+		Collection:            "filters",
+		URL:                   URLs["l_original_src"],
+		Message:               &l_tls_inspector.TlsInspector{},
+		DownstreamFiltersFunc: downstreamfilters.ConfigDiscoveryListenerDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	ListenerDnsFilter: {
+		PrettyName:            "DNS Filter",
+		Collection:            "filters",
+		URL:                   URLs["l_dns_filter"],
+		Message:               &l_dns_filter.DnsFilterConfig{},
+		DownstreamFiltersFunc: downstreamfilters.ConfigDiscoveryListenerDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	ListeneProxyProtocol: {
+		PrettyName:            "Proxy Protocol",
+		Collection:            "filters",
+		URL:                   URLs["l_proxy_protocol"],
+		Message:               &l_proxy_protocol.ProxyProtocol{},
+		DownstreamFiltersFunc: downstreamfilters.ConfigDiscoveryListenerDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	ConnectionLimit: {
+		PrettyName:            "Connection Limit",
+		Collection:            "filters",
+		URL:                   URLs["connection_limit"],
+		Message:               &connection_limit.ConnectionLimit{},
+		DownstreamFiltersFunc: downstreamfilters.ConfigDiscoveryListenerDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	NetworkLocalRatelimit: {
+		PrettyName:            "Local Ratelimit",
+		Collection:            "filters",
+		URL:                   URLs["n_local_ratelimit"],
+		Message:               &n_local_ratelimit.LocalRateLimit{},
+		DownstreamFiltersFunc: downstreamfilters.ConfigDiscoveryListenerDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	HttpLocalRatelimit: {
+		PrettyName:            "Local Ratelimit",
+		Collection:            "filters",
+		URL:                   URLs["h_local_ratelimit"],
+		Message:               &h_local_ratelimit.LocalRateLimit{},
+		DownstreamFiltersFunc: downstreamfilters.TypedHTTPFilterDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	GenericSecret: {
+		PrettyName:            "Generic Secret",
+		Collection:            "filters",
+		URL:                   URLs["secrets"],
+		Message:               &tls.GenericSecret{},
+		DownstreamFiltersFunc: downstreamfilters.TLSCertificateDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	TLSSessionTicketKeys: {
+		PrettyName:            "TLS Session Ticket Keys",
+		Collection:            "filters",
+		URL:                   URLs["secrets"],
+		Message:               &tls.TlsSessionTicketKeys{},
+		DownstreamFiltersFunc: downstreamfilters.TLSCertificateDownstreamFilters,
+		TypedConfigPaths:      nil,
+		UpstreamPaths:         nil,
+	},
+	OAuth2: {
+		PrettyName:            "OAuth2",
+		Collection:            "filters",
+		URL:                   URLs["oauth2"],
+		Message:               &oauth2.OAuth2{},
 		DownstreamFiltersFunc: downstreamfilters.TypedHTTPFilterDownstreamFilters,
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
