@@ -2,12 +2,14 @@ package bridge
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/keepalive"
@@ -35,9 +37,19 @@ func ipv4Dialer(ctx context.Context, addr string) (net.Conn, error) {
 }
 
 func NewBridgeHandler(appCtx *db.AppContext) *AppHandler {
+	var transportCredentials credentials.TransportCredentials
+	if appCtx.Config.BigbangTLSEnabled == "true" {
+		tlsConfig := &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		transportCredentials = credentials.NewTLS(tlsConfig)
+	} else {
+		transportCredentials = insecure.NewCredentials()
+	}
+
 	conn, err := grpc.NewClient(
 		appCtx.Config.BigbangAddress+":"+appCtx.Config.BigbangPort,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithTransportCredentials(transportCredentials),
 		grpc.WithContextDialer(ipv4Dialer),
 		grpc.WithDisableServiceConfig(),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
