@@ -21,10 +21,9 @@ jobs:
         run: |
           export BIGBANG_ADDRESS=${{ vars.BIGBANG_ADDRESS }}
           export BIGBANG_PORT=${{ vars.BIGBANG_PORT }}
-          export BIGBANG_API_ADDRESS=${{ vars.BIGBANG_API_ADDRESS }}
-          export BIGBANG_API_PORT=${{ vars.BIGBANG_API_PORT }}
           export BIGBANG_TLS_ENABLED=${{ vars.BIGBANG_TLS_ENABLED }}
           export BIGBANG_GRPC_NODE_COUNT=1
+          export BIGBANG_REST_NODE_COUNT=1
           export MONGODB_HOSTS=${{ vars.MONGODB_HOSTS }}
           export MONGODB_USERNAME=${{ secrets.MONGODB_USERNAME }}
           export MONGODB_PASSWORD=${{ secrets.MONGODB_PASSWORD }}
