@@ -6,37 +6,57 @@ import "google/protobuf/struct.proto";
 
 option go_package = ".;bridge";
 
-// İlk servis: Snapshot key'lerini döner
 service SnapshotKeyService {
   rpc GetSnapshotKeys(Empty) returns (SnapshotKeyList);
 }
 
-// İkinci servis: Belirli bir key için kaynakları döner
 service SnapshotResourceService {
   rpc GetSnapshotResources(SnapshotKey) returns (SnapshotResourceList);
 }
 
 service PokeService { rpc Poke(PokeRequest) returns (PokeResponse); }
 
-service ErrorService {
-  rpc GetNodeErrors(NodeErrorRequest) returns (NodeErrorResponse);
+service ActiveClientsService {
+  rpc GetActiveClients(Empty) returns (ActiveClientsResponse);
+  rpc GetActiveClient(NodeRequest) returns (ActiveClientResponse);
 }
 
-message NodeErrorRequest {
-  string node_id = 1; // Node'un ID'si
+message Client {
+  string server_address = 1;
+  string node_id = 2;
+  int64 first_connected = 3;
+  int64 last_seen = 4;
+  int64 connection_count = 5;
+  string client_addr = 6;
+  string local_addr = 7;
+  repeated int64 stream_ids = 8;
+  repeated ErrorEntry errors = 9;
+  int64 request_count = 10;
+}
+
+message ActiveClientsResponse {
+  repeated Client clients = 1;
+}
+
+message ActiveClientResponse {
+  Client client = 1;
+}
+
+message NodeRequest {
+  string node_id = 1;
 }
 
 message ErrorEntry {
-  string message = 1;        // Hata mesajı
-  string resource_id = 2;    // İlgili resource ID'si
-  string response_nonce = 3; // İlgili isteğin nonce değeri
-  int32 count = 4;           // Aynı hatanın tekrar sayısı
-  bool resolved = 5;         // Çözülme durumu
-  string timestamp = 6;      // Hatanın oluşma zamanı (ISO8601 formatında)
+  string message = 1;
+  string resource_id = 2;
+  string response_nonce = 3;
+  int32 count = 4;
+  bool resolved = 5;
+  string timestamp = 6;
 }
 
 message NodeErrorResponse {
-  repeated ErrorEntry errors = 1; // Hata girişlerinin listesi
+  repeated ErrorEntry errors = 1;
 }
 
 message PokeRequest {

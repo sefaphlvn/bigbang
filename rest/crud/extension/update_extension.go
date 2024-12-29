@@ -11,9 +11,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/pkg/resources"
 	"github.com/sefaphlvn/bigbang/rest/crud"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/crud/typedconfigs"
 )
 
 func (extension *AppHandler) UpdateExtensions(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
@@ -40,12 +40,12 @@ func updateResource(ctx context.Context, extension *AppHandler, resource models.
 	}
 	resource.SetVersion(strconv.Itoa(version + 1))
 	newResource := resource.GetResource()
-	validateErr, isErr, err := crud.Validate(resource.GetGeneral().GType, newResource)
+	validateErr, isErr, err := resources.Validate(resource.GetGeneral().GType, newResource)
 	if isErr {
 		return validateErr, err
 	}
 
-	resource.SetTypedConfig(typedconfigs.DecodeSetTypedConfigs(resource, extension.Context.Logger))
+	resource.SetTypedConfig(resources.DecodeSetTypedConfigs(resource, extension.Context.Logger))
 
 	update := bson.M{
 		"$set": bson.M{

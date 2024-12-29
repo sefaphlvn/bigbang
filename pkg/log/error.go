@@ -1,7 +1,6 @@
 package log
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -21,7 +20,6 @@ func NewLogger(appConfig *config.AppConfig) *logrus.Logger {
 
 	logLevel, err := logrus.ParseLevel(appConfig.LogLevel)
 	if err != nil {
-		fmt.Println(appConfig)
 		panic(err)
 	}
 

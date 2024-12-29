@@ -1,8 +1,6 @@
 package models
 
 import (
-	"fmt"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -21,6 +19,8 @@ const (
 func (kt KnownTYPES) String() string {
 	return string(kt)
 }
+
+type ScenarioBody map[string]interface{}
 
 type DBResourceClass interface {
 	GetGeneral() General
@@ -158,7 +158,6 @@ func (d *DBResource) SetVersion(versionRaw interface{}) {
 	version, ok := versionRaw.(string)
 	if !ok {
 		d.Resource.Version = "0"
-		fmt.Println("Warning: versionRaw is not of type string, setting version to empty string.")
 		return
 	}
 	d.Resource.Version = version

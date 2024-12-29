@@ -54,6 +54,7 @@ func (ar *AllResources) processTypedConfigPath(ctx context.Context, pathd models
 			return err
 		}
 		typedConfigStr := string(typedConfigJSON)
+
 		ar.processUpstreamPaths(ctx, tempTypedConfig.Gtype.UpstreamPaths(), &typedConfigStr, tempTypedConfig.ParentName, context, context.Logger)
 
 		typedConfig, err := decodeTypedConfig([]byte(typedConfigStr), tempTypedConfig.Gtype)

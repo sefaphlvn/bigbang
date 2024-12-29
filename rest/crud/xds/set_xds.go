@@ -3,36 +3,21 @@ package xds
 import (
 	"context"
 	"errors"
-	"time"
 
-	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/pkg/resources"
 	"github.com/sefaphlvn/bigbang/rest/crud"
-	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/crud/typedconfigs"
 )
 
 func (xds *AppHandler) SetResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	general := resource.GetGeneral()
-	now := time.Now()
-	general.CreatedAt = primitive.NewDateTimeFromTime(now)
-	general.UpdatedAt = primitive.NewDateTimeFromTime(now)
+	resources.PrepareResource(resource, requestDetails, xds.Context.Logger)
 
-	resource.SetGeneral(&general)
-	validateErr, isErr, err := crud.Validate(resource.GetGeneral().GType, resource.GetResource())
-	if isErr {
-		return validateErr, err
-	}
-
-	resource.SetTypedConfig(typedconfigs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
-	common.DetectSetPermissions(resource, requestDetails)
-
-	collection := xds.Context.Client.Collection(requestDetails.Collection)
-	_, err = collection.InsertOne(ctx, resource)
+	collection := xds.Context.Client.Collection(general.Collection)
+	_, err := collection.InsertOne(ctx, resource)
 	if err != nil {
 		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
 			return nil, errstr.ErrNameAlreadyExists
@@ -52,7 +37,7 @@ func (xds *AppHandler) SetResource(ctx context.Context, resource models.DBResour
 		}
 	}
 
-	return gin.H{"message": "Success", "data": nil}, nil
+	return map[string]interface{}{"message": "Success", "data": nil}, nil
 }
 
 func (xds *AppHandler) createService(ctx context.Context, serviceName string) error {

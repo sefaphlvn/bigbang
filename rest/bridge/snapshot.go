@@ -10,7 +10,7 @@ import (
 )
 
 func (brg *AppHandler) GetSnapshotResources(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
-	md := metadata.Pairs("bigbang-controller", "1")
+	md := metadata.Pairs("nodeid", requestDetails.Name)
 	ctxOut := metadata.NewOutgoingContext(ctx, md)
 	resp, err := brg.SnapshotResource.GetSnapshotResources(ctxOut, &bridge.SnapshotKey{Key: requestDetails.Name})
 	if err != nil {
@@ -20,8 +20,8 @@ func (brg *AppHandler) GetSnapshotResources(ctx context.Context, _ models.DBReso
 	return resp, nil
 }
 
-func (brg *AppHandler) GetSnapshotKeys(ctx context.Context, _ models.DBResourceClass, _ models.RequestDetails) (interface{}, error) {
-	md := metadata.Pairs("bigbang-controller", "1")
+func (brg *AppHandler) GetSnapshotKeys(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+	md := metadata.Pairs("nodeid", requestDetails.Name)
 	ctxOut := metadata.NewOutgoingContext(ctx, md)
 	resp, err := brg.SnapshotKeys.GetSnapshotKeys(ctxOut, &bridge.Empty{})
 	if err != nil {

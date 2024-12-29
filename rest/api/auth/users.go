@@ -182,7 +182,6 @@ func (handler *AppHandler) ListUsers(c *gin.Context) {
 
 	filter := handler.GetProjectFiltersByUser(c, "base_project")
 
-	helper.PrettyPrint(filter)
 	if !handler.CheckUserProjectPermission(c) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "user does not have permission to list of users"})
 		return

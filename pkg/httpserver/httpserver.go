@@ -28,7 +28,7 @@ func NewHTTPServer(router *gin.Engine) *Server {
 
 func (s *Server) Run(config *config.AppConfig, log *logrus.Logger) error {
 	server := &http.Server{
-		Addr:              ":" + config.BigbangRestServerPort,
+		Addr:              ":8099",
 		Handler:           s.Router,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
@@ -41,7 +41,7 @@ func (s *Server) Run(config *config.AppConfig, log *logrus.Logger) error {
 		}
 	}()
 
-	log.Infof("Starting http web server [::]:%s", config.BigbangRestServerPort)
+	log.Info("Starting http web server [::]:8099")
 	<-done
 	log.Info("Http web server stop signal received")
 

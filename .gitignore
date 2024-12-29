@@ -24,3 +24,8 @@ go.work
 .scannerwork
 .env
 .configs/config-local.yaml
+.k8s
+skaffold.yaml
+Dockerfile-local
+kind
+.dev

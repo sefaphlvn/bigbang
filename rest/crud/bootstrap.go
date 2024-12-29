@@ -85,8 +85,8 @@ func createDataConfig(nodeID, authority string, cluster, admin map[string]interf
 						},
 						"initial_metadata": []interface{}{
 							map[string]interface{}{
-								"key":   "bigbang-controller",
-								"value": "1",
+								"key":   "nodeid",
+								"value": nodeID,
 							},
 						},
 					},

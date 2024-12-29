@@ -290,89 +290,126 @@ var PokeService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ErrorService_GetNodeErrors_FullMethodName = "/bridge.ErrorService/GetNodeErrors"
+	ActiveClientsService_GetActiveClients_FullMethodName = "/bridge.ActiveClientsService/GetActiveClients"
+	ActiveClientsService_GetActiveClient_FullMethodName  = "/bridge.ActiveClientsService/GetActiveClient"
 )
 
-// ErrorServiceClient is the client API for ErrorService service.
+// ActiveClientsServiceClient is the client API for ActiveClientsService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ErrorServiceClient interface {
-	GetNodeErrors(ctx context.Context, in *NodeErrorRequest, opts ...grpc.CallOption) (*NodeErrorResponse, error)
+type ActiveClientsServiceClient interface {
+	GetActiveClients(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ActiveClientsResponse, error)
+	GetActiveClient(ctx context.Context, in *NodeRequest, opts ...grpc.CallOption) (*ActiveClientResponse, error)
 }
 
-type errorServiceClient struct {
+type activeClientsServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewErrorServiceClient(cc grpc.ClientConnInterface) ErrorServiceClient {
-	return &errorServiceClient{cc}
+func NewActiveClientsServiceClient(cc grpc.ClientConnInterface) ActiveClientsServiceClient {
+	return &activeClientsServiceClient{cc}
 }
 
-func (c *errorServiceClient) GetNodeErrors(ctx context.Context, in *NodeErrorRequest, opts ...grpc.CallOption) (*NodeErrorResponse, error) {
-	out := new(NodeErrorResponse)
-	err := c.cc.Invoke(ctx, ErrorService_GetNodeErrors_FullMethodName, in, out, opts...)
+func (c *activeClientsServiceClient) GetActiveClients(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ActiveClientsResponse, error) {
+	out := new(ActiveClientsResponse)
+	err := c.cc.Invoke(ctx, ActiveClientsService_GetActiveClients_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ErrorServiceServer is the server API for ErrorService service.
-// All implementations must embed UnimplementedErrorServiceServer
+func (c *activeClientsServiceClient) GetActiveClient(ctx context.Context, in *NodeRequest, opts ...grpc.CallOption) (*ActiveClientResponse, error) {
+	out := new(ActiveClientResponse)
+	err := c.cc.Invoke(ctx, ActiveClientsService_GetActiveClient_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ActiveClientsServiceServer is the server API for ActiveClientsService service.
+// All implementations must embed UnimplementedActiveClientsServiceServer
 // for forward compatibility
-type ErrorServiceServer interface {
-	GetNodeErrors(context.Context, *NodeErrorRequest) (*NodeErrorResponse, error)
-	mustEmbedUnimplementedErrorServiceServer()
+type ActiveClientsServiceServer interface {
+	GetActiveClients(context.Context, *Empty) (*ActiveClientsResponse, error)
+	GetActiveClient(context.Context, *NodeRequest) (*ActiveClientResponse, error)
+	mustEmbedUnimplementedActiveClientsServiceServer()
 }
 
-// UnimplementedErrorServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedErrorServiceServer struct {
+// UnimplementedActiveClientsServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedActiveClientsServiceServer struct {
 }
 
-func (UnimplementedErrorServiceServer) GetNodeErrors(context.Context, *NodeErrorRequest) (*NodeErrorResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetNodeErrors not implemented")
+func (UnimplementedActiveClientsServiceServer) GetActiveClients(context.Context, *Empty) (*ActiveClientsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetActiveClients not implemented")
 }
-func (UnimplementedErrorServiceServer) mustEmbedUnimplementedErrorServiceServer() {}
+func (UnimplementedActiveClientsServiceServer) GetActiveClient(context.Context, *NodeRequest) (*ActiveClientResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetActiveClient not implemented")
+}
+func (UnimplementedActiveClientsServiceServer) mustEmbedUnimplementedActiveClientsServiceServer() {}
 
-// UnsafeErrorServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ErrorServiceServer will
+// UnsafeActiveClientsServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ActiveClientsServiceServer will
 // result in compilation errors.
-type UnsafeErrorServiceServer interface {
-	mustEmbedUnimplementedErrorServiceServer()
+type UnsafeActiveClientsServiceServer interface {
+	mustEmbedUnimplementedActiveClientsServiceServer()
 }
 
-func RegisterErrorServiceServer(s grpc.ServiceRegistrar, srv ErrorServiceServer) {
-	s.RegisterService(&ErrorService_ServiceDesc, srv)
+func RegisterActiveClientsServiceServer(s grpc.ServiceRegistrar, srv ActiveClientsServiceServer) {
+	s.RegisterService(&ActiveClientsService_ServiceDesc, srv)
 }
 
-func _ErrorService_GetNodeErrors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NodeErrorRequest)
+func _ActiveClientsService_GetActiveClients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ErrorServiceServer).GetNodeErrors(ctx, in)
+		return srv.(ActiveClientsServiceServer).GetActiveClients(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ErrorService_GetNodeErrors_FullMethodName,
+		FullMethod: ActiveClientsService_GetActiveClients_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ErrorServiceServer).GetNodeErrors(ctx, req.(*NodeErrorRequest))
+		return srv.(ActiveClientsServiceServer).GetActiveClients(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// ErrorService_ServiceDesc is the grpc.ServiceDesc for ErrorService service.
+func _ActiveClientsService_GetActiveClient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ActiveClientsServiceServer).GetActiveClient(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ActiveClientsService_GetActiveClient_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ActiveClientsServiceServer).GetActiveClient(ctx, req.(*NodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ActiveClientsService_ServiceDesc is the grpc.ServiceDesc for ActiveClientsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var ErrorService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "bridge.ErrorService",
-	HandlerType: (*ErrorServiceServer)(nil),
+var ActiveClientsService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "bridge.ActiveClientsService",
+	HandlerType: (*ActiveClientsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetNodeErrors",
-			Handler:    _ErrorService_GetNodeErrors_Handler,
+			MethodName: "GetActiveClients",
+			Handler:    _ActiveClientsService_GetActiveClients_Handler,
+		},
+		{
+			MethodName: "GetActiveClient",
+			Handler:    _ActiveClientsService_GetActiveClient_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

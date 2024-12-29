@@ -29,7 +29,6 @@ func (s *SnapshotResourceServiceServer) GetSnapshotResources(_ context.Context, 
 		logrus.Errorf("Error getting snapshot for key %s: %v", req.Key, err)
 		return nil, err
 	}
-
 	status := s.context.Cache.Cache.GetStatusInfo(req.Key)
 
 	var numWatches int

@@ -1,10 +1,16 @@
 package bridge
 
 import (
+	"context"
+	"fmt"
 	"log"
+	"net"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/keepalive"
 
 	"github.com/sefaphlvn/bigbang/pkg/bridge"
 	"github.com/sefaphlvn/bigbang/pkg/db"
@@ -16,26 +22,81 @@ type AppHandler struct {
 	SnapshotResource bridge.SnapshotResourceServiceClient
 	SnapshotKeys     bridge.SnapshotKeyServiceClient
 	Poke             bridge.PokeServiceClient
-	Errors           bridge.ErrorServiceClient
+	ActiveClients    bridge.ActiveClientsServiceClient
 }
 
-func NewBridgeHandler(context *db.AppContext) *AppHandler {
-	conn, err := grpc.NewClient("localhost:80", grpc.WithTransportCredentials(insecure.NewCredentials()))
+func ipv4Dialer(ctx context.Context, addr string) (net.Conn, error) {
+	var d net.Dialer
+	conn, err := d.DialContext(ctx, "tcp4", addr)
+	if err != nil {
+		conn, err = d.DialContext(ctx, "tcp6", addr)
+	}
+	return conn, err
+}
+
+func NewBridgeHandler(appCtx *db.AppContext) *AppHandler {
+	conn, err := grpc.NewClient(
+		appCtx.Config.BigbangAddress+":"+appCtx.Config.BigbangPort,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(ipv4Dialer),
+		grpc.WithDisableServiceConfig(),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                10 * time.Second,
+			Timeout:             5 * time.Second,
+			PermitWithoutStream: true,
+		}),
+		grpc.WithAuthority(appCtx.Config.BigbangAddress),
+	)
+
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 
-	ResourcesClient := bridge.NewSnapshotResourceServiceClient(conn)
-	ListenersClient := bridge.NewSnapshotKeyServiceClient(conn)
-	PokeClient := bridge.NewPokeServiceClient(conn)
-	ErrorsClient := bridge.NewErrorServiceClient(conn)
+	if err != nil {
+		log.Fatalf("Failed to connect to gRPC server: %v", err)
+	}
+
+	/* if err := checkHealth(conn); err != nil {
+		log.Fatalf("gRPC server health check failed: %v", err)
+	} */
 
 	return &AppHandler{
-		Context:          context,
+		Context:          appCtx,
 		GRPCConn:         conn,
-		SnapshotResource: ResourcesClient,
-		SnapshotKeys:     ListenersClient,
-		Poke:             PokeClient,
-		Errors:           ErrorsClient,
+		SnapshotResource: bridge.NewSnapshotResourceServiceClient(conn),
+		SnapshotKeys:     bridge.NewSnapshotKeyServiceClient(conn),
+		Poke:             bridge.NewPokeServiceClient(conn),
+		ActiveClients:    bridge.NewActiveClientsServiceClient(conn),
+	}
+}
+
+func checkHealth(conn *grpc.ClientConn) error {
+	healthClient := grpc_health_v1.NewHealthClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	startTime := time.Now()
+	for {
+		resp, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{Service: ""})
+		if err == nil && resp.GetStatus() == grpc_health_v1.HealthCheckResponse_SERVING {
+			fmt.Printf("Health check failed: %v. Retrying...\n", err)
+			return nil
+		}
+
+		fmt.Printf("Health check failed: %v. Retrying...\n", err)
+		if time.Since(startTime) >= 30*time.Second {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return fmt.Errorf("Health check failed after retries within 30 seconds")
+}
+
+func (h *AppHandler) Close() {
+	if h.GRPCConn != nil {
+		h.GRPCConn.Close()
 	}
 }

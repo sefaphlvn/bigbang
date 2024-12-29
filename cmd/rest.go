@@ -14,6 +14,7 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/bridge"
 	"github.com/sefaphlvn/bigbang/rest/crud/custom"
 	"github.com/sefaphlvn/bigbang/rest/crud/extension"
+	"github.com/sefaphlvn/bigbang/rest/crud/scenario"
 	"github.com/sefaphlvn/bigbang/rest/crud/xds"
 	"github.com/sefaphlvn/bigbang/rest/dependency"
 	"github.com/sefaphlvn/bigbang/rest/handlers"
@@ -32,16 +33,17 @@ var restCmd = &cobra.Command{
 	Run: func(_ *cobra.Command, _ []string) {
 		appConfig := config.Read(cfgFile)
 		logger := log.NewLogger(appConfig)
-		db := db.NewMongoDB(appConfig, logger)
-		xdsHandler := xds.NewXDSHandler(db)
-		extensionHandler := extension.NewExtensionHandler(db)
-		customHandler := custom.NewCustomHandler(db)
-		bridgeHandler := bridge.NewBridgeHandler(db)
-		userHandler := auth.NewUserHandler(db)
-		dependencyHandler := dependency.NewDependencyHandler(db)
+		appContext := db.NewMongoDB(appConfig, logger)
+		xdsHandler := xds.NewXDSHandler(appContext)
+		extensionHandler := extension.NewExtensionHandler(appContext)
+		scenarioHandler := scenario.NewScenarioHandler(appContext)
+		customHandler := custom.NewCustomHandler(appContext)
+		bridgeHandler := bridge.NewBridgeHandler(appContext)
+		userHandler := auth.NewUserHandler(appContext)
+		dependencyHandler := dependency.NewDependencyHandler(appContext)
 		dependencyHandler.StartCacheCleanup(1 * time.Minute)
 
-		h := handlers.NewHandler(xdsHandler, extensionHandler, customHandler, userHandler, dependencyHandler, bridgeHandler)
+		h := handlers.NewHandler(xdsHandler, extensionHandler, customHandler, userHandler, dependencyHandler, bridgeHandler, scenarioHandler)
 		r := router.InitRouter(h, logger)
 		if err := server.NewHTTPServer(r).Run(appConfig, logger); err != nil {
 			logger.Fatalf("Server failed to run: %v", err)

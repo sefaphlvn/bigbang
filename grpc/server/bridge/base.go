@@ -1,11 +1,10 @@
 package bridge
 
 import (
-	"github.com/sirupsen/logrus"
-
 	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"
 	"github.com/sefaphlvn/bigbang/pkg/bridge"
 	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 type BaseServiceServer struct {
@@ -50,17 +49,17 @@ func NewPokeServiceServer(context *snapshot.Context, db *db.AppContext) *PokeSer
 	}
 }
 
-// ErrorContext yapısı, hataların merkezi yönetimi için.
-type ErrorServiceServer struct {
-	bridge.UnimplementedErrorServiceServer
-	errorContext *ErrorContext
-	logger       *logrus.Logger
+// ActiveClientsServiceServer service
+type ActiveClientsServiceServer struct {
+	bridge.UnimplementedActiveClientsServiceServer
+	*BaseServiceServer
+	activeClients *models.ActiveClients
 }
 
-// Yeni bir ErrorServiceServer oluşturur.
-func NewErrorServiceServer(ctx *ErrorContext, logger *logrus.Logger) *ErrorServiceServer {
-	return &ErrorServiceServer{
-		errorContext: ctx,
-		logger:       logger,
+// Yeni bir ActiveClientsServiceServer oluşturur.
+func NewActiveClientsServiceServer(context *snapshot.Context, activeClients *models.ActiveClients) *ActiveClientsServiceServer {
+	return &ActiveClientsServiceServer{
+		BaseServiceServer: &BaseServiceServer{context: context},
+		activeClients:     activeClients,
 	}
 }

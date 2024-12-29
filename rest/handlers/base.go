@@ -10,6 +10,7 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/bridge"
 	"github.com/sefaphlvn/bigbang/rest/crud/custom"
 	"github.com/sefaphlvn/bigbang/rest/crud/extension"
+	"github.com/sefaphlvn/bigbang/rest/crud/scenario"
 	"github.com/sefaphlvn/bigbang/rest/crud/xds"
 	"github.com/sefaphlvn/bigbang/rest/dependency"
 
@@ -22,8 +23,9 @@ const (
 )
 
 type (
-	DBFunc  func(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error)
-	DepFunc func(ctx context.Context, requestDetails models.RequestDetails) (*dependency.Graph, error)
+	DBFunc       func(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error)
+	DepFunc      func(ctx context.Context, requestDetails models.RequestDetails) (*dependency.Graph, error)
+	ScenarioFunc func(ctx context.Context, scenario models.ScenarioBody, reqDetails models.RequestDetails) (interface{}, error)
 )
 
 type Handler struct {
@@ -33,9 +35,10 @@ type Handler struct {
 	Auth       *auth.AppHandler
 	dependency *dependency.AppHandler
 	Bridge     *bridge.AppHandler
+	Scenario   *scenario.AppHandler
 }
 
-func NewHandler(xds *xds.AppHandler, extension *extension.AppHandler, custom *custom.AppHandler, auth *auth.AppHandler, dependency *dependency.AppHandler, stats *bridge.AppHandler) *Handler {
+func NewHandler(xds *xds.AppHandler, extension *extension.AppHandler, custom *custom.AppHandler, auth *auth.AppHandler, dependency *dependency.AppHandler, stats *bridge.AppHandler, scenario *scenario.AppHandler) *Handler {
 	return &Handler{
 		XDS:        xds,
 		Extension:  extension,
@@ -43,18 +46,8 @@ func NewHandler(xds *xds.AppHandler, extension *extension.AppHandler, custom *cu
 		Auth:       auth,
 		dependency: dependency,
 		Bridge:     stats,
+		Scenario:   scenario,
 	}
-}
-
-func decodeResource(c *gin.Context) (models.DBResourceClass, error) {
-	var body models.DBResource
-	if c.Request.Method != MethodGet && c.Request.Method != MethodDelete {
-		err := c.BindJSON(&body)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &body, nil
 }
 
 // This function handles a request in the Handler struct.
@@ -64,6 +57,23 @@ func decodeResource(c *gin.Context) (models.DBResourceClass, error) {
 // Finally, it returns the response as a JSON object with the status OK.
 func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 	ctx := c.Request.Context()
+	requestDetails, userDetails := h.getRequestDetails(c)
+
+	if err := checkRole(c, userDetails); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	response, err := h.dynamicFuncs(c, ctx, dbFunc, requestDetails)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error(), "data": response})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) getRequestDetails(c *gin.Context) (models.RequestDetails, models.UserDetails) {
 	userDetails, _ := GetUserDetails(c)
 
 	requestDetails := models.RequestDetails{
@@ -80,24 +90,21 @@ func (h *Handler) handleRequest(c *gin.Context, dbFunc DBFunc) {
 		User:          userDetails,
 	}
 
-	if err := checkRole(c, userDetails); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
-	}
+	return requestDetails, userDetails
+}
 
+func (h *Handler) dynamicFuncs(c *gin.Context, ctx context.Context, dbFunc DBFunc, requestDetails models.RequestDetails) (interface{}, error) {
 	resource, err := decodeResource(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
+		return nil, err
 	}
 
 	response, err := dbFunc(ctx, resource, requestDetails)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error(), "data": response})
-		return
+		return response, err
 	}
 
-	c.JSON(http.StatusOK, response)
+	return response, nil
 }
 
 func GetUserDetails(c *gin.Context) (models.UserDetails, error) {
@@ -231,4 +238,15 @@ func getOptionalParam(c *gin.Context, key string) string {
 		return value
 	}
 	return c.Query(key)
+}
+
+func decodeResource(c *gin.Context) (models.DBResourceClass, error) {
+	var body models.DBResource
+	if c.Request.Method != MethodGet && c.Request.Method != MethodDelete {
+		err := c.BindJSON(&body)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &body, nil
 }

@@ -22,12 +22,26 @@ func ClusterDownstreamFilters(clusterName string) []MongoFilters {
 		{
 			Collection: "filters",
 			Filter: bson.D{
-				{Key: "$and", Value: bson.A{
-					bson.D{{Key: "general.gtype", Value: "envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy"}},
-					bson.D{{Key: "$or", Value: bson.A{
-						bson.D{{Key: "resource.resource.cluster", Value: clusterName}},
-						bson.D{{Key: "resource.resource.weighted_clusters.clusters.name", Value: clusterName}},
-					}}},
+				{Key: "$or", Value: bson.A{
+					bson.D{
+						{Key: "$and", Value: bson.A{
+							bson.D{{Key: "general.gtype", Value: "envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy"}},
+							bson.D{{Key: "$or", Value: bson.A{
+								bson.D{{Key: "resource.resource.cluster", Value: clusterName}},
+								bson.D{{Key: "resource.resource.weighted_clusters.clusters.name", Value: clusterName}},
+							}}},
+						}},
+					},
+					bson.D{
+						{Key: "$and", Value: bson.A{
+							bson.D{{Key: "general.gtype", Value: "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager"}},
+							bson.D{{Key: "$or", Value: bson.A{
+								bson.D{{Key: "resource.resource.route_config.virtual_hosts.routes.route.cluster", Value: clusterName}},
+								bson.D{{Key: "resource.resource.route_config.virtual_hosts.routes.route.weighted_clusters.clusters.name", Value: clusterName}},
+								bson.D{{Key: "resource.resource.route_config.virtual_hosts.request_mirror_policies.cluster", Value: clusterName}},
+							}}},
+						}},
+					},
 				}},
 			},
 		},

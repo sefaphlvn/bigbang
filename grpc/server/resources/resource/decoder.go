@@ -31,7 +31,11 @@ import (
 // - ListenerConfig: a structured representation of the listener configuration
 // - error: an error if any occurred during the decoding process
 func (ar *AllResources) DecodeListener(ctx context.Context, rawListenerResource *models.DBResource, context *db.AppContext, logger *logrus.Logger) {
+	fmt.Println("seeefa")
+	ar.mutex.Lock()
 	ar.UniqueResources = make(map[string]struct{})
+	ar.mutex.Unlock()
+
 	if err := ar.initializeListener(ctx, rawListenerResource, context, logger); err != nil {
 		logger.Fatalf("Error initializing listener: %v", err)
 	}
@@ -56,8 +60,10 @@ func (ar *AllResources) initializeListener(ctx context.Context, rawListenerResou
 	if err != nil {
 		return err
 	}
+	ar.mutex.Lock()
 	ar.SetVersion(newVersion)
 	ar.SetProject(rawListenerResource.General.Project)
+	ar.mutex.Unlock()
 
 	listeners := make([]types.Resource, 0, len(resArray))
 	for _, lstnr := range resArray {
@@ -72,7 +78,10 @@ func (ar *AllResources) initializeListener(ctx context.Context, rawListenerResou
 		listeners = append(listeners, singleListener)
 	}
 
+	ar.mutex.Lock()
 	ar.SetListener(listeners)
+	ar.mutex.Unlock()
+
 	return nil
 }
 
@@ -144,7 +153,10 @@ func (ar *AllResources) addTypedExtensionConfig(typedConfig *anypb.Any, parentNa
 		Name:        parentName,
 		TypedConfig: typedConfig,
 	}
+
+	ar.mutex.Lock()
 	ar.Extensions = append(ar.Extensions, typedExtensionConfig)
+	ar.mutex.Unlock()
 }
 
 // checkAndMarkDuplicate checks for duplicate entries in the provided list and marks them if found.
@@ -316,11 +328,12 @@ func processUpstreamPaths(ctx context.Context, result gjson.Result, upstreamType
 // Returns:
 // - error: an error if any occurred during the addition of the item to the collection
 func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTypes, uniqName string, parentName *string, resourceName string) {
+	ar.mutex.Lock()
+	defer ar.mutex.Unlock()
 	if ar.checkAndMarkDuplicate(uniqName) {
 		fmt.Printf("Skipping duplicate collection of resource: %s", uniqName)
 		return
 	}
-
 	switch gtype {
 	case models.Cluster:
 		if newCluster, ok := proto.Clone(resource).(*cluster.Cluster); ok {
@@ -353,4 +366,5 @@ func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTy
 	default:
 		ar.Extensions = append(ar.Extensions, resource)
 	}
+
 }

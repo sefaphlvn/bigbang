@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strconv"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,6 +14,8 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/rest/crud/common"
+	"github.com/sirupsen/logrus"
 )
 
 type GeneralResponse struct {
@@ -107,4 +110,21 @@ func GetGenerals(ctx context.Context, context *db.AppContext, collectionName str
 	}
 
 	return results, nil
+}
+
+func PrepareResource(resource models.DBResourceClass, requestDetails models.RequestDetails, logger *logrus.Logger) (interface{}, error) {
+	general := resource.GetGeneral()
+	now := time.Now()
+	general.CreatedAt = primitive.NewDateTimeFromTime(now)
+	general.UpdatedAt = primitive.NewDateTimeFromTime(now)
+	resource.SetGeneral(&general)
+	validateErr, isErr, err := Validate(resource.GetGeneral().GType, resource.GetResource())
+	if isErr {
+		return validateErr, err
+	}
+
+	resource.SetTypedConfig(DecodeSetTypedConfigs(resource, logger))
+	common.DetectSetPermissions(resource, requestDetails)
+
+	return resource, nil
 }

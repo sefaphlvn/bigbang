@@ -14,7 +14,10 @@ import (
 type AppHandler crud.Application
 
 func NewXDSHandler(context *db.AppContext) *AppHandler {
-	conn, err := grpc.NewClient("localhost:80", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		context.Config.BigbangAddress+":"+context.Config.BigbangPort,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithAuthority(context.Config.BigbangAddress))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

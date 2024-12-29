@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/metadata"
 
@@ -9,7 +10,8 @@ import (
 )
 
 func PokeNode(ctx context.Context, poke bridge.PokeServiceClient, nodeID, project string) (interface{}, error) {
-	md := metadata.Pairs("bigbang-controller", "1")
+	nodeid := fmt.Sprintf("%s:%s", nodeID, project)
+	md := metadata.Pairs("nodeid", nodeid)
 	ctxOut := metadata.NewOutgoingContext(ctx, md)
 	resp, err := poke.Poke(ctxOut, &bridge.PokeRequest{NodeID: nodeID, Project: project})
 	if err != nil {

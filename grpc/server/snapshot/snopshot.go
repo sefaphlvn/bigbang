@@ -17,14 +17,6 @@ var (
 	ctx  *Context
 )
 
-type Cache struct {
-	Cache cache.SnapshotCache
-}
-
-type Context struct {
-	Cache *Cache
-}
-
 func NewCache(logger *logrus.Logger) *Cache {
 	return &Cache{
 		Cache: cache.NewSnapshotCache(true, cache.IDHash{}, logger),

@@ -13,9 +13,9 @@ import (
 
 	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/pkg/resources"
 	"github.com/sefaphlvn/bigbang/rest/crud"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"github.com/sefaphlvn/bigbang/rest/crud/typedconfigs"
 )
 
 func (xds *AppHandler) UpdateResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
@@ -32,14 +32,13 @@ func (xds *AppHandler) UpdateResource(ctx context.Context, resource models.DBRes
 
 	newResource := resource.GetResource()
 	version, _ := strconv.Atoi(resource.GetVersion().(string))
-	validateErr, isErr, err := crud.Validate(resource.GetGeneral().GType, newResource)
-	//	validateErr, err, isErr := crud.Validate(models.GTypes(resource.GetGeneral().GType), newResource)
+	validateErr, isErr, err := resources.Validate(resource.GetGeneral().GType, newResource)
 	if isErr {
 		return validateErr, err
 	}
 
 	resource.SetVersion(strconv.Itoa(version + 1))
-	resource.SetTypedConfig(typedconfigs.DecodeSetTypedConfigs(resource, xds.Context.Logger))
+	resource.SetTypedConfig(resources.DecodeSetTypedConfigs(resource, xds.Context.Logger))
 
 	update := bson.M{
 		"$set": bson.M{

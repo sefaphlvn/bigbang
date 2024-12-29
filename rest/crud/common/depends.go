@@ -16,7 +16,6 @@ func IsDeletable(ctx context.Context, appCtx *db.AppContext, gtype models.GTypes
 	var deletableNames []string
 
 	for _, filter := range downstreamFilters {
-		fmt.Println("Filter: ", filter)
 		collection := appCtx.Client.Collection(filter.Collection)
 		cursor, err := collection.Find(ctx, filter.Filter, options.Find())
 		if err != nil {

@@ -53,6 +53,7 @@ var Indices = map[string]mongo.IndexModel{
 	"bootstrap":     {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
 	"tls":           {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
 	"projects":      {Keys: bson.M{"projectname": 1}, Options: options.Index().SetUnique(true).SetName("projectname_1")},
+	"grpc_servers":  {Keys: bson.M{"name": 1}, Options: options.Index().SetUnique(true).SetName("name_1")},
 }
 
 func buildMongoDBConnectionString(config *config.AppConfig) string {
@@ -62,17 +63,14 @@ func buildMongoDBConnectionString(config *config.AppConfig) string {
 		Path:   config.MongodbDatabase,
 	}
 
-	// Kullanıcı adı ve parola ayarlanıyor
 	if config.MongodbUsername != "" && config.MongodbPassword != "" {
 		u.User = url.UserPassword(config.MongodbUsername, config.MongodbPassword)
 	}
 
-	// Port ekleniyor (eğer MongodbHosts içinde port yoksa ve MongodbPort belirtilmişse)
 	if !strings.Contains(config.MongodbHosts, ":") && config.MongodbPort != "" {
 		u.Host = fmt.Sprintf("%s:%s", config.MongodbHosts, config.MongodbPort)
 	}
 
-	// Sorgu parametreleri ekleniyor
 	query := url.Values{}
 	if config.MongodbReplicaSet != "" {
 		query.Add("replicaSet", config.MongodbReplicaSet)

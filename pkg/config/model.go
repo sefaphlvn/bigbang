@@ -1,10 +1,9 @@
 package config
 
 type AppConfig struct {
-	BigbangRestServerPort string `mapstructure:"BIGBANG_REST_SERVER_PORT" yaml:"BIGBANG_REST_SERVER_PORT"`
-	BigbangAddress        string `mapstructure:"BIGBANG_ADDRESS" yaml:"BIGBANG_ADDRESS"`
-	BigbangTLSEnabled     string `mapstructure:"BIGBANG_TLS_ENABLED" yaml:"BIGBANG_TLS_ENABLED"`
-	BigbangGrpcPokePort   string `mapstructure:"BIGBANG_GRPC_POKE_PORT" yaml:"BIGBANG_GRPC_POKE_PORT"`
+	BigbangAddress    string `mapstructure:"BIGBANG_ADDRESS" yaml:"BIGBANG_ADDRESS"`
+	BigbangPort       string `mapstructure:"BIGBANG_PORT" yaml:"BIGBANG_PORT"`
+	BigbangTLSEnabled string `mapstructure:"BIGBANG_TLS_ENABLED" yaml:"BIGBANG_TLS_ENABLED"`
 
 	MongodbHosts      string `mapstructure:"MONGODB_HOSTS" yaml:"MONGODB_HOSTS"`
 	MongodbUsername   string `mapstructure:"MONGODB_USERNAME" yaml:"MONGODB_USERNAME"`

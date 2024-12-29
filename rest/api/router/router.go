@@ -28,11 +28,13 @@ func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
 	apiExtension := e.Group("/api/v3/eo")
 	apiResource := e.Group("/api/v3/xds")
 	apiDependency := e.Group("/api/v3/dependency")
+	apiScenario := e.Group("/api/v3/scenario")
 	apiBridge := e.Group("/api/v3/bridge")
 
 	apiSettings.Use(middleware.Authentication())
 	apiCustom.Use(middleware.Authentication())
 	apiExtension.Use(middleware.Authentication())
+	apiScenario.Use(middleware.Authentication())
 	apiResource.Use(middleware.Authentication())
 	apiDependency.Use(middleware.Authentication())
 
@@ -40,6 +42,7 @@ func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
 	initSettingRoutes(apiSettings, h)
 	initCustomRoutes(apiCustom, h)
 	initExtensionRoutes(apiExtension, h)
+	initScenarioRoutes(apiScenario, h)
 	initResourceRoutes(apiResource, h)
 	initDependencyRoutes(apiDependency, h)
 	initBridgeRoutes(apiBridge, h)
@@ -68,7 +71,7 @@ func initBridgeRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		{"GET", "/stats/snapshot-keys", h.GetSnapshotKeys},
 		{"GET", "/stats/:name", h.GetSnapshotResources},
 		{"POST", "/poke/:name", h.GetSnapshotResources},
-		{"GET", "/errors", h.GetErrors},
+		{"GET", "/snapshot_details", h.GetSnapshotDetails},
 	}
 
 	initRoutes(rg, routes)
@@ -111,6 +114,20 @@ func initCustomRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 
 		{"GET", "/count/all", h.GetResourceCounts},
 		{"GET", "/count/filters", h.GetFilterCounts},
+	}
+
+	initRoutes(rg, routes)
+}
+
+func initScenarioRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
+	routes := []struct {
+		method  string
+		path    string
+		handler gin.HandlerFunc
+	}{
+		{"GET", "/scenario_list", h.GetScenarios},
+		{"GET", "/scenario", h.GetScenario},
+		{"POST", "/scenario", h.SetScenario},
 	}
 
 	initRoutes(rg, routes)
