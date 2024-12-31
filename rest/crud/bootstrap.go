@@ -125,6 +125,7 @@ func createGeneralConfig(listenerGeneral models.General, createdAt, updatedAt pr
 		"gtype":                "envoy.config.bootstrap.v3.Bootstrap",
 		"canonical_name":       "config.bootstrap.v3.Bootstrap",
 		"category":             "bootstrap",
+		"collection":           "bootstrap",
 		"project":              listenerGeneral.Project,
 		"permissions":          map[string]interface{}{"users": []interface{}{}, "groups": []interface{}{}},
 		"additional_resources": []interface{}{},
@@ -140,13 +141,6 @@ func createTLSTransportSocket() map[string]interface{} {
 		"name": "envoy.transport_sockets.tls",
 		"typed_config": map[string]interface{}{
 			"@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext",
-			"common_tls_context": map[string]interface{}{
-				"validation_context": map[string]interface{}{
-					"trusted_ca": map[string]interface{}{
-						"filename": "/etc/ssl/certs/ca-certificates.crt",
-					},
-				},
-			},
 		},
 	}
 }

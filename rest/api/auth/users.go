@@ -25,6 +25,40 @@ type UserWithGroups struct {
 	Permissions *models.Permission `json:"permissions"`
 }
 
+func (handler *AppHandler) DemoAccount(c *gin.Context) {
+	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
+	var userWG UserWithGroups
+	var status int
+	var msg, userID string
+	email := c.Param("email")
+
+	if checkUserByEmailAndIP(userCollection, email, c.ClientIP()) {
+		respondWithJSON(c, http.StatusBadRequest, "Email or clientIP already exists", "0")
+		return
+	}
+
+	clientIP := c.ClientIP()
+	baseProject := "6772a722d9175fe95968628b"
+	ctx := c.Request.Context()
+	user := "demo" + helper.GenerateUniqueId(4)
+	userWG.Username = &user
+	passwd := helper.GenerateUniqueId(8)
+	userWG.Password = &passwd
+	userWG.Email = &email
+	userWG.Projects = []string{baseProject}
+	userWG.BaseProject = &baseProject
+	role := models.RoleEditor
+	userWG.Role = &role
+	userWG.ClientIP = &clientIP
+	status, msg, userID = handler.CreateUser(ctx, userCollection, userWG)
+
+	if status == http.StatusOK {
+		SendEmail(user, passwd, email)
+	}
+
+	respondWithJSON(c, status, msg, userID)
+}
+
 func (handler *AppHandler) SetUpdateUser(c *gin.Context) {
 	ctx := c.Request.Context()
 	var userCollection *mongo.Collection = handler.Context.Client.Collection("users")
@@ -108,18 +142,15 @@ func (handler *AppHandler) CreateUser(ctx context.Context, userCollection *mongo
 func (handler *AppHandler) UpdateUser(c *gin.Context, userCollection *mongo.Collection, userWG UserWithGroups, userID string) (int, string) {
 	ctx := c.Request.Context()
 
-	// Kullanıcı yetkilendirme kontrolünü ayrı bir fonksiyona taşı
 	if status, message := handler.checkUserAuthorization(c, userID); status != http.StatusOK {
 		return status, message
 	}
 
-	// Update alanlarını oluşturmak için yardımcı fonksiyon
 	update := bson.M{"$set": handler.buildUpdateFields(userWG)}
 
 	filter := handler.GetProjectFiltersByUser(c, "base_project")
 	filter["user_id"] = userID
 
-	// Kullanıcıyı güncelle
 	result, err := userCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Sprintf("error updating user: %v", err)
@@ -132,7 +163,6 @@ func (handler *AppHandler) UpdateUser(c *gin.Context, userCollection *mongo.Coll
 	return http.StatusOK, "user successfully updated"
 }
 
-// Yetkilendirme kontrolünü yapan yardımcı fonksiyon
 func (handler *AppHandler) checkUserAuthorization(c *gin.Context, userID string) (int, string) {
 	if !handler.OwnerGuard(c, userID) {
 		return http.StatusUnauthorized, errstr.ErrUserUpdatePermError.Error()
@@ -140,7 +170,6 @@ func (handler *AppHandler) checkUserAuthorization(c *gin.Context, userID string)
 	return http.StatusOK, ""
 }
 
-// Kullanıcı güncelleme alanlarını oluşturan yardımcı fonksiyon
 func (handler *AppHandler) buildUpdateFields(userWG UserWithGroups) bson.M {
 	setMap := bson.M{}
 
@@ -463,4 +492,21 @@ func isOwnerUpdatingNonOwner(currentUserRole models.Role, user models.User) bool
 func isAdminUpdatingNonOwner(currentUserRole models.Role, user models.User) bool {
 	return currentUserRole == models.RoleAdmin &&
 		(*user.Role == models.RoleAdmin || *user.Role == models.RoleViewer || *user.Role == models.RoleEditor)
+}
+
+func checkUserByEmailAndIP(userCollection *mongo.Collection, email, clientIP string) bool {
+	filter := bson.M{
+		"$or": []bson.M{
+			{"email": email},
+			{"client_ip": clientIP},
+		},
+	}
+
+	var user models.User
+	err := userCollection.FindOne(context.TODO(), filter).Decode(&user)
+	if err != nil {
+		return false
+	}
+
+	return true
 }

@@ -24,6 +24,7 @@ jobs:
           export BIGBANG_TLS_ENABLED=${{ vars.BIGBANG_TLS_ENABLED }}
           export BIGBANG_GRPC_NODE_COUNT=1
           export BIGBANG_REST_NODE_COUNT=1
+          export BIGBANG_ENABLE_DEMO=${{ vars.BIGBANG_ENABLE_DEMO }}
           export MONGODB_HOSTS=${{ vars.MONGODB_HOSTS }}
           export MONGODB_USERNAME=${{ secrets.MONGODB_USERNAME }}
           export MONGODB_PASSWORD=${{ secrets.MONGODB_PASSWORD }}
@@ -36,7 +37,6 @@ jobs:
           export LOG_LEVEL=${{ vars.LOG_LEVEL }}
           export LOG_FORMATTER=${{ vars.LOG_FORMATTER }}
           export LOG_REPORTCALLER=${{ vars.LOG_REPORTCALLER }}
-          
           
           envsubst < .configs/config-prod.yaml > .configs/config-prod.yaml.filled
           mv .configs/config-prod.yaml.filled .configs/config-prod.yaml

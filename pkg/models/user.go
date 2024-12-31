@@ -32,6 +32,7 @@ type User struct {
 	RefreshToken *string            `json:"refresh_token" bson:"refresh_token"`
 	CreatedAt    primitive.DateTime `json:"created_at" bson:"created_at"`
 	UpdatedAt    primitive.DateTime `json:"updated_at" bson:"updated_at"`
+	ClientIP     *string            `json:"client_ip" bson:"client_ip"`
 	UserID       string             `json:"user_id" bson:"user_id"`
 }
 

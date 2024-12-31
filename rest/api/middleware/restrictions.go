@@ -15,6 +15,7 @@ var AllowedEndpoints = []string{
 	"/logout",
 	"/refresh",
 	"/auth/login",
+	"/auth/demo/:email",
 	"/api/v3/setting/user_list",
 	"/api/v3/setting/user/:user_id",
 	"/api/v3/setting/group_list",

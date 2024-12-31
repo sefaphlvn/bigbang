@@ -1,6 +1,8 @@
 package router
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
@@ -47,16 +49,28 @@ func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
 	initDependencyRoutes(apiDependency, h)
 	initBridgeRoutes(apiBridge, h)
 
+	logRoutes(e)
 	return e
 }
 
 func initAuthRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
+	enableDemo := h.Auth.Context.Config.BigbangEnableDemo == "true"
 	routes := []struct {
 		method  string
 		path    string
 		handler gin.HandlerFunc
 	}{
 		{"POST", "/login", h.Auth.Login()},
+	}
+
+	if enableDemo {
+		routes = append(routes, struct {
+			method  string
+			path    string
+			handler gin.HandlerFunc
+		}{
+			"POST", "/demo/:email", h.Auth.DemoAccount,
+		})
 	}
 
 	initRoutes(rg, routes)
@@ -200,5 +214,12 @@ func initRoutes(rg *gin.RouterGroup, routes []struct {
 		case "DELETE":
 			rg.DELETE(route.path, route.handler)
 		}
+	}
+}
+
+func logRoutes(r *gin.Engine) {
+	log.Println("Registered Routes:")
+	for _, route := range r.Routes() {
+		log.Printf("Method: %s, Path: %s, Handler: %s\n", route.Method, route.Path, route.Handler)
 	}
 }

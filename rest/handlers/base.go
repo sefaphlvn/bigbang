@@ -94,7 +94,7 @@ func (h *Handler) getRequestDetails(c *gin.Context) (models.RequestDetails, mode
 }
 
 func (h *Handler) dynamicFuncs(c *gin.Context, ctx context.Context, dbFunc DBFunc, requestDetails models.RequestDetails) (interface{}, error) {
-	resource, err := decodeResource(c)
+	resource, err := decodeR(c)
 	if err != nil {
 		return nil, err
 	}
@@ -240,13 +240,18 @@ func getOptionalParam(c *gin.Context, key string) string {
 	return c.Query(key)
 }
 
-func decodeResource(c *gin.Context) (models.DBResourceClass, error) {
+func decodeR(c *gin.Context) (models.DBResourceClass, error) {
 	var body models.DBResource
 	if c.Request.Method != MethodGet && c.Request.Method != MethodDelete {
-		err := c.BindJSON(&body)
-		if err != nil {
-			return nil, err
-		}
+		return decodeResource(c)
+	}
+	return &body, nil
+}
+
+func decodeResource(c *gin.Context) (models.DBResourceClass, error) {
+	var body models.DBResource
+	if err := c.BindJSON(&body); err != nil {
+		return nil, err
 	}
 	return &body, nil
 }

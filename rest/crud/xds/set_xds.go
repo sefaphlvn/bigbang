@@ -2,6 +2,7 @@ package xds
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,7 +27,7 @@ func (xds *AppHandler) SetResource(ctx context.Context, resource models.DBResour
 	}
 
 	if general.GType == models.Listener {
-		if err := xds.createBootstrap(ctx, general); err != nil {
+		if err := xds.createBootstrap(ctx, general, requestDetails); err != nil {
 			return nil, err
 		}
 
@@ -55,10 +56,16 @@ func (xds *AppHandler) createService(ctx context.Context, serviceName string) er
 	return nil
 }
 
-func (xds *AppHandler) createBootstrap(ctx context.Context, listenerGeneral models.General) error {
+func (xds *AppHandler) createBootstrap(ctx context.Context, listenerGeneral models.General, requestDetails models.RequestDetails) error {
 	collection := xds.Context.Client.Collection("bootstrap")
 	bootstrap := crud.GetBootstrap(listenerGeneral, xds.Context.Config)
-	_, err := collection.InsertOne(ctx, bootstrap)
+	resource, err := DecodeFromMap(bootstrap)
+	resources.PrepareResource(resource, requestDetails, xds.Context.Logger)
+	if err != nil {
+		return err
+	}
+
+	_, err = collection.InsertOne(ctx, resource)
 	if err != nil {
 		if er := new(mongo.WriteException); errors.As(err, &er) && er.WriteErrors[0].Code == 11000 {
 			return errstr.ErrNameAlreadyExists
@@ -67,4 +74,18 @@ func (xds *AppHandler) createBootstrap(ctx context.Context, listenerGeneral mode
 	}
 
 	return nil
+}
+
+func DecodeFromMap(data map[string]interface{}) (models.DBResourceClass, error) {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	var resource models.DBResource
+	if err := json.Unmarshal(jsonData, &resource); err != nil {
+		return nil, err
+	}
+
+	return &resource, nil
 }
