@@ -37,7 +37,7 @@ const RouteWithDirectVirtualHost = `
 						}
 					],
 					"name": "virtualhost1",
-					"domains": {{ .Data.domains | toJson }},
+					"domains": {{ .Data.domains | toJson }}
 				}
 			]
 		}
@@ -85,13 +85,13 @@ const RouteWithVHDS = `
 						"grpc_services": [
 							{
 								"envoy_grpc": {
-									"cluster_name": "xds_cluster"
+									"cluster_name": "bigbang-controller"
 								},
 								"timeout": "2.0s",
 								"initial_metadata": [
 									{
 										"key": "nodeid",
-										"value": "1"
+										"value": "__NODEID__"
 									}
 								]
 							}

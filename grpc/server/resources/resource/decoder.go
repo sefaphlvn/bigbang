@@ -9,6 +9,7 @@ import (
 	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
@@ -31,13 +32,12 @@ import (
 // - ListenerConfig: a structured representation of the listener configuration
 // - error: an error if any occurred during the decoding process
 func (ar *AllResources) DecodeListener(ctx context.Context, rawListenerResource *models.DBResource, context *db.AppContext, logger *logrus.Logger) {
-	fmt.Println("seeefa")
 	ar.mutex.Lock()
 	ar.UniqueResources = make(map[string]struct{})
 	ar.mutex.Unlock()
 
 	if err := ar.initializeListener(ctx, rawListenerResource, context, logger); err != nil {
-		logger.Fatalf("Error initializing listener: %v", err)
+		logger.Errorf("Error initializing listener: %v", err)
 	}
 
 	ar.processConfigDiscoveries(ctx, rawListenerResource.General.ConfigDiscovery, context, logger)
@@ -125,6 +125,21 @@ func (ar *AllResources) processExtension(ctx context.Context, extension *models.
 			uniqKey := fmt.Sprintf("%s__%s", extension.Name, extension.GType.String())
 			ar.AddToCollection(extConfig, extension.GType, uniqKey, &parentName, extension.Name)
 		} else {
+			// Detect vhds and add nodeid to inital metadata
+			if extension.GType == models.HTTPConnectionManager {
+				hcmConfig, ok := extConfig.(*hcm.HttpConnectionManager)
+				if !ok {
+					logger.Errorf("Error casting extConfig to HttpConnectionManager")
+					continue
+				}
+
+				if routeConfig := hcmConfig.GetRouteConfig(); routeConfig != nil {
+					if vhds := routeConfig.GetVhds(); vhds != nil {
+						ar.UpdateVhdsMetadataNodeID(vhds)
+					}
+				}
+			}
+
 			typedConfigAsAny, err := anypb.New(extConfig)
 			if err != nil {
 				logger.Errorf("Error converting extTypedConfig to *anypb.Any for %s: %v", parentName, err)
@@ -253,6 +268,7 @@ func (ar *AllResources) processTypedConfigsAndUpstream(ctx context.Context, prot
 		logger.Errorf("Error unmarshalling to proto message after processing nested configs: %v", err)
 		return err
 	}
+
 	return nil
 }
 
@@ -334,6 +350,7 @@ func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTy
 		fmt.Printf("Skipping duplicate collection of resource: %s", uniqName)
 		return
 	}
+
 	switch gtype {
 	case models.Cluster:
 		if newCluster, ok := proto.Clone(resource).(*cluster.Cluster); ok {
@@ -343,6 +360,9 @@ func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTy
 		}
 	case models.Route:
 		if newRoute, ok := proto.Clone(resource).(*route.RouteConfiguration); ok {
+			if vhds := newRoute.GetVhds(); vhds != nil {
+				ar.UpdateVhdsMetadataNodeID(vhds)
+			}
 			ar.Route = append(ar.Route, newRoute)
 		} else {
 			fmt.Printf("Type assertion failed for RouteConfiguration")
@@ -366,5 +386,10 @@ func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTy
 	default:
 		ar.Extensions = append(ar.Extensions, resource)
 	}
+}
 
+func (ar *AllResources) UpdateVhdsMetadataNodeID(vhds *route.Vhds) {
+	if vhdsConfig := vhds.ConfigSource.GetApiConfigSource(); vhdsConfig != nil {
+		vhdsConfig.GrpcServices[0].InitialMetadata[0].Value = ar.NodeID
+	}
 }

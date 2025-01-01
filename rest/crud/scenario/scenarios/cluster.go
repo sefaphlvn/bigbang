@@ -81,7 +81,7 @@ const EdsCluster = `
 			"eds_cluster_config": {
 				"eds_config": {
 					"ads": {},
-					"initial_fetch_timeout": "10.0s",
+					"initial_fetch_timeout": "2.0s",
 					"resource_api_version": "V3"
 				},
 				"service_name": "{{ .Data.eds_config }}"
