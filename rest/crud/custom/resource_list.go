@@ -66,6 +66,12 @@ func buildFilters(details models.RequestDetails) bson.M {
 		filters["general.canonical_name"] = details.CanonicalName
 	}
 
+	if details.Metadata != nil {
+		if name, ok := details.Metadata["non_eds_cluster"]; ok && name == "true" {
+			filters["resource.resource.type"] = bson.M{"$ne": "EDS"}
+		}
+	}
+
 	return filters
 }
 

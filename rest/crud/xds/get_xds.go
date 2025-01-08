@@ -25,8 +25,6 @@ func (xds *AppHandler) GetResource(ctx context.Context, resource models.DBResour
 		return nil, errstr.ErrUnknownDBError
 	}
 
-	// GetSnapshotsFromServer("localhost:18000")
-
 	err := result.Decode(resource)
 	if err != nil {
 		return nil, err

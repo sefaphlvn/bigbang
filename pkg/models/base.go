@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -34,6 +36,9 @@ type DBResourceClass interface {
 	SetTypedConfig(typedConfig []*TypedConfig)
 	SetVersion(versionRaw interface{})
 	SetPermissions(permissions *Permissions)
+
+	SetBootstrapClusters(clusters []interface{})
+	SetBootstrapAccessLoggers(accessLoggers []interface{})
 }
 
 type RequestDetails struct {
@@ -115,6 +120,11 @@ type TypedConfig struct {
 	ParentName    string `json:"parent_name" bson:"parent_name"`
 }
 
+type TC struct {
+	Name        string                 `json:"name" bson:"name"`
+	TypedConfig map[string]interface{} `json:"typed_config" bson:"typed_config"`
+}
+
 type DBResource struct {
 	ID       primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	General  General            `json:"general" bson:"general"`
@@ -165,6 +175,39 @@ func (d *DBResource) SetVersion(versionRaw interface{}) {
 
 func (d *DBResource) SetResource(resource interface{}) {
 	d.Resource.Resource = resource
+}
+
+func (d *DBResource) SetBootstrapClusters(clusters []interface{}) {
+	resourceMap, ok := d.Resource.Resource.(primitive.M)
+	if !ok {
+		fmt.Errorf("failed to parse Resource.Resource as map[string]interface{}, got type: %T", d.Resource.Resource)
+	}
+
+	//fmt.Printf("Type: %T\nValue: %+v\n", resourceMap, resourceMap)
+	staticResources, ok := resourceMap["static_resources"].(primitive.M)
+	if !ok || staticResources == nil {
+		staticResources = make(primitive.M)
+	}
+
+	staticResources["clusters"] = clusters
+	resourceMap["static_resources"] = staticResources
+	d.Resource.Resource = resourceMap
+}
+
+func (d *DBResource) SetBootstrapAccessLoggers(accessLoggers []interface{}) {
+	resourceMap, ok := d.Resource.Resource.(primitive.M)
+	if !ok {
+		fmt.Errorf("failed to parse Resource.Resource as map[string]interface{}, got type: %T", d.Resource.Resource)
+	}
+
+	admin, ok := resourceMap["admin"].(primitive.M)
+	if !ok || admin == nil {
+		admin = make(primitive.M)
+	}
+
+	admin["access_log"] = accessLoggers
+	resourceMap["admin"] = admin
+	d.Resource.Resource = resourceMap
 }
 
 func (d *DBResource) SetGeneral(general *General) {

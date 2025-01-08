@@ -67,8 +67,7 @@ func createClusterConfig(config *config.AppConfig) map[string]interface{} {
 func createDataConfig(nodeID, authority string, cluster, admin map[string]interface{}) map[string]interface{} {
 	return map[string]interface{}{
 		"node": map[string]interface{}{
-			"id":      nodeID,
-			"cluster": "aadsa",
+			"id": nodeID,
 		},
 		"static_resources": map[string]interface{}{
 			"clusters": []interface{}{cluster},
@@ -100,16 +99,9 @@ func createDataConfig(nodeID, authority string, cluster, admin map[string]interf
 
 func createAdminConfig() map[string]interface{} {
 	return map[string]interface{}{
-		"access_log": []interface{}{
-			map[string]interface{}{
-				"name": "envoy.access_loggers.stdout",
-				"typed_config": map[string]interface{}{
-					"@type": "type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog",
-				},
-			},
-		},
 		"address": map[string]interface{}{
 			"socket_address": map[string]interface{}{
+				"Protocol":   "TCP",
 				"address":    "127.0.0.1",
 				"port_value": 9090,
 			},

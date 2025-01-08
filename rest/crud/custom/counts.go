@@ -46,7 +46,7 @@ func (custom *AppHandler) GetFilterCounts(ctx context.Context, _ models.DBResour
 		},
 		{
 			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$general.canonical_name"},
+				{Key: "_id", Value: "$general.category"},
 				{Key: "count", Value: bson.D{
 					{Key: "$sum", Value: 1},
 				}},

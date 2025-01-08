@@ -59,5 +59,13 @@ func (xds *AppHandler) UpdateResource(ctx context.Context, resource models.DBRes
 	project := resource.GetGeneral().Project
 	changedResources := crud.HandleResourceChange(ctx, resource, requestDetails, xds.Context, project, xds.Poke)
 
+	if requestDetails.SaveOrPublish == "download" {
+		if bootstrap, err := xds.DownloadBootstrap(ctx, requestDetails); err != nil {
+			return gin.H{"message": "Error", "data": bootstrap}, err
+		} else {
+			return gin.H{"message": "Success", "data": bootstrap}, nil
+		}
+	}
+
 	return gin.H{"message": "Success", "data": changedResources}, nil
 }
