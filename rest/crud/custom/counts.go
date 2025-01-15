@@ -37,6 +37,10 @@ func (custom *AppHandler) GetResourceCounts(ctx context.Context, _ models.DBReso
 }
 
 func (custom *AppHandler) GetFilterCounts(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+	groupKey := "$general.canonical_name"
+	if requestDetails.Category != "" {
+		groupKey = "$general.category"
+	}
 	collection := custom.Context.Client.Collection(requestDetails.Collection)
 	pipeline := mongo.Pipeline{
 		{
@@ -46,7 +50,7 @@ func (custom *AppHandler) GetFilterCounts(ctx context.Context, _ models.DBResour
 		},
 		{
 			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$general.category"},
+				{Key: "_id", Value: groupKey},
 				{Key: "count", Value: bson.D{
 					{Key: "$sum", Value: 1},
 				}},
