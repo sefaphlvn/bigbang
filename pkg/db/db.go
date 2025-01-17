@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -123,6 +124,10 @@ func NewMongoDB(config *config.AppConfig, logger *logrus.Logger) *AppContext {
 
 	if err := createDefaultProject(ctx, context, userID); err != nil {
 		logger.Infof("Default project not created: %s", err)
+	}
+
+	if err := createDefaultCluster(ctx, context); err != nil {
+		logger.Infof("Default cluster not created: %s", err)
 	}
 
 	return context
@@ -323,6 +328,91 @@ func createDefaultProject(ctx context.Context, db *AppContext, userID string) er
 		return fmt.Errorf("failed to check for default project: %w", err)
 	default:
 		db.Logger.Info("default project already exists")
+	}
+
+	return nil
+}
+
+func createDefaultCluster(ctx context.Context, db *AppContext) error {
+	collection := db.Client.Collection("clusters")
+	var cluster models.Resource
+	err := collection.FindOne(ctx, bson.M{"general.name": "bigbang-controller"}).Decode(&cluster)
+
+	switch {
+	case errors.Is(err, mongo.ErrNoDocuments):
+		now := time.Now()
+		createdAt := primitive.NewDateTimeFromTime(now)
+		updatedAt := primitive.NewDateTimeFromTime(now)
+
+		portValue, err := strconv.Atoi(db.Config.BigbangPort)
+		if err != nil {
+			return fmt.Errorf("failed to convert port to integer: %w", err)
+		}
+
+		defaultCluster := bson.M{
+			"general": bson.M{
+				"name":           "bigbang-controller",
+				"version":        "shared",
+				"type":           "cluster",
+				"gtype":          "envoy.config.cluster.v3.Cluster",
+				"project":        "shared",
+				"collection":     "clusters",
+				"canonical_name": "config.cluster.v3.Cluster",
+				"category":       "cluster",
+				"metadata": bson.M{
+					"from_template": true,
+				},
+				"permissions": bson.M{
+					"users":  []string{},
+					"groups": []string{},
+				},
+				"created_at": createdAt,
+				"updated_at": updatedAt,
+			},
+			"resource": bson.M{
+				"version": "1",
+				"resource": bson.M{
+					"name":            "bigbang-controller",
+					"type":            "STRICT_DNS",
+					"connect_timeout": "2s",
+					"load_assignment": bson.M{
+						"cluster_name": "bigbang-controller",
+						"endpoints": []bson.M{
+							{
+								"lb_endpoints": []bson.M{
+									{
+										"endpoint": bson.M{
+											"address": bson.M{
+												"socket_address": bson.M{
+													"address":    db.Config.BigbangAddress,
+													"port_value": portValue,
+													"protocol":   "TCP",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		_, err = collection.InsertOne(ctx, defaultCluster)
+		if err != nil {
+			if mongo.IsDuplicateKeyError(err) {
+				db.Logger.Infof("default cluster already exists: %v", err)
+			} else {
+				return fmt.Errorf("failed to create default cluster: %w", err)
+			}
+		} else {
+			db.Logger.Info("default cluster created successfully")
+		}
+	case err != nil:
+		return fmt.Errorf("failed to check for default cluster: %w", err)
+	default:
+		db.Logger.Info("default cluster already exists")
 	}
 
 	return nil

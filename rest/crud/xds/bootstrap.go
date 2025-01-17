@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/sefaphlvn/bigbang/pkg/errstr"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
@@ -13,6 +14,21 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+type CollectorFunc func(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (models.DBResourceClass, error)
+
+type BootstrapCollector struct {
+	collectors map[string]CollectorFunc
+}
+
+func (xds *AppHandler) NewBootstrapCollector() *BootstrapCollector {
+	return &BootstrapCollector{
+		collectors: map[string]CollectorFunc{
+			"clusters":    xds.collectBootstrapClusters,
+			"access_logs": xds.collectAccessLoggers,
+		},
+	}
+}
 
 func (xds *AppHandler) DownloadBootstrap(ctx context.Context, requestDetails models.RequestDetails) (interface{}, error) {
 	resource := &models.DBResource{}
@@ -28,23 +44,60 @@ func (xds *AppHandler) DownloadBootstrap(ctx context.Context, requestDetails mod
 		return nil, errstr.ErrUnknownDBError
 	}
 
-	err := result.Decode(resource)
-	if err != nil {
+	if err := result.Decode(resource); err != nil {
 		return nil, err
 	}
 
-	bootstrap, err := xds.collectBootstrapClusters(ctx, resource, requestDetails)
-	if err != nil {
-		return nil, err
+	collector := xds.NewBootstrapCollector()
+	return collector.CollectAll(ctx, resource, requestDetails)
+}
+
+func (bc *BootstrapCollector) CollectAll(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (models.DBResourceClass, error) {
+	var err error
+	bootstrap := resource
+
+	for name, collector := range bc.collectors {
+		if shouldSkip, err := bc.shouldSkipCollection(bootstrap, name); err != nil {
+			return nil, fmt.Errorf("checking %s collection: %w", name, err)
+		} else if shouldSkip {
+			continue
+		}
+
+		bootstrap, err = collector(ctx, bootstrap, requestDetails)
+		if err != nil {
+			return nil, fmt.Errorf("collecting %s: %w", name, err)
+		}
 	}
 
-	bootstrap, err = xds.collectAccessLoggers(ctx, bootstrap, requestDetails)
-	if err != nil {
+	return bootstrap, nil
+}
 
-		return nil, err
+func (bc *BootstrapCollector) shouldSkipCollection(resource models.DBResourceClass, collectorName string) (bool, error) {
+	bootstrapMap, ok := resource.GetResource().(primitive.M)
+	if !ok {
+		return false, fmt.Errorf("invalid bootstrap format")
 	}
 
-	return bootstrap, err
+	switch collectorName {
+	case "access_logs":
+		admin, ok := bootstrapMap["admin"].(primitive.M)
+		if !ok {
+			return true, nil
+		}
+		_, hasAccessLog := admin["access_log"].(primitive.A)
+		return !hasAccessLog, nil
+
+	case "clusters":
+		staticResources, ok := bootstrapMap["static_resources"].(primitive.M)
+		if !ok {
+			return true, nil
+		}
+		_, hasClusters := staticResources["clusters"].(primitive.A)
+		return !hasClusters, nil
+
+	default:
+		return false, fmt.Errorf("unknown collector: %s", collectorName)
+	}
 }
 
 func (xds *AppHandler) collectBootstrapClusters(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (models.DBResourceClass, error) {
@@ -91,7 +144,10 @@ func (xds *AppHandler) GetNonEdsClusters(ctx context.Context, clusterNames []str
 	collection := xds.Context.Client.Collection("clusters")
 	results := []interface{}{}
 	for _, clusterName := range clusterNames {
-		filter := bson.M{"general.name": clusterName, "general.project": requestDetails.Project}
+		filter := bson.M{"general.name": clusterName}
+		filter = common.AddUserFilter(requestDetails, filter)
+
+		helper.PrettyPrint(filter)
 		result := collection.FindOne(ctx, filter)
 
 		if result.Err() != nil {
