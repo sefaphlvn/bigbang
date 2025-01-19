@@ -43,6 +43,7 @@ func (extension *AppHandler) GetExtension(ctx context.Context, resource models.D
 }
 
 func (extension *AppHandler) GetOtherExtension(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+	fmt.Println("requestDetails.Version", requestDetails.Version)
 	return getExtensionByFilter(ctx, resource, extension, requestDetails, bson.M{
 		"general.name":    requestDetails.Name,
 		"general.project": requestDetails.Project,
@@ -51,12 +52,21 @@ func (extension *AppHandler) GetOtherExtension(ctx context.Context, resource mod
 
 func getExtensionByFilter(ctx context.Context, resource models.DBResourceClass, extension *AppHandler, requestDetails models.RequestDetails, filter bson.M) (interface{}, error) {
 	collection := extension.Context.Client.Collection(requestDetails.Collection)
-	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
+	resourceIDFilter, err := common.AddResourceIDFilter(requestDetails, filter)
+	if err != nil {
+		return nil, fmt.Errorf("add resource id filter error: %w", err)
+	}
+
+	filterWithRestriction := common.AddUserFilter(requestDetails, resourceIDFilter)
 	result := collection.FindOne(ctx, filterWithRestriction)
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			return nil, fmt.Errorf("not found: (%s)", requestDetails.Name)
+			return nil, fmt.Errorf("resource not found - type: %s, name: %s, project: %s",
+				requestDetails.Collection,
+				requestDetails.Name,
+				requestDetails.Project,
+			)
 		}
 		return nil, fmt.Errorf("db find one error: %w", result.Err())
 	}

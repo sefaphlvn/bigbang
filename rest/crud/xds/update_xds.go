@@ -19,7 +19,11 @@ import (
 )
 
 func (xds *AppHandler) UpdateResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
-	filter := bson.M{"general.name": requestDetails.Name}
+	filter, err := common.AddResourceIDFilter(requestDetails, bson.M{"general.name": requestDetails.Name})
+	if err != nil {
+		return nil, errors.New("invalid id format")
+	}
+
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
 	result := xds.Context.Client.Collection(requestDetails.Collection).FindOne(ctx, filterWithRestriction)
 

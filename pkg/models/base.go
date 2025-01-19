@@ -42,6 +42,7 @@ type DBResourceClass interface {
 }
 
 type RequestDetails struct {
+	ResourceID    string
 	Collection    string
 	Type          KnownTYPES
 	GType         GTypes

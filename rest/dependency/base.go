@@ -10,7 +10,8 @@ var (
 	visitedDownstream = make(map[string]bool)
 )
 
-func (h *AppHandler) ProcessResource(ctx context.Context, activeResource Depend) {
+func (h *AppHandler) ProcessResource(ctx context.Context, activeResource Depend, version string) {
+	h.SetVersion(version)
 	visitedUpstream = make(map[string]bool)
 	h.ProcessUpstream(ctx, activeResource)
 
@@ -40,7 +41,7 @@ func (h *AppHandler) ProcessUpstream(ctx context.Context, activeResource Depend)
 	for _, up := range upstreams {
 		if up.ID != "" && up.Name != "" && up.Gtype != "" {
 			h.AddNodeAndEdge(node, up, true)
-			h.ProcessUpstream(ctx, up) // Sadece upstream keşfi yap
+			h.ProcessUpstream(ctx, up)
 		} else {
 			h.Context.Logger.Infof("Upstream is missing required fields, not adding: %+v\n", up)
 		}

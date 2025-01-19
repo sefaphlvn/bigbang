@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/sefaphlvn/bigbang/pkg/errstr"
-	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
@@ -15,7 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type CollectorFunc func(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (models.DBResourceClass, error)
+type CollectorFunc func(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails, version string) (models.DBResourceClass, error)
 
 type BootstrapCollector struct {
 	collectors map[string]CollectorFunc
@@ -33,7 +32,10 @@ func (xds *AppHandler) NewBootstrapCollector() *BootstrapCollector {
 func (xds *AppHandler) DownloadBootstrap(ctx context.Context, requestDetails models.RequestDetails) (interface{}, error) {
 	resource := &models.DBResource{}
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
-	filter := bson.M{"general.name": requestDetails.Name}
+	filter, err := common.AddResourceIDFilter(requestDetails, bson.M{"general.name": requestDetails.Name})
+	if err != nil {
+		return nil, errors.New("invalid id format")
+	}
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
 	result := collection.FindOne(ctx, filterWithRestriction)
 
@@ -55,6 +57,7 @@ func (xds *AppHandler) DownloadBootstrap(ctx context.Context, requestDetails mod
 func (bc *BootstrapCollector) CollectAll(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (models.DBResourceClass, error) {
 	var err error
 	bootstrap := resource
+	version := resource.GetGeneral().Version
 
 	for name, collector := range bc.collectors {
 		if shouldSkip, err := bc.shouldSkipCollection(bootstrap, name); err != nil {
@@ -63,7 +66,7 @@ func (bc *BootstrapCollector) CollectAll(ctx context.Context, resource models.DB
 			continue
 		}
 
-		bootstrap, err = collector(ctx, bootstrap, requestDetails)
+		bootstrap, err = collector(ctx, bootstrap, requestDetails, version)
 		if err != nil {
 			return nil, fmt.Errorf("collecting %s: %w", name, err)
 		}
@@ -100,7 +103,7 @@ func (bc *BootstrapCollector) shouldSkipCollection(resource models.DBResourceCla
 	}
 }
 
-func (xds *AppHandler) collectBootstrapClusters(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (models.DBResourceClass, error) {
+func (xds *AppHandler) collectBootstrapClusters(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails, version string) (models.DBResourceClass, error) {
 	bootstrap := resource.GetResource()
 	bootstrapMap, ok := bootstrap.(primitive.M)
 	if !ok {
@@ -129,7 +132,7 @@ func (xds *AppHandler) collectBootstrapClusters(ctx context.Context, resource mo
 		}
 	}
 
-	clusters, err := xds.GetNonEdsClusters(ctx, clusterNames, requestDetails)
+	clusters, err := xds.GetNonEdsClusters(ctx, clusterNames, requestDetails, version)
 	if err != nil {
 		return nil, err
 	}
@@ -139,15 +142,13 @@ func (xds *AppHandler) collectBootstrapClusters(ctx context.Context, resource mo
 	return resource, nil
 }
 
-func (xds *AppHandler) GetNonEdsClusters(ctx context.Context, clusterNames []string, requestDetails models.RequestDetails) ([]interface{}, error) {
+func (xds *AppHandler) GetNonEdsClusters(ctx context.Context, clusterNames []string, requestDetails models.RequestDetails, version string) ([]interface{}, error) {
 	resource := &models.DBResource{}
 	collection := xds.Context.Client.Collection("clusters")
 	results := []interface{}{}
 	for _, clusterName := range clusterNames {
-		filter := bson.M{"general.name": clusterName}
+		filter := bson.M{"general.name": clusterName, "general.project": requestDetails.Project, "general.version": version}
 		filter = common.AddUserFilter(requestDetails, filter)
-
-		helper.PrettyPrint(filter)
 		result := collection.FindOne(ctx, filter)
 
 		if result.Err() != nil {
@@ -172,7 +173,7 @@ func (xds *AppHandler) GetNonEdsClusters(ctx context.Context, clusterNames []str
 						return nil, fmt.Errorf("failed to parse cluster")
 					}
 
-					protocolOptions, err := xds.GetHttpProtocolOptions(ctx, typed.Collection, typed.Name, requestDetails)
+					protocolOptions, err := xds.GetHttpProtocolOptions(ctx, typed.Collection, typed.Name, requestDetails, version)
 					if err != nil {
 						return nil, err
 					}
@@ -192,10 +193,10 @@ func (xds *AppHandler) GetNonEdsClusters(ctx context.Context, clusterNames []str
 	return results, nil
 }
 
-func (xds *AppHandler) GetHttpProtocolOptions(ctx context.Context, collectionName, name string, requestDetails models.RequestDetails) (primitive.M, error) {
+func (xds *AppHandler) GetHttpProtocolOptions(ctx context.Context, collectionName, name string, requestDetails models.RequestDetails, version string) (primitive.M, error) {
 	resource := &models.DBResource{}
 	collection := xds.Context.Client.Collection(collectionName)
-	filter := bson.M{"general.name": name, "general.project": requestDetails.Project}
+	filter := bson.M{"general.name": name, "general.project": requestDetails.Project, "general.version": version}
 	result := collection.FindOne(ctx, filter)
 
 	if result.Err() != nil {
@@ -226,7 +227,7 @@ func (xds *AppHandler) GetHttpProtocolOptions(ctx context.Context, collectionNam
 	return httpProtocolOptions, nil
 }
 
-func (xds *AppHandler) collectAccessLoggers(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (models.DBResourceClass, error) {
+func (xds *AppHandler) collectAccessLoggers(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails, version string) (models.DBResourceClass, error) {
 	bootstrap := resource.GetResource()
 	bootstrapMap, ok := bootstrap.(primitive.M)
 	if !ok {
@@ -259,7 +260,7 @@ func (xds *AppHandler) collectAccessLoggers(ctx context.Context, resource models
 		}
 	}
 
-	accessLoggers, err := xds.GetAccessLoggers(ctx, accessLogs, requestDetails)
+	accessLoggers, err := xds.GetAccessLoggers(ctx, accessLogs, requestDetails, version)
 	if err != nil {
 		return nil, err
 	}
@@ -269,12 +270,12 @@ func (xds *AppHandler) collectAccessLoggers(ctx context.Context, resource models
 	return resource, nil
 }
 
-func (xds *AppHandler) GetAccessLoggers(ctx context.Context, alNames []string, requestDetails models.RequestDetails) ([]interface{}, error) {
+func (xds *AppHandler) GetAccessLoggers(ctx context.Context, alNames []string, requestDetails models.RequestDetails, version string) ([]interface{}, error) {
 	resource := &models.DBResource{}
 	collection := xds.Context.Client.Collection("extensions")
 	results := []interface{}{}
 	for _, alName := range alNames {
-		filter := bson.M{"general.name": alName, "general.project": requestDetails.Project}
+		filter := bson.M{"general.name": alName, "general.project": requestDetails.Project, "general.version": version}
 		result := collection.FindOne(ctx, filter)
 
 		if result.Err() != nil {

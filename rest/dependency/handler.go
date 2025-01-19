@@ -25,16 +25,16 @@ func (h *AppHandler) GetResourceDependencies(ctx context.Context, requestDetails
 	}
 
 	h.Dependencies = &Graph{}
-	h.ProcessResource(ctx, activeResource)
+	h.ProcessResource(ctx, activeResource, requestDetails.Version)
 
 	return h.Dependencies, nil
 }
 
 func (h *AppHandler) CallUpstreamFunction(ctx context.Context, activeResource Depend) (Node, []Depend) {
-	return GenericUpstreamCollector(ctx, h, activeResource)
+	return GenericUpstreamCollector(ctx, h, activeResource, h.Version)
 }
 
 func (h *AppHandler) CallDownstreamFunction(ctx context.Context, activeResource Depend) (Node, []Depend) {
 	visited := make(map[string]bool)
-	return GenericDownstreamCollector(ctx, h, activeResource, visited)
+	return GenericDownstreamCollector(ctx, h, activeResource, visited, h.Version)
 }

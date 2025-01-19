@@ -25,12 +25,12 @@ func NewPokeService(ctxCache *snapshot.Context, appContext *db.AppContext) *Poke
 }
 
 func (pss *PokeServiceServer) Poke(ctx context.Context, req *bridge.PokeRequest) (*bridge.PokeResponse, error) {
-	rawListenerResource, err := resources.GetResourceNGeneral(ctx, pss.AppContext, "listeners", req.NodeID, req.Project)
+	rawListenerResource, err := resources.GetResourceNGeneral(ctx, pss.AppContext, "listeners", req.NodeID, req.Project, req.Version)
 	if err != nil {
 		return nil, err
 	}
 
-	lis, err := resource.GenerateSnapshot(ctx, rawListenerResource, req.NodeID, pss.AppContext, pss.AppContext.Logger, req.Project)
+	lis, err := resource.GenerateSnapshot(ctx, rawListenerResource, req.NodeID, pss.AppContext, pss.AppContext.Logger, req.Project, req.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -60,13 +60,13 @@ func (ps *PokeService) CheckSnapshot(node string) bool {
 	return false
 }
 
-func (ps *PokeService) getAllResourcesFromListener(ctx context.Context, listenerName, project string) (*resource.AllResources, error) {
-	rawListenerResource, err := resources.GetResourceNGeneral(ctx, ps.appContext, "listeners", listenerName, project)
+func (ps *PokeService) getAllResourcesFromListener(ctx context.Context, listenerName, project, version string) (*resource.AllResources, error) {
+	rawListenerResource, err := resources.GetResourceNGeneral(ctx, ps.appContext, "listeners", listenerName, project, version)
 	if err != nil {
 		return nil, err
 	}
 
-	lis, err := resource.GenerateSnapshot(ctx, rawListenerResource, listenerName, ps.appContext, ps.appContext.Logger, project)
+	lis, err := resource.GenerateSnapshot(ctx, rawListenerResource, listenerName, ps.appContext, ps.appContext.Logger, project, version)
 	if err != nil {
 		return nil, err
 	}
@@ -74,10 +74,11 @@ func (ps *PokeService) getAllResourcesFromListener(ctx context.Context, listener
 	return lis, nil
 }
 
-func (ps *PokeService) GetResourceSetSnapshot(ctx context.Context, node, project string) error {
-	allResource, err := ps.getAllResourcesFromListener(ctx, node, project)
+func (ps *PokeService) GetResourceSetSnapshot(ctx context.Context, node, project, version string) error {
+	allResource, err := ps.getAllResourcesFromListener(ctx, node, project, version)
 	if err != nil {
 		ps.appContext.Logger.Warnf("get resources err (%v:%v): %v", node, project, err)
+		return err
 	}
 
 	err = ps.Snapshot.SetSnapshot(ctx, allResource, ps.appContext.Logger)

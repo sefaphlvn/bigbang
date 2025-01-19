@@ -56,7 +56,7 @@ func (ar *AllResources) initializeListener(ctx context.Context, rawListenerResou
 		return errstr.ErrUnexpectedResource
 	}
 
-	newVersion, err := resources.IncrementResourceVersion(ctx, context, rawListenerResource.General.Name, rawListenerResource.General.Project)
+	newVersion, err := resources.IncrementResourceVersion(ctx, context, rawListenerResource.General.Name, rawListenerResource.General.Project, ar.ResourceVersion)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (ar *AllResources) checkAndMarkDuplicate(name string) bool {
 // - []Resource: a slice containing all resources associated with the parent
 // - error: an error if any occurred during the resource collection process
 func (ar *AllResources) CollectAllResourcesWithParent(ctx context.Context, gtype models.GTypes, resourceName, parentName string, context *db.AppContext, logger *logrus.Logger) ([]proto.Message, []*models.ConfigDiscovery, error) {
-	resource, err := resources.GetResourceNGeneral(ctx, context, gtype.CollectionString(), resourceName, ar.Project)
+	resource, err := resources.GetResourceNGeneral(ctx, context, gtype.CollectionString(), resourceName, ar.Project, ar.ResourceVersion)
 	if err != nil {
 		logger.Errorf("Error getting resource %s: %v", resourceName, err)
 		return nil, nil, err
@@ -391,5 +391,14 @@ func (ar *AllResources) AddToCollection(resource proto.Message, gtype models.GTy
 func (ar *AllResources) UpdateVhdsMetadataNodeID(vhds *route.Vhds) {
 	if vhdsConfig := vhds.ConfigSource.GetApiConfigSource(); vhdsConfig != nil {
 		vhdsConfig.GrpcServices[0].InitialMetadata[0].Value = ar.NodeID
+
+		versionMetadata := &core.HeaderValue{
+			Key:   "version",
+			Value: ar.ResourceVersion,
+		}
+		vhdsConfig.GrpcServices[0].InitialMetadata = append(
+			vhdsConfig.GrpcServices[0].InitialMetadata,
+			versionMetadata,
+		)
 	}
 }

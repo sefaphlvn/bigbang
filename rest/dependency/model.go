@@ -20,6 +20,11 @@ type AppHandler struct {
 	Dependencies *Graph
 	Cache        map[string]CacheEntry
 	CacheMutex   sync.Mutex
+	Version      string
+}
+
+func (h *AppHandler) SetVersion(version string) {
+	h.Version = version
 }
 
 type Dependency struct {

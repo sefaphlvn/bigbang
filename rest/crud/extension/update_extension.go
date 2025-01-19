@@ -2,6 +2,7 @@ package extension
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -17,12 +18,18 @@ import (
 )
 
 func (extension *AppHandler) UpdateExtensions(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
-	filter := bson.M{"general.name": requestDetails.Name, "general.canonical_name": requestDetails.CanonicalName, "general.project": requestDetails.Project}
+	filter, err := common.AddResourceIDFilter(requestDetails, bson.M{"general.canonical_name": requestDetails.CanonicalName, "general.project": requestDetails.Project})
+	if err != nil {
+		return nil, errors.New("invalid id format")
+	}
 	return updateResource(ctx, extension, resource, requestDetails, filter)
 }
 
 func (extension *AppHandler) UpdateOtherExtensions(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
-	filter := bson.M{"general.name": requestDetails.Name, "general.project": requestDetails.Project}
+	filter, err := common.AddResourceIDFilter(requestDetails, bson.M{"general.project": requestDetails.Project})
+	if err != nil {
+		return nil, errors.New("invalid id format")
+	}
 	return updateResource(ctx, extension, resource, requestDetails, filter)
 }
 

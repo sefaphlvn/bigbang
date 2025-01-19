@@ -40,7 +40,7 @@ func (ar *AllResources) processTypedConfigPath(ctx context.Context, pathd models
 	_, typedConfigsMap := resources.ProcessTypedConfigs(*jsonStringStr, pathd, context.Logger)
 
 	for path, tempTypedConfig := range typedConfigsMap {
-		conf, err := resources.GetResourceNGeneral(ctx, context, tempTypedConfig.Collection, tempTypedConfig.Name, ar.Project)
+		conf, err := resources.GetResourceNGeneral(ctx, context, tempTypedConfig.Collection, tempTypedConfig.Name, ar.Project, ar.ResourceVersion)
 		if err != nil {
 			context.Logger.Warnf("Error getting resource from DB: %v", err)
 			return err

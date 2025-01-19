@@ -36,23 +36,24 @@ var (
 	adminBaseGroup                 = ""
 	generalProject                 = "general.project"
 	generalName                    = "general.name"
-	generalNameProject             = "general_name_project_1"
+	generalVersion                 = "general.version"
+	generalNameProject             = "general_name_version_project_1"
 )
 
 var Indices = map[string]mongo.IndexModel{
 	"users":         {Keys: bson.M{"username": 1}, Options: options.Index().SetUnique(true).SetName("username_1")},
 	"groups":        {Keys: bson.D{{Key: "groupname", Value: 1}, {Key: "project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("groupname_project_1")},
 	"service":       {Keys: bson.D{{Key: "name", Value: 1}, {Key: "project", Value: 1}}, Options: options.Index().SetUnique(true).SetName("name_project_1")},
-	"clusters":      {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
-	"listeners":     {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
-	"endpoints":     {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
-	"routes":        {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
-	"virtual_hosts": {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
-	"filters":       {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
-	"secrets":       {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
-	"extensions":    {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
-	"bootstrap":     {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
-	"tls":           {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+	"clusters":      {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalVersion, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+	"listeners":     {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalVersion, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+	"endpoints":     {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalVersion, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+	"routes":        {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalVersion, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+	"virtual_hosts": {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalVersion, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+	"filters":       {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalVersion, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+	"secrets":       {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalVersion, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+	"extensions":    {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalVersion, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+	"bootstrap":     {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalVersion, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
+	"tls":           {Keys: bson.D{{Key: generalName, Value: 1}, {Key: generalVersion, Value: 1}, {Key: generalProject, Value: 1}}, Options: options.Index().SetUnique(true).SetName(generalNameProject)},
 	"projects":      {Keys: bson.M{"projectname": 1}, Options: options.Index().SetUnique(true).SetName("projectname_1")},
 	"grpc_servers":  {Keys: bson.M{"name": 1}, Options: options.Index().SetUnique(true).SetName("name_1")},
 }
@@ -274,12 +275,14 @@ func createAdminGroup(ctx context.Context, db *AppContext, userID string) error 
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
-		_, err = collection.InsertOne(ctx, bson.M{
+		groupDoc := bson.M{
 			"groupname":  "admin",
 			"members":    []string{userID},
 			"created_at": primitive.NewDateTimeFromTime(time.Now()),
 			"updated_at": primitive.NewDateTimeFromTime(time.Now()),
-		})
+		}
+
+		result, err := collection.InsertOne(ctx, groupDoc)
 		if err != nil {
 			if mongo.IsDuplicateKeyError(err) {
 				db.Logger.Infof("admin group already exists: %v", err)
@@ -288,6 +291,18 @@ func createAdminGroup(ctx context.Context, db *AppContext, userID string) error 
 			}
 		} else {
 			db.Logger.Info("admin group created successfully")
+
+			groupID := result.InsertedID.(primitive.ObjectID).Hex()
+			usersCollection := db.Client.Collection("users")
+			userFilter := bson.M{"user_id": userID}
+			userUpdate := bson.M{"$set": bson.M{"base_group": groupID}}
+
+			_, updateErr := usersCollection.UpdateOne(ctx, userFilter, userUpdate)
+			if updateErr != nil {
+				db.Logger.Infof("Failed to update admin user's base group: %v", updateErr)
+				return fmt.Errorf("failed to update admin user's base group: %w", updateErr)
+			}
+			db.Logger.Info("Admin user's base group updated successfully")
 		}
 	case err != nil:
 		return fmt.Errorf("failed to check for admin group: %w", err)
@@ -309,12 +324,14 @@ func createDefaultProject(ctx context.Context, db *AppContext, userID string) er
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
-		_, err = collection.InsertOne(ctx, bson.M{
+		projectDoc := bson.M{
 			"projectname": "default",
 			"members":     []string{userID},
 			"created_at":  primitive.NewDateTimeFromTime(time.Now()),
 			"updated_at":  primitive.NewDateTimeFromTime(time.Now()),
-		})
+		}
+
+		result, err := collection.InsertOne(ctx, projectDoc)
 		if err != nil {
 			if mongo.IsDuplicateKeyError(err) {
 				db.Logger.Infof("default project already exists: %v", err)
@@ -323,6 +340,29 @@ func createDefaultProject(ctx context.Context, db *AppContext, userID string) er
 			}
 		} else {
 			db.Logger.Info("default project created successfully")
+			projectID := result.InsertedID.(primitive.ObjectID).Hex()
+
+			usersCollection := db.Client.Collection("users")
+			userFilter := bson.M{"user_id": userID}
+			userUpdate := bson.M{"$set": bson.M{"base_project": projectID}}
+
+			_, updateErr := usersCollection.UpdateOne(ctx, userFilter, userUpdate)
+			if updateErr != nil {
+				db.Logger.Infof("Failed to update admin user's default project: %v", updateErr)
+				return fmt.Errorf("failed to update admin user's default project: %w", updateErr)
+			}
+			db.Logger.Info("Admin user's default project updated successfully")
+
+			groupsCollection := db.Client.Collection("groups")
+			groupFilter := bson.M{"groupname": "admin"}
+			groupUpdate := bson.M{"$set": bson.M{"project": projectID}}
+
+			_, groupUpdateErr := groupsCollection.UpdateOne(ctx, groupFilter, groupUpdate)
+			if groupUpdateErr != nil {
+				db.Logger.Infof("Failed to update admin group's projects: %v", groupUpdateErr)
+				return fmt.Errorf("failed to update admin group's projects: %w", groupUpdateErr)
+			}
+			db.Logger.Info("Admin group's projects updated successfully")
 		}
 	case err != nil:
 		return fmt.Errorf("failed to check for default project: %w", err)
@@ -352,7 +392,7 @@ func createDefaultCluster(ctx context.Context, db *AppContext) error {
 		defaultCluster := bson.M{
 			"general": bson.M{
 				"name":           "bigbang-controller",
-				"version":        "shared",
+				"version":        "v1.32.3",
 				"type":           "cluster",
 				"gtype":          "envoy.config.cluster.v3.Cluster",
 				"project":        "shared",

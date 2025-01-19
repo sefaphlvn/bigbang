@@ -44,10 +44,9 @@ import (
 	utm "github.com/envoyproxy/go-control-plane/envoy/extensions/path/match/uri_template/v3"
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	http_protocol_options "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
+	"github.com/sefaphlvn/bigbang/pkg/models/downstreamfilters"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
-
-	"github.com/sefaphlvn/bigbang/pkg/models/downstreamfilters"
 )
 
 type GTypeMapping struct {
@@ -55,7 +54,7 @@ type GTypeMapping struct {
 	URL                   string
 	PrettyName            string
 	Message               proto.Message
-	DownstreamFiltersFunc func(string) []downstreamfilters.MongoFilters
+	DownstreamFiltersFunc func(downstreamfilters.DownstreamFilter) []downstreamfilters.MongoFilters
 	TypedConfigPaths      []TypedConfigPath
 	UpstreamPaths         map[string]GTypes
 }
@@ -651,9 +650,9 @@ func (gt GTypes) ProtoMessage() proto.Message {
 	return &anypb.Any{}
 }
 
-func (gt GTypes) DownstreamFilters(name string) []downstreamfilters.MongoFilters {
+func (gt GTypes) DownstreamFilters(dfm downstreamfilters.DownstreamFilter) []downstreamfilters.MongoFilters {
 	if mapping, exists := gTypeMappings[gt]; exists && mapping.DownstreamFiltersFunc != nil {
-		return mapping.DownstreamFiltersFunc(name)
+		return mapping.DownstreamFiltersFunc(dfm)
 	}
 	return nil
 }

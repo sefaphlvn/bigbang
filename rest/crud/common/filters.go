@@ -1,12 +1,19 @@
 package common
 
 import (
+	"fmt"
+
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
 func AddUserFilter(details models.RequestDetails, mainFilter bson.M) bson.M {
+	if mainFilter == nil {
+		mainFilter = bson.M{}
+	}
+
 	userFilter := bson.M{
 		"$or": []bson.M{
 			{"general.project": details.Project},
@@ -28,4 +35,19 @@ func AddUserFilter(details models.RequestDetails, mainFilter bson.M) bson.M {
 	}
 
 	return mainFilter
+}
+
+func AddResourceIDFilter(requestDetails models.RequestDetails, mainFilter bson.M) (bson.M, error) {
+	if mainFilter == nil {
+		mainFilter = bson.M{}
+	}
+
+	objectID, err := primitive.ObjectIDFromHex(requestDetails.ResourceID)
+	if err != nil {
+		return mainFilter, err
+	}
+
+	mainFilter["_id"] = objectID
+	fmt.Println(mainFilter)
+	return mainFilter, nil
 }

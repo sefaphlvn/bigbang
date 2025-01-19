@@ -13,17 +13,6 @@ import (
 
 func (extension *AppHandler) SetExtension(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	general := resource.GetGeneral()
-	/* now := time.Now()
-	general.CreatedAt = primitive.NewDateTimeFromTime(now)
-	general.UpdatedAt = primitive.NewDateTimeFromTime(now)
-	resource.SetGeneral(&general)
-	validateErr, isErr, err := resources.Validate(resource.GetGeneral().GType, resource.GetResource())
-	if isErr {
-		return validateErr, err
-	}
-
-	resource.SetTypedConfig(resources.DecodeSetTypedConfigs(resource, extension.Context.Logger))
-	common.DetectSetPermissions(resource, requestDetails)  */
 
 	resources.PrepareResource(resource, requestDetails, extension.Context.Logger)
 	collection := extension.Context.Client.Collection(general.Collection)

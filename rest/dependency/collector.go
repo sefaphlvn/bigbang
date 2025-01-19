@@ -10,9 +10,9 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models/downstreamfilters"
 )
 
-func GenericUpstreamCollector(ctx context.Context, appCtx *AppHandler, activeResource Depend) (Node, []Depend) {
+func GenericUpstreamCollector(ctx context.Context, appCtx *AppHandler, activeResource Depend, version string) (Node, []Depend) {
 	var dependencies []Depend
-	id, jsonData := appCtx.getResourceData(ctx, activeResource.Collection, activeResource.Name, activeResource.Project)
+	id, jsonData := appCtx.getResourceData(ctx, activeResource.Collection, activeResource.Name, activeResource.Project, version)
 	rootResult := gjson.Parse(jsonData)
 
 	node := Node{
@@ -28,11 +28,11 @@ func GenericUpstreamCollector(ctx context.Context, appCtx *AppHandler, activeRes
 	jsonPaths := getDynamicJSONPaths(activeResource.Gtype)
 	for path, gtype := range jsonPaths {
 		resourcePath := fmt.Sprintf("%s.%s", "resource.resource", path)
-		collectDependenciesFromPath(ctx, appCtx, rootResult, resourcePath, gtype, activeResource, &dependencies)
+		collectDependenciesFromPath(ctx, appCtx, rootResult, resourcePath, gtype, activeResource, &dependencies, version)
 	}
 
-	dependencies = append(dependencies, parseTypedConfig(ctx, appCtx, rootResult, activeResource)...)
-	dependencies = append(dependencies, parseConfigDiscovery(ctx, appCtx, rootResult, activeResource)...)
+	dependencies = append(dependencies, parseTypedConfig(ctx, appCtx, rootResult, activeResource, version)...)
+	dependencies = append(dependencies, parseConfigDiscovery(ctx, appCtx, rootResult, activeResource, version)...)
 
 	if len(dependencies) == 0 {
 		appCtx.Context.Logger.Debugf("No dependencies found for resource: %s of type %s", activeResource.Name, activeResource.Gtype)
@@ -41,7 +41,7 @@ func GenericUpstreamCollector(ctx context.Context, appCtx *AppHandler, activeRes
 	return node, dependencies
 }
 
-func collectDependenciesFromPath(ctx context.Context, appCtx *AppHandler, rootResult gjson.Result, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend) {
+func collectDependenciesFromPath(ctx context.Context, appCtx *AppHandler, rootResult gjson.Result, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend, version string) {
 	results := rootResult.Get(path)
 
 	if !results.Exists() {
@@ -52,34 +52,34 @@ func collectDependenciesFromPath(ctx context.Context, appCtx *AppHandler, rootRe
 	results.ForEach(func(_, item gjson.Result) bool {
 		if item.IsArray() {
 			item.ForEach(func(_, subItem gjson.Result) bool {
-				processItem(ctx, appCtx, subItem, path, gtype, activeResource, dependencies)
+				processItem(ctx, appCtx, subItem, path, gtype, activeResource, dependencies, version)
 				return true
 			})
 		} else {
-			processItem(ctx, appCtx, item, path, gtype, activeResource, dependencies)
+			processItem(ctx, appCtx, item, path, gtype, activeResource, dependencies, version)
 		}
 		return true
 	})
 }
 
-func processItem(ctx context.Context, appCtx *AppHandler, item gjson.Result, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend) {
+func processItem(ctx context.Context, appCtx *AppHandler, item gjson.Result, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend, version string) {
 	if item.IsArray() {
 		item.ForEach(func(_, subItem gjson.Result) bool {
-			addDependency(ctx, appCtx, subItem.String(), path, gtype, activeResource, dependencies)
+			addDependency(ctx, appCtx, subItem.String(), path, gtype, activeResource, dependencies, version)
 			return true
 		})
 	} else {
-		addDependency(ctx, appCtx, item.String(), path, gtype, activeResource, dependencies)
+		addDependency(ctx, appCtx, item.String(), path, gtype, activeResource, dependencies, version)
 	}
 }
 
-func addDependency(ctx context.Context, appCtx *AppHandler, name, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend) {
+func addDependency(ctx context.Context, appCtx *AppHandler, name, path string, gtype models.GTypes, activeResource Depend, dependencies *[]Depend, version string) {
 	if name == "" {
 		appCtx.Context.Logger.Debugf("Name not found at path: %s for gtype: %s", path, gtype)
 		return
 	}
 
-	itemID, _ := appCtx.getResourceData(ctx, gtype.CollectionString(), name, activeResource.Project)
+	itemID, _ := appCtx.getResourceData(ctx, gtype.CollectionString(), name, activeResource.Project, version)
 	if itemID == "" {
 		appCtx.Context.Logger.Debugf("ID not found for %s of type %s, skipping... Path: %s", name, gtype, path)
 		return
@@ -98,10 +98,10 @@ func addDependency(ctx context.Context, appCtx *AppHandler, name, path string, g
 	appCtx.Context.Logger.Debugf("Added dependency: %s of type %s with ID: %s", dependency.Name, dependency.Gtype, dependency.ID)
 }
 
-func GenericDownstreamCollector(ctx context.Context, appCtx *AppHandler, activeResource Depend, visited map[string]bool) (Node, []Depend) {
+func GenericDownstreamCollector(ctx context.Context, appCtx *AppHandler, activeResource Depend, visited map[string]bool, version string) (Node, []Depend) {
 	var dependencies []Depend
 	if activeResource.ID == "" {
-		id, _ := appCtx.getResourceData(ctx, activeResource.Collection, activeResource.Name, activeResource.Project)
+		id, _ := appCtx.getResourceData(ctx, activeResource.Collection, activeResource.Name, activeResource.Project, version)
 		activeResource.ID = id
 	}
 
@@ -121,14 +121,20 @@ func GenericDownstreamCollector(ctx context.Context, appCtx *AppHandler, activeR
 		Direction:  "downstream",
 	}
 
-	downstreamFilters := activeResource.Gtype.DownstreamFilters(activeResource.Name)
+	dfm := downstreamfilters.DownstreamFilter{
+		Name:    activeResource.Name,
+		Project: activeResource.Project,
+		Version: version,
+	}
+
+	downstreamFilters := activeResource.Gtype.DownstreamFilters(dfm)
 	for _, filter := range downstreamFilters {
 		collectDependenciesFromFilter(ctx, appCtx, filter, activeResource, &dependencies)
 	}
 
 	for _, dep := range dependencies {
 		if dep.Direction == "downstream" {
-			_, downstreamDeps := GenericDownstreamCollector(ctx, appCtx, dep, visited)
+			_, downstreamDeps := GenericDownstreamCollector(ctx, appCtx, dep, visited, version)
 			dependencies = append(dependencies, downstreamDeps...)
 		}
 	}

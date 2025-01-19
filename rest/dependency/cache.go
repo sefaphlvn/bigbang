@@ -57,14 +57,14 @@ func (h *AppHandler) cleanupCache() {
 	}
 }
 
-func (h *AppHandler) getResourceData(ctx context.Context, collection, name, project string) (string, string) {
+func (h *AppHandler) getResourceData(ctx context.Context, collection, name, project, version string) (string, string) {
 	cacheKey := fmt.Sprintf("%s|%s|%s", collection, name, project)
 
 	if cacheEntry, found := h.getCacheEntry(cacheKey); found {
 		return cacheEntry.ID, cacheEntry.JSON
 	}
 
-	resource, err := resources.GetResourceNGeneral(ctx, h.Context, collection, name, project)
+	resource, err := resources.GetResourceNGeneral(ctx, h.Context, collection, name, project, version)
 	if err != nil {
 		h.Context.Logger.Debugf("Error fetching resource: %v", err)
 		return "", ""

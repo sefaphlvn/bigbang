@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -22,19 +23,24 @@ type GeneralResponse struct {
 	General models.General `bson:"general"`
 }
 
-func GetResourceNGeneral(ctx context.Context, db *db.AppContext, collectionName, name, project string) (*models.DBResource, error) {
+func GetResourceNGeneral(ctx context.Context, db *db.AppContext, collectionName, name, project, version string) (*models.DBResource, error) {
 	var doc models.DBResource
 
 	collection := db.Client.Collection(collectionName)
 	findOptions := options.FindOne()
 	findOptions.SetProjection(bson.D{{Key: "resource", Value: 1}, {Key: "_id", Value: 1}, {Key: "general", Value: 1}})
 
-	filter := bson.D{{Key: "general.name", Value: name}, {Key: "general.project", Value: project}}
+	filter := bson.D{{Key: "general.name", Value: name}, {Key: "general.project", Value: project}, {Key: "general.version", Value: version}}
 
 	err := collection.FindOne(ctx, filter, findOptions).Decode(&doc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, errors.New("not found: (" + name + ")")
+			return nil, fmt.Errorf("resource not found - type: %s, name: %s, project: %s, version: %s",
+				collectionName,
+				name,
+				project,
+				version,
+			)
 		}
 		return nil, errstr.ErrUnknownDBError
 	}
@@ -42,11 +48,11 @@ func GetResourceNGeneral(ctx context.Context, db *db.AppContext, collectionName,
 	return &doc, nil
 }
 
-func IncrementResourceVersion(ctx context.Context, db *db.AppContext, name, project string) (string, error) {
+func IncrementResourceVersion(ctx context.Context, db *db.AppContext, name, project, version string) (string, error) {
 	collection := db.Client.Collection("listeners")
 
 	var doc models.DBResource
-	filter := bson.D{{Key: "general.name", Value: name}, {Key: "general.project", Value: project}}
+	filter := bson.D{{Key: "general.name", Value: name}, {Key: "general.project", Value: project}, {Key: "general.version", Value: version}}
 	findOptions := options.FindOne()
 	findOptions.SetProjection(bson.D{{Key: "resource.version", Value: 1}})
 

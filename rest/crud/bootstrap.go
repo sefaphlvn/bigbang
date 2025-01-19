@@ -16,9 +16,9 @@ func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[
 	UpdatedAt := primitive.NewDateTimeFromTime(now)
 	nodeID := fmt.Sprintf("%s:%s", listenerGeneral.Name, listenerGeneral.Project)
 
-	cluster := createClusterConfig(config)
+	cluster := createClusterConfig()
 	admin := createAdminConfig()
-	data := createDataConfig(nodeID, config.BigbangAddress, cluster, admin)
+	data := createDataConfig(nodeID, config.BigbangAddress, listenerGeneral.Version, cluster, admin)
 	general := createGeneralConfig(listenerGeneral, CreatedAt, UpdatedAt)
 
 	return map[string]interface{}{
@@ -27,44 +27,14 @@ func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[
 	}
 }
 
-func createClusterConfig(config *config.AppConfig) map[string]interface{} {
-	portValue := 80
-	if config.BigbangTLSEnabled == "true" {
-		portValue = 443
-	}
+func createClusterConfig() map[string]interface{} {
 	cluster := map[string]interface{}{
-		"name":            "bigbang-controller",
-		"type":            "STRICT_DNS",
-		"connect_timeout": "1s",
-		"lb_policy":       "ROUND_ROBIN",
-		"load_assignment": map[string]interface{}{
-			"cluster_name": "bigbang-controller",
-			"endpoints": []interface{}{
-				map[string]interface{}{
-					"lb_endpoints": []interface{}{
-						map[string]interface{}{
-							"endpoint": map[string]interface{}{
-								"address": map[string]interface{}{
-									"socket_address": map[string]interface{}{
-										"address":    config.BigbangAddress,
-										"port_value": portValue,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		"http2_protocol_options": map[string]interface{}{},
-	}
-	if config.BigbangTLSEnabled == "true" {
-		cluster["transport_socket"] = createTLSTransportSocket()
+		"name": "bigbang-controller",
 	}
 	return cluster
 }
 
-func createDataConfig(nodeID, authority string, cluster, admin map[string]interface{}) map[string]interface{} {
+func createDataConfig(nodeID, authority, version string, cluster, admin map[string]interface{}) map[string]interface{} {
 	return map[string]interface{}{
 		"node": map[string]interface{}{
 			"id": nodeID,
@@ -87,6 +57,10 @@ func createDataConfig(nodeID, authority string, cluster, admin map[string]interf
 								"key":   "nodeid",
 								"value": nodeID,
 							},
+							map[string]interface{}{
+								"key":   "version",
+								"value": version,
+							},
 						},
 					},
 				},
@@ -102,8 +76,8 @@ func createAdminConfig() map[string]interface{} {
 		"address": map[string]interface{}{
 			"socket_address": map[string]interface{}{
 				"Protocol":   "TCP",
-				"address":    "127.0.0.1",
-				"port_value": 9090,
+				"address":    "0.0.0.0",
+				"port_value": 30090,
 			},
 		},
 	}

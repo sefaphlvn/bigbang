@@ -9,10 +9,11 @@ import (
 
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/pkg/models/downstreamfilters"
 )
 
-func IsDeletable(ctx context.Context, appCtx *db.AppContext, gtype models.GTypes, name string) []string {
-	downstreamFilters := gtype.DownstreamFilters(name)
+func IsDeletable(ctx context.Context, appCtx *db.AppContext, gtype models.GTypes, dfm downstreamfilters.DownstreamFilter) []string {
+	downstreamFilters := gtype.DownstreamFilters(dfm)
 	var deletableNames []string
 
 	for _, filter := range downstreamFilters {

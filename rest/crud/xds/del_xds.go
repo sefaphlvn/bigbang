@@ -12,20 +12,29 @@ import (
 
 	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/pkg/models/downstreamfilters"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
 func (xds *AppHandler) DelResource(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	resourceType := requestDetails.Collection
 	collection := xds.Context.Client.Collection(resourceType)
+	downstreamFilterModel := downstreamfilters.DownstreamFilter{
+		Name:    requestDetails.Name,
+		Project: requestDetails.Project,
+		Version: requestDetails.Version,
+	}
 
-	dependList := common.IsDeletable(ctx, xds.Context, requestDetails.GType, requestDetails.Name)
+	dependList := common.IsDeletable(ctx, xds.Context, requestDetails.GType, downstreamFilterModel)
 	if len(dependList) > 0 {
 		message := "Resource has dependencies: \n " + strings.Join(dependList, ", ")
 		return nil, errors.New(message)
 	}
 
-	filter := buildFilter(requestDetails)
+	filter, err := common.AddResourceIDFilter(requestDetails, buildFilter(requestDetails))
+	if err != nil {
+		return nil, errors.New("invalid id format")
+	}
 
 	if err := checkDocumentExists(ctx, xds, collection, filter); err != nil {
 		return nil, err

@@ -14,7 +14,12 @@ import (
 
 func (xds *AppHandler) GetResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
-	filter := bson.M{"general.name": requestDetails.Name}
+
+	filter, err := common.AddResourceIDFilter(requestDetails, bson.M{})
+	if err != nil {
+		return nil, errors.New("invalid id format")
+	}
+
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
 	result := collection.FindOne(ctx, filterWithRestriction)
 
@@ -25,7 +30,7 @@ func (xds *AppHandler) GetResource(ctx context.Context, resource models.DBResour
 		return nil, errstr.ErrUnknownDBError
 	}
 
-	err := result.Decode(resource)
+	err = result.Decode(resource)
 	if err != nil {
 		return nil, err
 	}

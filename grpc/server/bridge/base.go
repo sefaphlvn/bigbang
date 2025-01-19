@@ -49,14 +49,12 @@ func NewPokeServiceServer(context *snapshot.Context, db *db.AppContext) *PokeSer
 	}
 }
 
-// ActiveClientsServiceServer service
 type ActiveClientsServiceServer struct {
 	bridge.UnimplementedActiveClientsServiceServer
 	*BaseServiceServer
 	activeClients *models.ActiveClients
 }
 
-// Yeni bir ActiveClientsServiceServer oluşturur.
 func NewActiveClientsServiceServer(context *snapshot.Context, activeClients *models.ActiveClients) *ActiveClientsServiceServer {
 	return &ActiveClientsServiceServer{
 		BaseServiceServer: &BaseServiceServer{context: context},

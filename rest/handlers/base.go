@@ -81,6 +81,7 @@ func (h *Handler) getRequestDetails(c *gin.Context) (models.RequestDetails, mode
 		Collection:    getParamOrQuery(c, "collection"),
 		Version:       getOptionalParam(c, "version"),
 		Category:      c.Query("category"),
+		ResourceID:    c.Query("resource_id"),
 		Name:          c.Param("name"),
 		SaveOrPublish: c.Query("save_or_publish"),
 		Project:       c.Query("project"),
@@ -196,6 +197,7 @@ func (h *Handler) handleDepRequest(c *gin.Context, depFunc DepFunc) {
 		Name:       c.Param("name"),
 		Collection: c.Query("collection"),
 		Project:    c.Query("project"),
+		Version:    c.Query("version"),
 		User:       userDetails,
 	}
 

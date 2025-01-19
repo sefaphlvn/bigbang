@@ -2,59 +2,107 @@ package downstreamfilters
 
 import "go.mongodb.org/mongo-driver/bson"
 
-func ALSDownstreamFilters(name string) []MongoFilters {
+func ALSDownstreamFilters(dfm DownstreamFilter) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "filters",
-			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+			Filter: bson.D{
+				{Key: "$and", Value: bson.A{
+					bson.D{{Key: generalProject, Value: dfm.Project}},
+					bson.D{{Key: generalVersion, Value: dfm.Version}},
+					bson.D{{Key: "general.typed_config.name", Value: dfm.Name}},
+				}},
+			},
 		},
 		{
 			Collection: "listeners",
-			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+			Filter: bson.D{
+				{Key: "$and", Value: bson.A{
+					bson.D{{Key: generalProject, Value: dfm.Project}},
+					bson.D{{Key: generalVersion, Value: dfm.Version}},
+					bson.D{{Key: "general.typed_config.name", Value: dfm.Name}},
+				}},
+			},
 		},
 	}
 }
 
-func HCEFSDownstreamFilters(name string) []MongoFilters {
+func HCEFSDownstreamFilters(dfm DownstreamFilter) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "clusters",
-			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+			Filter: bson.D{
+				{Key: "$and", Value: bson.A{
+					bson.D{{Key: generalProject, Value: dfm.Project}},
+					bson.D{{Key: generalVersion, Value: dfm.Version}},
+					bson.D{{Key: "general.typed_config.name", Value: dfm.Name}},
+				}},
+			},
 		},
 	}
 }
 
-func UTMDownstreamFilters(name string) []MongoFilters {
+func UTMDownstreamFilters(dfm DownstreamFilter) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "virtual_hosts",
-			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+			Filter: bson.D{
+				{Key: "$and", Value: bson.A{
+					bson.D{{Key: generalProject, Value: dfm.Project}},
+					bson.D{{Key: generalVersion, Value: dfm.Version}},
+					bson.D{{Key: "general.typed_config.name", Value: dfm.Name}},
+				}},
+			},
 		},
 		{
 			Collection: "routes",
-			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+			Filter: bson.D{
+				{Key: "$and", Value: bson.A{
+					bson.D{{Key: generalProject, Value: dfm.Project}},
+					bson.D{{Key: generalVersion, Value: dfm.Version}},
+					bson.D{{Key: "general.typed_config.name", Value: dfm.Name}},
+				}},
+			},
 		},
 		{
 			Collection: "filters",
-			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+			Filter: bson.D{
+				{Key: "$and", Value: bson.A{
+					bson.D{{Key: generalProject, Value: dfm.Project}},
+					bson.D{{Key: generalVersion, Value: dfm.Version}},
+					bson.D{{Key: "general.typed_config.name", Value: dfm.Name}},
+				}},
+			},
 		},
 	}
 }
 
-func TypedConfigDownstreamFilters(name string) []MongoFilters {
+func TypedConfigDownstreamFilters(dfm DownstreamFilter) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "filters",
-			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+			Filter: bson.D{
+				{Key: "$and", Value: bson.A{
+					bson.D{{Key: generalProject, Value: dfm.Project}},
+					bson.D{{Key: generalVersion, Value: dfm.Version}},
+					bson.D{{Key: "general.typed_config.name", Value: dfm.Name}},
+				}},
+			},
 		},
 	}
 }
 
-func TypedHTTPProtocolDownstreamFilters(name string) []MongoFilters {
+func TypedHTTPProtocolDownstreamFilters(dfm DownstreamFilter) []MongoFilters {
 	return []MongoFilters{
 		{
 			Collection: "clusters",
-			Filter:     bson.D{{Key: "general.typed_config.name", Value: name}},
+			Filter: bson.D{
+				{Key: "$and", Value: bson.A{
+					bson.D{{Key: generalProject, Value: dfm.Project}},
+					bson.D{{Key: generalVersion, Value: dfm.Version}},
+					bson.D{{Key: "general.typed_config.name", Value: dfm.Name}},
+				}},
+			},
 		},
 	}
 }

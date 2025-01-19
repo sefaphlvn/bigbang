@@ -62,6 +62,7 @@ message NodeErrorResponse {
 message PokeRequest {
   string nodeID = 1;
   string project = 2;
+  string version = 3;
 }
 
 message PokeResponse { string message = 1; }

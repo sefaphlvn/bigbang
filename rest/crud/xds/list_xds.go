@@ -19,7 +19,7 @@ type Field struct {
 type ResourceSchema map[string][]Field
 
 func (xds *AppHandler) ListResource(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
-	filter := bson.M{"general.project": requestDetails.Project}
+	filter := bson.M{}
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
 	opts := options.Find().SetProjection(bson.M{"resource": 0})
 

@@ -15,6 +15,7 @@ import (
 type Resources struct {
 	NodeID          string
 	Version         string
+	ResourceVersion string
 	Project         string
 	Listener        []types.Resource
 	Cluster         []types.Resource
@@ -30,6 +31,7 @@ type AllResources interface {
 	SetNodeID(nodeID string)
 	GetNodeID() string
 
+	SetResourceVersion(version string)
 	SetVersion(version string)
 	GetVersion() string
 
@@ -72,6 +74,10 @@ func (ar *Resources) SetNodeID(nodeID string) {
 
 func (ar *Resources) GetNodeID() string {
 	return ar.NodeID
+}
+
+func (ar *Resources) SetResourceVersion(version string) {
+	ar.ResourceVersion = version
 }
 
 func (ar *Resources) SetVersion(version string) {

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -57,13 +58,17 @@ func (c *Callbacks) OnStreamClosed(_ int64, _ *core.Node) {
 func (c *Callbacks) OnDeltaStreamOpen(ctx context.Context, id int64, typ string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	clientAddr, localAddr, nodeID := GetMetadata(ctx)
+	clientAddr, localAddr, nodeID, version := GetMetadata(ctx)
 	if nodeID == "" {
 		c.appContext.Logger.Warn("NodeID missing from metadata, skipping tracking")
 		return nil
 	}
 
-	c.CheckSetSnapshot(nodeID)
+	err := c.CheckSetSnapshot(nodeID, version)
+	if err != nil {
+		c.appContext.Logger.Warnf("Error checking snapshot: %v", err)
+		return err
+	}
 	c.activeClientsService.TrackClient(c.appContext.Client, nodeID, clientAddr, localAddr, id)
 	c.appContext.Logger.Infof("Delta stream %d opened for NodeID %s", id, nodeID)
 
@@ -120,31 +125,34 @@ func (c *Callbacks) OnStreamDeltaResponse(_ int64, req *discovery.DeltaDiscovery
 	}
 }
 
-func (c *Callbacks) CheckSetSnapshot(nodeID string) {
+func (c *Callbacks) CheckSetSnapshot(nodeID, version string) error {
 	if nodeID == "" {
-		return
+		return nil
 	}
 
 	parts := strings.Split(nodeID, ":")
 	if len(parts) != 2 {
 		c.appContext.Logger.Errorf("Invalid nodeID format: %s", nodeID)
+		return errors.New("invalid nodeID format")
 	}
 	node, project := parts[0], parts[1]
 
 	if c.poke.CheckSnapshot(nodeID) {
-		c.poke.GetResourceSetSnapshot(context.Background(), node, project)
+		return c.poke.GetResourceSetSnapshot(context.Background(), node, project, version)
 	}
+	return nil
 }
 
-func GetMetadata(ctx context.Context) (string, string, string) {
+func GetMetadata(ctx context.Context) (string, string, string, string) {
 	p, ok := peer.FromContext(ctx)
 	if !ok {
-		return "", "", ""
+		return "", "", "", ""
 	}
 
 	clientAddr := p.Addr.String()
 	localAddr := ""
 	nodeID := ""
+	version := ""
 	if p.LocalAddr != nil {
 		localAddr = p.LocalAddr.String()
 	}
@@ -156,7 +164,14 @@ func GetMetadata(ctx context.Context) (string, string, string) {
 		} else {
 			fmt.Println("Stream opened without NodeID in metadata")
 		}
+
+		if vals := md.Get("version"); len(vals) > 0 {
+			version = vals[0]
+			fmt.Printf("Stream opened with Version: %s", version)
+		} else {
+			fmt.Println("Stream opened without Version in metadata")
+		}
 	}
 
-	return clientAddr, localAddr, nodeID
+	return clientAddr, localAddr, nodeID, version
 }

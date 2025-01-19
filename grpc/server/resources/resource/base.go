@@ -23,11 +23,12 @@ func NewResources() *AllResources {
 	}
 }
 
-func GenerateSnapshot(ctx context.Context, rawListenerResource *models.DBResource, listenerName string, db *db.AppContext, logger *logrus.Logger, project string) (*AllResources, error) {
+func GenerateSnapshot(ctx context.Context, rawListenerResource *models.DBResource, listenerName string, db *db.AppContext, logger *logrus.Logger, project, version string) (*AllResources, error) {
 	ar := NewResources()
 	nodeID := fmt.Sprintf("%s:%s", listenerName, project)
 	ar.mutex.Lock()
 	ar.SetNodeID(nodeID)
+	ar.SetResourceVersion(version)
 	ar.mutex.Unlock()
 	ar.DecodeListener(ctx, rawListenerResource, db, logger)
 	return ar, nil
