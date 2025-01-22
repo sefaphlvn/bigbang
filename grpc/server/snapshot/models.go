@@ -1,7 +1,7 @@
 package snapshot
 
 import (
-	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	"github.com/sefaphlvn/versioned-go-control-plane/pkg/cache/v3"
 )
 
 type Cache struct {

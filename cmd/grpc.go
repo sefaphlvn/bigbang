@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 
-	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	"github.com/sefaphlvn/versioned-go-control-plane/pkg/server/v3"
 	"github.com/spf13/cobra"
 
 	grpcserver1 "github.com/sefaphlvn/bigbang/grpc/grpcserver"

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	core "github.com/sefaphlvn/versioned-go-control-plane/envoy/config/core/v3"
+	discovery "github.com/sefaphlvn/versioned-go-control-plane/envoy/service/discovery/v3"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 

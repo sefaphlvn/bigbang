@@ -1,7 +1,7 @@
 package server
 
 import (
-	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	discovery "github.com/sefaphlvn/versioned-go-control-plane/envoy/service/discovery/v3"
 
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 )

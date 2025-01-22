@@ -13,9 +13,9 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
-	discoverygrpc "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	discoverygrpc "github.com/sefaphlvn/versioned-go-control-plane/envoy/service/discovery/v3"
+	routeservice "github.com/sefaphlvn/versioned-go-control-plane/envoy/service/route/v3"
+	"github.com/sefaphlvn/versioned-go-control-plane/pkg/server/v3"
 
 	serverBridge "github.com/sefaphlvn/bigbang/grpc/server/bridge"
 	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"

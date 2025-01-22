@@ -7,9 +7,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	"github.com/sefaphlvn/versioned-go-control-plane/pkg/cache/types"
 
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	resource "github.com/sefaphlvn/versioned-go-control-plane/pkg/resource/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"

@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
-	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"github.com/sefaphlvn/versioned-go-control-plane/pkg/cache/types"
+	"github.com/sefaphlvn/versioned-go-control-plane/pkg/cache/v3"
+	"github.com/sefaphlvn/versioned-go-control-plane/pkg/resource/v3"
 	"github.com/sirupsen/logrus"
 
 	xdsResource "github.com/sefaphlvn/bigbang/grpc/server/resources/resource"

@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/sefaphlvn/bigbang/grpc/grpcserver"
 	"github.com/sefaphlvn/bigbang/pkg/bridge"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/versioned-go-control-plane/pkg/cache/v3"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/genproto/googleapis/rpc/status"

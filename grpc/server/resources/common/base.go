@@ -3,13 +3,13 @@ package common
 import (
 	"fmt"
 
-	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	cluster "github.com/sefaphlvn/versioned-go-control-plane/envoy/config/cluster/v3"
+	core "github.com/sefaphlvn/versioned-go-control-plane/envoy/config/core/v3"
+	endpoint "github.com/sefaphlvn/versioned-go-control-plane/envoy/config/endpoint/v3"
+	listener "github.com/sefaphlvn/versioned-go-control-plane/envoy/config/listener/v3"
+	route "github.com/sefaphlvn/versioned-go-control-plane/envoy/config/route/v3"
+	tls "github.com/sefaphlvn/versioned-go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	"github.com/sefaphlvn/versioned-go-control-plane/pkg/cache/types"
 )
 
 type Resources struct {

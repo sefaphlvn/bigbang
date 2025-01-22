@@ -1,7 +1,7 @@
 package resource
 
 import (
-	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	tls "github.com/sefaphlvn/versioned-go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"google.golang.org/protobuf/proto"
 )
 
