@@ -46,7 +46,7 @@ func InitRouter(h *handlers.Handler, logger *logrus.Logger) *gin.Engine {
 	initDependencyRoutes(apiDependency, h)
 	initBridgeRoutes(apiBridge, h)
 
-	logRoutes(e)
+	// logRoutes(e)
 	return e
 }
 

@@ -29,3 +29,5 @@ skaffold.yaml
 Dockerfile-local
 kind
 .dev
+scripts/
+helm/

@@ -1,0 +1,100 @@
+name: Build and Push Docker Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      envoy_versions:
+        description: 'Envoy versions (comma separated)'
+        required: true
+        default: 'v0.13.4-envoy1.33.0,v0.13.4-envoy1.32.3'
+        type: string
+
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  DOCKER_IMAGE: bigbang
+  GO_CONTROL_PLANE_PACKAGE: github.com/sefaphlvn/versioned-go-control-plane
+  GO_CONTROL_PLANE_ENVOY_PACKAGE: github.com/sefaphlvn/versioned-go-control-plane/envoy
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Set Project Version
+        run: |
+          echo "PROJECT_VERSION=$(cat VERSION)" >> $GITHUB_ENV
+
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ env.PROJECT_VERSION }}
+          path: release
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
+
+      - name: Build and push images
+        working-directory: release
+        run: |
+          # Convert comma-separated versions to array
+          IFS=',' read -ra VERSIONS <<< "${{ github.event.inputs.envoy_versions }}"
+          
+          # Process each version
+          for VERSION in "${VERSIONS[@]}"; do
+            # Trim whitespace
+            VERSION=$(echo $VERSION | xargs)
+            
+            echo "Processing version: ${VERSION}"
+            
+            # Extract Envoy version from the full version string
+            # Example: v0.13.4-envoy1.33.0 -> 1.33.0
+            ENVOY_VERSION=$(echo $VERSION | sed -n 's/.*envoy\([0-9.]*\)/\1/p')
+            
+            # Update go.mod for both packages
+            echo "Updating go.mod for version ${VERSION} and Envoy ${ENVOY_VERSION}"
+            go mod edit -require="${GO_CONTROL_PLANE_PACKAGE}@${VERSION}"
+            go mod edit -require="${GO_CONTROL_PLANE_ENVOY_PACKAGE}@v${ENVOY_VERSION}"
+            go mod tidy
+            
+            # Set image tags
+            IMAGE_NAME="${DOCKER_USERNAME}/${DOCKER_IMAGE}"
+            IMAGE_TAG="${IMAGE_NAME}:v${PROJECT_VERSION}-${VERSION}"
+            LATEST_TAG="${IMAGE_NAME}:latest"
+            
+            echo "Building image for version: ${VERSION}"
+            
+            # Build and push
+            docker buildx build \
+              --platform linux/amd64,linux/arm64 \
+              --build-arg VERSION=${VERSION} \
+              --build-arg PROJECT_VERSION=v${PROJECT_VERSION} \
+              -t ${IMAGE_TAG} \
+              -t ${LATEST_TAG} \
+              -f Dockerfile-release \
+              --push \
+              .
+            
+            echo "✅ Version ${VERSION} completed"
+            
+            # Reset go.mod changes for next iteration
+            git checkout -- go.mod go.sum
+          done 
