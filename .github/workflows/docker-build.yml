@@ -89,7 +89,7 @@ jobs:
               --build-arg PROJECT_VERSION=v${PROJECT_VERSION} \
               -t ${IMAGE_TAG} \
               -t ${LATEST_TAG} \
-              -f Dockerfile-release \
+              -f helm/bigbang/Dockerfile \
               --push \
               .
             
