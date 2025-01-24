@@ -65,10 +65,15 @@ jobs:
             CHANGELOG=$(git log --pretty=format:"* %s")
           fi
           
-          # Create release with changelog
+          # Create source archive
+          ARCHIVE_NAME="bigbang-v${VERSION}"
+          git archive --format=tar.gz --prefix=${ARCHIVE_NAME}/ -o ${ARCHIVE_NAME}.tar.gz HEAD
+          
+          # Create release with changelog and source archive
           gh release create v${VERSION} \
             --title "Release v${VERSION}" \
-            --notes "${CHANGELOG}"
+            --notes "${CHANGELOG}" \
+            ${ARCHIVE_NAME}.tar.gz
 
       - name: Release Status
         run: |
