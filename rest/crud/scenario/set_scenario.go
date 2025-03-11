@@ -15,7 +15,7 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/scenario/scenarios"
 )
 
-func (sc *AppHandler) SetScenario(ctx context.Context, scenario models.ScenarioBody, reqDetails models.RequestDetails) (interface{}, error) {
+func (sc *AppHandler) SetScenario(ctx context.Context, scenario models.ScenarioBody, reqDetails models.RequestDetails) (any, error) {
 	templateMap, exists := scenarios.Scenarios[scenarios.Scenario(reqDetails.Metadata["scenario_id"])]
 	if !exists {
 		return nil, fmt.Errorf("scenario not found")
@@ -28,7 +28,7 @@ func (sc *AppHandler) SetScenario(ctx context.Context, scenario models.ScenarioB
 	}
 
 	successfulResources := []models.DBResourceClass{}
-	response := map[string]interface{}{}
+	response := map[string]any{}
 
 	for key, templateStr := range templateMap {
 		if data, ok := scenario[key]; ok {
@@ -81,20 +81,20 @@ func (sc *AppHandler) SetScenario(ctx context.Context, scenario models.ScenarioB
 	return response, nil
 }
 
-func (sc *AppHandler) SetResource(ctx context.Context, data models.DBResourceClass, reqDetails models.RequestDetails) (map[string]interface{}, error) {
+func (sc *AppHandler) SetResource(ctx context.Context, data models.DBResourceClass, reqDetails models.RequestDetails) (map[string]any, error) {
 	Gtype := data.GetGeneral().GType
-	result := map[string]interface{}{}
+	result := map[string]any{}
 	if helper.Contains([]string{"filters", "extensions"}, Gtype.CollectionString()) {
 		response, err := sc.Extension.SetExtension(ctx, data, reqDetails)
 		if err == nil {
-			result = response.(map[string]interface{})
+			result = response.(map[string]any)
 		}
 		return result, err
 	}
 
 	response, err := sc.XDS.SetResource(ctx, data, reqDetails)
 	if err == nil {
-		result = response.(map[string]interface{})
+		result = response.(map[string]any)
 	}
 	return result, err
 }

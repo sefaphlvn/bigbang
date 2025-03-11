@@ -15,12 +15,8 @@ import (
 )
 
 func ipv4Dialer(ctx context.Context, addr string) (net.Conn, error) {
-	var d net.Dialer
-	conn, err := d.DialContext(ctx, "tcp4", addr)
-	if err != nil {
-		conn, err = d.DialContext(ctx, "tcp6", addr)
-	}
-	return conn, err
+	dialer := net.Dialer{}
+	return dialer.DialContext(ctx, "tcp4", addr)
 }
 
 func NewGRPCClient(appCtx *db.AppContext) (*grpc.ClientConn, error) {
