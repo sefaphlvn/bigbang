@@ -21,7 +21,10 @@ func ipv4Dialer(ctx context.Context, addr string) (net.Conn, error) {
 
 func NewGRPCClient(appCtx *db.AppContext) (*grpc.ClientConn, error) {
 	var transportCredentials credentials.TransportCredentials
-	if appCtx.Config.BigbangTLSEnabled == "true" {
+
+	if appCtx.Config.BigbangInternalCommunication == "true" {
+		transportCredentials = insecure.NewCredentials()
+	} else if appCtx.Config.BigbangTLSEnabled == "true" {
 		tlsConfig := &tls.Config{
 			InsecureSkipVerify: true,
 		}
@@ -31,7 +34,7 @@ func NewGRPCClient(appCtx *db.AppContext) (*grpc.ClientConn, error) {
 	}
 
 	return grpc.NewClient(
-		appCtx.Config.BigbangAddress+":"+appCtx.Config.BigbangPort,
+		GetBigbangAddressPort(appCtx),
 		grpc.WithTransportCredentials(transportCredentials),
 		grpc.WithContextDialer(ipv4Dialer),
 		grpc.WithDisableServiceConfig(),
@@ -42,4 +45,11 @@ func NewGRPCClient(appCtx *db.AppContext) (*grpc.ClientConn, error) {
 		}),
 		grpc.WithAuthority(appCtx.Config.BigbangAddress),
 	)
-} 
+}
+
+func GetBigbangAddressPort(appCtx *db.AppContext) string {
+	if appCtx.Config.BigbangInternalCommunication == "true" {
+		return appCtx.Config.BigbangInternalAddressPort
+	}
+	return appCtx.Config.BigbangAddress + ":" + appCtx.Config.BigbangPort
+}
