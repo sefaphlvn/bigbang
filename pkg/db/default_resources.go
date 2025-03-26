@@ -7,24 +7,28 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sefaphlvn/bigbang/pkg/errstr"
-	"github.com/sefaphlvn/bigbang/pkg/helper"
-	"github.com/sefaphlvn/bigbang/pkg/models"
-	"github.com/sefaphlvn/bigbang/pkg/version"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/sefaphlvn/bigbang/pkg/errstr"
+	"github.com/sefaphlvn/bigbang/pkg/helper"
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/pkg/version"
 )
 
 func createDefaults(ctx context.Context, context *AppContext, logger *logrus.Logger) {
+	vrs := version.GetVersion()
+
+	if vrs == "" {
+		logger.Infof("Version not found! Skipping default resources creation.")
+		return
+	}
+
 	userID, err := createAdminUser(ctx, context)
 	if err != nil {
 		logger.Infof("Admin user not created: %s", err)
-	}
-
-	if err := createAdminGroup(ctx, context, userID); err != nil {
-		logger.Infof("Admin group not created: %s", err)
 	}
 
 	projectID, err := createDefaultProject(ctx, context, userID)
@@ -32,18 +36,22 @@ func createDefaults(ctx context.Context, context *AppContext, logger *logrus.Log
 		logger.Infof("Default project not created: %s", err)
 	}
 
-	if err := CreateDefaultHttpProtocolOptions(ctx, context, projectID, version.GetVersion()); err != nil {
+	groupID, err := createDefaultGroup(ctx, context, userID, projectID)
+	if err != nil {
+		logger.Infof("Admin group not created: %s", err)
+	}
+
+	if err := CreateDefaultHttpProtocolOptions(ctx, context, projectID, vrs, groupID); err != nil {
 		logger.Infof("Default hpo not created: %s", err)
 	}
 
-	if err := CreateDefaultUpstreamTLS(ctx, context, projectID, version.GetVersion()); err != nil {
+	if err := CreateDefaultUpstreamTLS(ctx, context, projectID, vrs, groupID); err != nil {
 		logger.Infof("Default upstream tls not created: %s", err)
 	}
 
-	if err := CreateDefaultCluster(ctx, context, projectID, version.GetVersion()); err != nil {
+	if err := CreateDefaultCluster(ctx, context, projectID, vrs, groupID); err != nil {
 		logger.Infof("Default cluster not created: %s", err)
 	}
-
 }
 
 func createAdminUser(ctx context.Context, db *AppContext) (string, error) {
@@ -66,7 +74,7 @@ func createAdminUser(ctx context.Context, db *AppContext) (string, error) {
 		user.BaseGroup = &adminBaseGroup
 		user.Active = &adminActive
 
-		token, refreshToken, _ := helper.GenerateAllTokens(user.Email, user.Username, user.UserID, nil, nil, nil, nil, false, user.Role)
+		token, refreshToken, _ := helper.GenerateAllTokens(user.Email, user.Username, user.UserID, nil, nil, nil, nil, user.Role)
 		user.Token = &token
 		user.RefreshToken = &refreshToken
 
@@ -89,35 +97,47 @@ func createAdminUser(ctx context.Context, db *AppContext) (string, error) {
 	return user.UserID, nil
 }
 
-func createAdminGroup(ctx context.Context, db *AppContext, userID string) error {
+func CreateGroup(ctx context.Context, collection *mongo.Collection, userID, projectID string) (*mongo.InsertOneResult, error) {
+	var members []string
+	if userID != "" {
+		members = []string{userID}
+	}
+	groupDoc := bson.M{
+		"groupname":  "default",
+		"members":    members,
+		"project":    projectID,
+		"created_at": primitive.NewDateTimeFromTime(time.Now()),
+		"updated_at": primitive.NewDateTimeFromTime(time.Now()),
+	}
+
+	result, err := collection.InsertOne(ctx, groupDoc)
+
+	return result, err
+}
+
+func createDefaultGroup(ctx context.Context, db *AppContext, userID string, projectID string) (string, error) {
+	var groupID string
 	if userID == "" {
-		return errstr.ErrUserIDEmpty
+		return "", errstr.ErrUserIDEmpty
 	}
 
 	collection := db.Client.Collection("groups")
 	var group models.Group
-	err := collection.FindOne(ctx, bson.M{"groupname": "admin"}).Decode(&group)
+	err := collection.FindOne(ctx, bson.M{"groupname": "default", "project": projectID}).Decode(&group)
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
-		groupDoc := bson.M{
-			"groupname":  "admin",
-			"members":    []string{userID},
-			"created_at": primitive.NewDateTimeFromTime(time.Now()),
-			"updated_at": primitive.NewDateTimeFromTime(time.Now()),
-		}
-
-		result, err := collection.InsertOne(ctx, groupDoc)
+		result, err := CreateGroup(ctx, collection, userID, projectID)
 		if err != nil {
 			if mongo.IsDuplicateKeyError(err) {
-				db.Logger.Infof("admin group already exists: %v", err)
+				db.Logger.Infof("default group already exists: %v", err)
 			} else {
-				return fmt.Errorf("failed to create admin group: %w", err)
+				return "", fmt.Errorf("failed to create default group: %w", err)
 			}
 		} else {
-			db.Logger.Info("admin group created successfully")
+			db.Logger.Info("default group created successfully")
 
-			groupID := result.InsertedID.(primitive.ObjectID).Hex()
+			groupID = result.InsertedID.(primitive.ObjectID).Hex()
 			usersCollection := db.Client.Collection("users")
 			userFilter := bson.M{"user_id": userID}
 			userUpdate := bson.M{"$set": bson.M{"base_group": groupID}}
@@ -125,17 +145,17 @@ func createAdminGroup(ctx context.Context, db *AppContext, userID string) error 
 			_, updateErr := usersCollection.UpdateOne(ctx, userFilter, userUpdate)
 			if updateErr != nil {
 				db.Logger.Infof("Failed to update admin user's base group: %v", updateErr)
-				return fmt.Errorf("failed to update admin user's base group: %w", updateErr)
+				return "", fmt.Errorf("failed to update admin user's base group: %w", updateErr)
 			}
 			db.Logger.Info("Admin user's base group updated successfully")
 		}
 	case err != nil:
-		return fmt.Errorf("failed to check for admin group: %w", err)
+		return "", fmt.Errorf("failed to check for default group: %w", err)
 	default:
-		db.Logger.Info("admin group already exists")
+		db.Logger.Info("default group already exists")
 	}
 
-	return nil
+	return groupID, nil
 }
 
 func createDefaultProject(ctx context.Context, db *AppContext, userID string) (string, error) {
@@ -179,17 +199,6 @@ func createDefaultProject(ctx context.Context, db *AppContext, userID string) (s
 				return projectID, fmt.Errorf("failed to update admin user's default project: %w", updateErr)
 			}
 			db.Logger.Info("Admin user's default project updated successfully")
-
-			groupsCollection := db.Client.Collection("groups")
-			groupFilter := bson.M{"groupname": "admin"}
-			groupUpdate := bson.M{"$set": bson.M{"project": projectID}}
-
-			_, groupUpdateErr := groupsCollection.UpdateOne(ctx, groupFilter, groupUpdate)
-			if groupUpdateErr != nil {
-				db.Logger.Infof("Failed to update admin group's projects: %v", groupUpdateErr)
-				return projectID, fmt.Errorf("failed to update admin group's projects: %w", groupUpdateErr)
-			}
-			db.Logger.Info("Admin group's projects updated successfully")
 		}
 	case err != nil:
 		return projectID, fmt.Errorf("failed to check for default project: %w", err)
@@ -201,7 +210,7 @@ func createDefaultProject(ctx context.Context, db *AppContext, userID string) (s
 	return projectID, nil
 }
 
-func CreateDefaultCluster(ctx context.Context, db *AppContext, projectID string, vers string) error {
+func CreateDefaultCluster(ctx context.Context, db *AppContext, projectID string, vers string, groupID string) error {
 	collection := db.Client.Collection("clusters")
 	var cluster models.Resource
 	if projectID == "" {
@@ -305,7 +314,7 @@ func CreateDefaultCluster(ctx context.Context, db *AppContext, projectID string,
 				},
 				"permissions": bson.M{
 					"users":  []string{},
-					"groups": []string{},
+					"groups": []string{groupID},
 				},
 				"created_at":   createdAt,
 				"updated_at":   updatedAt,
@@ -336,7 +345,7 @@ func CreateDefaultCluster(ctx context.Context, db *AppContext, projectID string,
 	return nil
 }
 
-func CreateDefaultHttpProtocolOptions(ctx context.Context, db *AppContext, projectID string, vers string) error {
+func CreateDefaultHttpProtocolOptions(ctx context.Context, db *AppContext, projectID string, vers string, groupID string) error {
 	collection := db.Client.Collection("extensions")
 	var hpo models.Resource
 	if projectID == "" {
@@ -365,7 +374,7 @@ func CreateDefaultHttpProtocolOptions(ctx context.Context, db *AppContext, proje
 				},
 				"permissions": bson.M{
 					"users":  []string{},
-					"groups": []string{},
+					"groups": []string{groupID},
 				},
 				"created_at": createdAt,
 				"updated_at": updatedAt,
@@ -375,7 +384,10 @@ func CreateDefaultHttpProtocolOptions(ctx context.Context, db *AppContext, proje
 				"resource": bson.M{
 					"explicit_http_config": bson.M{
 						"http2_protocol_options": bson.M{
-							"max_concurrent_streams": 5000,
+							"connection_keepalive": bson.M{
+								"interval": "30s",
+								"timeout":  "5s",
+							},
 						},
 					},
 				},
@@ -401,7 +413,7 @@ func CreateDefaultHttpProtocolOptions(ctx context.Context, db *AppContext, proje
 	return nil
 }
 
-func CreateDefaultUpstreamTLS(ctx context.Context, db *AppContext, projectID string, vers string) error {
+func CreateDefaultUpstreamTLS(ctx context.Context, db *AppContext, projectID string, vers string, groupID string) error {
 	collection := db.Client.Collection("tls")
 	var tls models.Resource
 	if projectID == "" {
@@ -430,7 +442,7 @@ func CreateDefaultUpstreamTLS(ctx context.Context, db *AppContext, projectID str
 				},
 				"permissions": bson.M{
 					"users":  []string{},
-					"groups": []string{},
+					"groups": []string{groupID},
 				},
 				"created_at": createdAt,
 				"updated_at": updatedAt,

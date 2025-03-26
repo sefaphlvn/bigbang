@@ -33,29 +33,22 @@ func Contains(s []string, str string) bool {
 	return false
 }
 
-func PrettyPrint(data interface{}) {
-	// Eğer veri nil ise çıkış yap
+func PrettyPrint(data any) {
 	if data == nil {
 		return
 	}
 
-	// JSON verisini saklamak için
-	var jsonData interface{}
-
+	var jsonData any
 	switch v := data.(type) {
 	case string:
-		// String'i JSON olarak unmarshall etmeyi dene
 		if err := json.Unmarshal([]byte(v), &jsonData); err != nil {
-			// JSON değilse, doğrudan string'i döndür
 			fmt.Println(v)
 			return
 		}
 	default:
-		// JSON olmayan yapıları doğrudan al
 		jsonData = v
 	}
 
-	// Eğer jsonData bir JSON yapıdaysa, pretty print yap
 	prettyJSON, err := json.MarshalIndent(jsonData, "", "    ")
 	if err != nil {
 		log.Fatalf("JSON marshaling error: %v", err)
@@ -64,17 +57,11 @@ func PrettyPrint(data interface{}) {
 	fmt.Println(string(prettyJSON))
 }
 
-/* func GetResourceType(data interface{}) {
-	resourceType := reflect.TypeOf(data)
-	fmt.Printf("Resource type: %v\n", resourceType)
-} */
-
 func ToBool(strBool string) bool {
 	boolean, err := strconv.ParseBool(strBool)
 	if err != nil {
 		fmt.Println(err)
 	}
-
 	return boolean
 }
 
@@ -83,11 +70,10 @@ func HashPassword(password string) string {
 	if err != nil {
 		log.Panic(err)
 	}
-
 	return string(bytes)
 }
 
-func GenerateAllTokens(email, username *string, userID string, groups *[]string, projects *[]models.CombinedProjects, baseGroup, baseProject *string, adminGroup bool, role *models.Role) (signedToken, signedRefreshToken string, err error) {
+func GenerateAllTokens(email, username *string, userID string, groups *[]string, projects *[]models.CombinedProjects, baseGroup, baseProject *string, role *models.Role) (signedToken, signedRefreshToken string, err error) {
 	claims := &models.SignedDetails{
 		Email:       email,
 		Username:    username,
@@ -96,7 +82,6 @@ func GenerateAllTokens(email, username *string, userID string, groups *[]string,
 		Projects:    projects,
 		BaseGroup:   baseGroup,
 		BaseProject: baseProject,
-		AdminGroup:  adminGroup,
 		Role:        role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 60)),
@@ -111,7 +96,6 @@ func GenerateAllTokens(email, username *string, userID string, groups *[]string,
 		Projects:    projects,
 		BaseGroup:   baseGroup,
 		BaseProject: baseProject,
-		AdminGroup:  adminGroup,
 		Role:        role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 60)),
@@ -150,7 +134,7 @@ func RemoveDuplicates(strings *[]string) *[]string {
 	return &result
 }
 
-func MarshalJSON(data interface{}, logger *logrus.Logger) (string, error) {
+func MarshalJSON(data any, logger *logrus.Logger) (string, error) {
 	jsonString, err := json.Marshal(data)
 	if err != nil {
 		logger.Debugf("Error marshaling JSON: %v", err)
@@ -175,7 +159,7 @@ func RemoveDuplicatesP(projects *[]models.CombinedProjects) *[]models.CombinedPr
 	return &result
 }
 
-func MarshalUnmarshalWithType(data interface{}, msg proto.Message) error {
+func MarshalUnmarshalWithType(data any, msg proto.Message) error {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -189,7 +173,7 @@ func MarshalUnmarshalWithType(data interface{}, msg proto.Message) error {
 	return nil
 }
 
-func ConvertToJSON(v interface{}, log *logrus.Logger) string {
+func ConvertToJSON(v any, log *logrus.Logger) string {
 	jsonData, err := json.Marshal(v)
 	if err != nil {
 		log.Infof("JSON convert err: %v", err)
@@ -201,7 +185,7 @@ func EscapePointKey(key string) string {
 	return strings.ReplaceAll(key, ".", `\.`)
 }
 
-func GenerateUniqueId(length int) string {
+func GenerateUniqueID(length int) string {
 	const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 	charactersLength := big.NewInt(int64(len(characters)))
 	result := make([]byte, length)

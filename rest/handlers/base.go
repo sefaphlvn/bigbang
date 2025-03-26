@@ -23,9 +23,9 @@ const (
 )
 
 type (
-	DBFunc       func(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error)
+	DBFunc       func(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (any, error)
 	DepFunc      func(ctx context.Context, requestDetails models.RequestDetails) (*dependency.Graph, error)
-	ScenarioFunc func(ctx context.Context, scenario models.ScenarioBody, reqDetails models.RequestDetails) (interface{}, error)
+	ScenarioFunc func(ctx context.Context, scenario models.ScenarioBody, reqDetails models.RequestDetails) (any, error)
 )
 
 type Handler struct {
@@ -94,7 +94,7 @@ func (h *Handler) getRequestDetails(c *gin.Context) (models.RequestDetails, mode
 	return requestDetails, userDetails
 }
 
-func (h *Handler) dynamicFuncs(c *gin.Context, ctx context.Context, dbFunc DBFunc, requestDetails models.RequestDetails) (interface{}, error) {
+func (h *Handler) dynamicFuncs(c *gin.Context, ctx context.Context, dbFunc DBFunc, requestDetails models.RequestDetails) (any, error) {
 	resource, err := decodeR(c)
 	if err != nil {
 		return nil, err
@@ -117,9 +117,9 @@ func GetUserDetails(c *gin.Context) (models.UserDetails, error) {
 	userName, _ := c.Get("user_name")
 	BaseGroup, _ := c.Get("base_group")
 
-	userGroup, ok := groups.([]string)
+	userGroup, ok := groups.(*[]string)
 	if !ok {
-		userGroup = []string{}
+		userGroup = &[]string{}
 	}
 
 	userProjects, ok := projects.([]string)
@@ -145,9 +145,9 @@ func GetUserDetails(c *gin.Context) (models.UserDetails, error) {
 		userID = ""
 	}
 
-	user, ok := userName.(string)
+	user, ok := userName.(*string)
 	if !ok {
-		user = ""
+		user = nil
 	}
 
 	userBaseGroup, ok := BaseGroup.(string)
@@ -156,12 +156,12 @@ func GetUserDetails(c *gin.Context) (models.UserDetails, error) {
 	}
 
 	userDetails := models.UserDetails{
-		Groups:    userGroup,
+		Groups:    *userGroup,
 		Role:      userRoleIs,
 		IsOwner:   userIsOwner,
 		UserID:    userID,
 		Projects:  userProjects,
-		UserName:  user,
+		UserName:  *user,
 		BaseGroup: userBaseGroup,
 	}
 

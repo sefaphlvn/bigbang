@@ -6,13 +6,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/mongo"
+	"google.golang.org/genproto/googleapis/rpc/status"
+
 	"github.com/sefaphlvn/bigbang/grpc/grpcserver"
 	"github.com/sefaphlvn/bigbang/pkg/bridge"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/versioned-go-control-plane/pkg/cache/v3"
-	"github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/mongo"
-	"google.golang.org/genproto/googleapis/rpc/status"
 )
 
 type ActiveClientsService struct {
@@ -208,7 +209,6 @@ func (acs *ActiveClientsService) GetErrorEntry(nodeID, resourceID, nonce string,
 
 	for _, entry := range client.Errors.Errors {
 		if entry.ResourceID == resourceID && entry.ResponseNonce == nonce {
-			//entry.Resolved = true
 			return &entry, true
 		}
 	}

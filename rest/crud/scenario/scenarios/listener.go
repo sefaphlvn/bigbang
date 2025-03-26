@@ -1,6 +1,6 @@
 package scenarios
 
-const SingleListenerHttp = `
+const SingleListenerHTTP = `
 {
 	"general": {
 		"name": "{{ .Data.name }}",
@@ -64,7 +64,7 @@ const SingleListenerHttp = `
 }
 `
 
-const SingleListenerTcp = `
+const SingleListenerTCP = `
 {
 	"general": {
 		"name": "{{ .Data.name }}",

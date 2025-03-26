@@ -50,7 +50,7 @@ func ValidateToken(signedToken string) (claims *models.SignedDetails, msg string
 	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&models.SignedDetails{},
-		func(_ *jwt.Token) (interface{}, error) {
+		func(_ *jwt.Token) (any, error) {
 			return []byte(helper.SecretKey), nil
 		},
 	)
@@ -110,7 +110,7 @@ func ValidateRefreshToken(tokenString string) (models.SignedDetails, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&models.SignedDetails{},
-		func(token *jwt.Token) (interface{}, error) {
+		func(token *jwt.Token) (any, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
 type UserWithGroups struct {
@@ -40,9 +42,9 @@ func (handler *AppHandler) DemoAccount(c *gin.Context) {
 	clientIP := c.ClientIP()
 	baseProject := handler.GetDemoProjectID()
 	ctx := c.Request.Context()
-	user := "demo" + helper.GenerateUniqueId(4)
+	user := "demo" + helper.GenerateUniqueID(4)
 	userWG.Username = &user
-	passwd := helper.GenerateUniqueId(8)
+	passwd := helper.GenerateUniqueID(8)
 	userWG.Password = &passwd
 	userWG.Email = &email
 	userWG.Projects = []string{baseProject}
@@ -52,9 +54,10 @@ func (handler *AppHandler) DemoAccount(c *gin.Context) {
 	userWG.ClientIP = &clientIP
 	status, msg, userID = handler.CreateUser(ctx, userCollection, userWG)
 
-	
 	if status == http.StatusOK {
-		SendEmail(user, passwd, email, handler.Context.Config.SMTPPassword)
+		if err := SendEmail(user, passwd, email, handler.Context.Config.SMTPPassword); err != nil {
+			handler.Context.Logger.Errorf("Failed to send email: %v", err)
+		}
 	}
 
 	respondWithJSON(c, status, msg, userID)
@@ -123,7 +126,7 @@ func (handler *AppHandler) CreateUser(ctx context.Context, userCollection *mongo
 	userWG.UpdatedAt = primitive.NewDateTimeFromTime(now)
 	userWG.ID = primitive.NewObjectID()
 	userWG.UserID = userWG.ID.Hex()
-	token, refreshToken, _ := helper.GenerateAllTokens(userWG.Email, userWG.Username, userWG.UserID, nil, nil, nil, nil, false, userWG.Role)
+	token, refreshToken, _ := helper.GenerateAllTokens(userWG.Email, userWG.Username, userWG.UserID, nil, nil, nil, nil, userWG.Role)
 	userWG.Token = &token
 	userWG.RefreshToken = &refreshToken
 
@@ -177,7 +180,7 @@ func (handler *AppHandler) buildUpdateFields(userWG UserWithGroups) bson.M {
 	if userWG.Username != nil {
 		setMap["username"] = userWG.Username
 	}
-	if userWG.Password != nil {
+	if userWG.Password != nil && *userWG.Password != "" {
 		setMap["password"] = helper.HashPassword(*userWG.Password)
 	}
 	if userWG.Email != nil {
@@ -290,10 +293,10 @@ func (handler *AppHandler) Login() gin.HandlerFunc {
 			return
 		}
 
-		groups, baseGroup, adminGroup := handler.GetUserGroups(ctx, foundUser.UserID)
+		groups, baseGroup, _ := handler.GetUserGroups(ctx, foundUser.UserID)
 		projects, baseProject := handler.GetUserProject(ctx, foundUser.UserID)
 
-		token, refreshToken, _ := helper.GenerateAllTokens(foundUser.Email, foundUser.Username, foundUser.UserID, groups, projects, baseGroup, baseProject, adminGroup, foundUser.Role)
+		token, refreshToken, _ := helper.GenerateAllTokens(foundUser.Email, foundUser.Username, foundUser.UserID, groups, projects, baseGroup, baseProject, foundUser.Role)
 
 		foundUser.Token = &token
 		foundUser.RefreshToken = &refreshToken
@@ -354,10 +357,10 @@ func (handler *AppHandler) Refresh() gin.HandlerFunc {
 			return
 		}
 
-		groups, baseGroup, adminGroup := handler.GetUserGroups(ctx, foundUser.UserID)
+		groups, baseGroup, _ := handler.GetUserGroups(ctx, foundUser.UserID)
 		projects, baseProject := handler.GetUserProject(ctx, foundUser.UserID)
 
-		signedToken, signedRefreshToken, _ := helper.GenerateAllTokens(foundUser.Email, foundUser.Username, foundUser.UserID, groups, projects, baseGroup, baseProject, adminGroup, foundUser.Role)
+		signedToken, signedRefreshToken, _ := helper.GenerateAllTokens(foundUser.Email, foundUser.Username, foundUser.UserID, groups, projects, baseGroup, baseProject, foundUser.Role)
 		UpdateAllTokens(handler, signedToken, signedRefreshToken, foundUser.UserID)
 
 		c.JSON(http.StatusOK, gin.H{
@@ -505,11 +508,7 @@ func checkUserByEmailAndIP(userCollection *mongo.Collection, email, clientIP str
 
 	var user models.User
 	err := userCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 func (handler *AppHandler) GetDemoProjectID() string {
@@ -526,4 +525,76 @@ func (handler *AppHandler) GetDemoProjectID() string {
 	}
 
 	return id.Hex()
+}
+
+func (handler *AppHandler) DeleteUser(c *gin.Context) {
+	ctx := c.Request.Context()
+	userID := c.Param("user_id")
+
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "User ID is required"})
+		return
+	}
+
+	if !handler.CheckUserProjectPermission(c) {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "User does not have permission to delete users"})
+		return
+	}
+
+	usersCollection := handler.Context.Client.Collection("users")
+
+	var user models.User
+	err := usersCollection.FindOne(ctx, bson.M{"user_id": userID}).Decode(&user)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to get user information"})
+		}
+		return
+	}
+
+	if user.Username != nil && *user.Username == "admin" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Admin user cannot be deleted"})
+		return
+	}
+
+	isDefault, err := common.IsDefaultResource(ctx, handler.Context, *user.Username, "users", "")
+	if err != nil {
+		handler.Context.Logger.Errorf("An error occurred while checking if the user is default: %v", err)
+	} else if isDefault {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "This user is a default resource and cannot be deleted"})
+		return
+	}
+
+	projectsCollection := handler.Context.Client.Collection("projects")
+	_, err = projectsCollection.UpdateMany(
+		ctx,
+		bson.M{"members": userID},
+		bson.M{"$pull": bson.M{"members": userID}},
+	)
+	if err != nil {
+		handler.Context.Logger.Errorf("Failed to remove user from projects: %v", err)
+	}
+
+	collectionsToClean := []string{"clusters", "listeners", "routes", "endpoints", "secrets", "extensions", "filters", "bootstrap", "tls", "virtual_hosts"}
+	for _, collectionName := range collectionsToClean {
+		collection := handler.Context.Client.Collection(collectionName)
+		_, err = collection.UpdateMany(
+			ctx,
+			bson.M{"general.permissions.users": userID},
+			bson.M{"$pull": bson.M{"general.permissions.users": userID}},
+		)
+		if err != nil {
+			handler.Context.Logger.Errorf("Failed to remove user permissions from %s: %v", collectionName, err)
+		}
+	}
+
+	_, err = usersCollection.DeleteOne(ctx, bson.M{"user_id": userID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to delete user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User successfully deleted"})
 }

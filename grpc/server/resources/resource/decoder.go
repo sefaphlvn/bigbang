@@ -125,7 +125,6 @@ func (ar *AllResources) processExtension(ctx context.Context, extension *models.
 			uniqKey := fmt.Sprintf("%s__%s", extension.Name, extension.GType.String())
 			ar.AddToCollection(extConfig, extension.GType, uniqKey, &parentName, extension.Name)
 		} else {
-			// Detect vhds and add nodeid to inital metadata
 			if extension.GType == models.HTTPConnectionManager {
 				hcmConfig, ok := extConfig.(*hcm.HttpConnectionManager)
 				if !ok {
@@ -393,7 +392,7 @@ func (ar *AllResources) UpdateVhdsMetadataNodeID(vhds *route.Vhds) {
 		vhdsConfig.GrpcServices[0].InitialMetadata[0].Value = ar.NodeID
 
 		versionMetadata := &core.HeaderValue{
-			Key:   "version",
+			Key:   "envoy-version",
 			Value: ar.ResourceVersion,
 		}
 		vhdsConfig.GrpcServices[0].InitialMetadata = append(

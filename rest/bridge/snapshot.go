@@ -9,10 +9,10 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
-func (brg *AppHandler) GetSnapshotResources(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (brg *AppHandler) GetSnapshotResources(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	md := metadata.Pairs("nodeid", requestDetails.Name, "envoy-version", requestDetails.Version)
 	ctxOut := metadata.NewOutgoingContext(ctx, md)
-	resp, err := brg.SnapshotResource.GetSnapshotResources(ctxOut, &bridge.SnapshotKey{Key: requestDetails.Name})
+	resp, err := brg.BSnapshot.GetSnapshotResources(ctxOut, &bridge.SnapshotKey{Key: requestDetails.Name})
 	if err != nil {
 		return nil, err
 	}
@@ -20,10 +20,10 @@ func (brg *AppHandler) GetSnapshotResources(ctx context.Context, _ models.DBReso
 	return resp, nil
 }
 
-func (brg *AppHandler) GetSnapshotKeys(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (brg *AppHandler) GetSnapshotKeys(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	md := metadata.Pairs("nodeid", requestDetails.Name, "envoy-version", requestDetails.Version)
 	ctxOut := metadata.NewOutgoingContext(ctx, md)
-	resp, err := brg.SnapshotKeys.GetSnapshotKeys(ctxOut, &bridge.Empty{})
+	resp, err := brg.BSnapshot.GetSnapshotKeys(ctxOut, &bridge.Empty{})
 	if err != nil {
 		return nil, err
 	}

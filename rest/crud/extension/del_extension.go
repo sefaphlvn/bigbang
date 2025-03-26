@@ -15,12 +15,19 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (xds *AppHandler) DelExtension(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) DelExtension(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	resourceType := requestDetails.Collection
 	collection := xds.Context.Client.Collection(resourceType)
 	filter, err := common.AddResourceIDFilter(requestDetails, buildFilter(requestDetails))
 	if err != nil {
 		return nil, errors.New("invalid id format")
+	}
+
+	isDefault, err := common.IsDefaultResource(ctx, xds.Context, requestDetails.Name, resourceType, requestDetails.Project)
+	if err != nil {
+		xds.Context.Logger.Errorf("An error occurred while checking if the resource is default: %v", err)
+	} else if isDefault {
+		return nil, errors.New("This resource is a default resource and cannot be deleted")
 	}
 
 	downstreamFilterModel := downstreamfilters.DownstreamFilter{

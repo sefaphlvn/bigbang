@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/rest/crud/scenario/scenarios"
@@ -18,13 +20,13 @@ import (
 func (sc *AppHandler) SetScenario(ctx context.Context, scenario models.ScenarioBody, reqDetails models.RequestDetails) (any, error) {
 	templateMap, exists := scenarios.Scenarios[scenarios.Scenario(reqDetails.Metadata["scenario_id"])]
 	if !exists {
-		return nil, fmt.Errorf("scenario not found")
+		return nil, errors.New("scenario not found")
 	}
 
 	listenerUniqs := map[string]string{
-		"UniqListenerNameID":    helper.GenerateUniqueId(6),
-		"UniqFilterChainNameID": helper.GenerateUniqueId(6),
-		"UniqFilterNameID":      helper.GenerateUniqueId(6),
+		"UniqListenerNameID":    helper.GenerateUniqueID(6),
+		"UniqFilterChainNameID": helper.GenerateUniqueID(6),
+		"UniqFilterNameID":      helper.GenerateUniqueID(6),
 	}
 
 	successfulResources := []models.DBResourceClass{}
@@ -33,7 +35,7 @@ func (sc *AppHandler) SetScenario(ctx context.Context, scenario models.ScenarioB
 	for key, templateStr := range templateMap {
 		if data, ok := scenario[key]; ok {
 
-			templateData := map[string]interface{}{
+			templateData := map[string]any{
 				"Data":     data,
 				"Version":  reqDetails.Version,
 				"Project":  reqDetails.Project,
@@ -52,7 +54,7 @@ func (sc *AppHandler) SetScenario(ctx context.Context, scenario models.ScenarioB
 				return nil, fmt.Errorf("template execute error: %w", err)
 			}
 
-			var jsonData interface{}
+			var jsonData any
 			if err := json.Unmarshal(buf.Bytes(), &jsonData); err != nil {
 				sc.rollback(ctx, successfulResources, reqDetails)
 				return nil, fmt.Errorf("failed to parse template output as JSON: %w", err)
@@ -87,14 +89,22 @@ func (sc *AppHandler) SetResource(ctx context.Context, data models.DBResourceCla
 	if helper.Contains([]string{"filters", "extensions"}, Gtype.CollectionString()) {
 		response, err := sc.Extension.SetExtension(ctx, data, reqDetails)
 		if err == nil {
-			result = response.(map[string]any)
+			if mapResult, ok := response.(map[string]any); ok {
+				result = mapResult
+			} else {
+				return nil, fmt.Errorf("unexpected response type from Extension.SetExtension: %T", response)
+			}
 		}
 		return result, err
 	}
 
 	response, err := sc.XDS.SetResource(ctx, data, reqDetails)
 	if err == nil {
-		result = response.(map[string]any)
+		if mapResult, ok := response.(map[string]any); ok {
+			result = mapResult
+		} else {
+			return nil, fmt.Errorf("unexpected response type: %T", response)
+		}
 	}
 	return result, err
 }
@@ -153,13 +163,13 @@ func (sc *AppHandler) DeleteResource(ctx context.Context, resource models.DBReso
 	if helper.Contains([]string{"filters", "extensions"}, general.GType.CollectionString()) {
 		_, err := sc.Extension.DelExtension(ctx, resource, reqDetails)
 		return err
-	} else {
-		_, err := sc.XDS.DelResource(ctx, resource, reqDetails)
-		return err
 	}
+
+	_, err := sc.XDS.DelResource(ctx, resource, reqDetails)
+	return err
 }
 
-func decodeXdsExtension(data interface{}) (models.DBResourceClass, error) {
+func decodeXdsExtension(data any) (models.DBResourceClass, error) {
 	var resource models.DBResource
 
 	resourceBytes, err := json.Marshal(data)

@@ -72,7 +72,6 @@ type SignedDetails struct {
 	Role        *Role
 	BaseGroup   *string
 	BaseProject *string
-	AdminGroup  bool
 	jwt.RegisteredClaims
 }
 

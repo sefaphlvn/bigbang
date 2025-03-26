@@ -18,12 +18,12 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/bridge"
 )
 
-func (s *SnapshotKeyServiceServer) GetSnapshotKeys(_ context.Context, _ *bridge.Empty) (*bridge.SnapshotKeyList, error) {
+func (s *SnapshotServiceServer) GetSnapshotKeys(_ context.Context, _ *bridge.Empty) (*bridge.SnapshotKeyList, error) {
 	snapshotKeys := s.context.Cache.Cache.GetStatusKeys()
 	return &bridge.SnapshotKeyList{Keys: snapshotKeys}, nil
 }
 
-func (s *SnapshotResourceServiceServer) GetSnapshotResources(_ context.Context, req *bridge.SnapshotKey) (*bridge.SnapshotResourceList, error) {
+func (s *SnapshotServiceServer) GetSnapshotResources(_ context.Context, req *bridge.SnapshotKey) (*bridge.SnapshotResourceList, error) {
 	snapshot, err := s.context.Cache.Cache.GetSnapshot(req.Key)
 	if err != nil {
 		logrus.Errorf("Error getting snapshot for key %s: %v", req.Key, err)
@@ -84,7 +84,7 @@ func (s *SnapshotResourceServiceServer) GetSnapshotResources(_ context.Context, 
 }
 
 func convertToStructPB(resourceData map[string]types.Resource) (*structpb.Struct, error) {
-	dataMap := make(map[string]interface{})
+	dataMap := make(map[string]any)
 	for key, res := range resourceData {
 		resProto, ok := res.(proto.Message)
 		if !ok {
@@ -96,7 +96,7 @@ func convertToStructPB(resourceData map[string]types.Resource) (*structpb.Struct
 			return nil, fmt.Errorf("failed to marshal resource %s: %w", key, err)
 		}
 
-		var jsonData interface{}
+		var jsonData any
 		if err := json.Unmarshal(jsonBytes, &jsonData); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal JSON for resource %s: %w", key, err)
 		}

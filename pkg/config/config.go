@@ -29,7 +29,7 @@ func Read(cfgFile string) *AppConfig {
 	return &appConfig
 }
 
-func BindEnvs(iface interface{}) {
+func BindEnvs(iface any) {
 	val := reflect.ValueOf(iface).Elem()
 	typ := val.Type()
 

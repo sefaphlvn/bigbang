@@ -16,9 +16,17 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (xds *AppHandler) DelResource(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) DelResource(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	resourceType := requestDetails.Collection
 	collection := xds.Context.Client.Collection(resourceType)
+
+	isDefault, err := common.IsDefaultResource(ctx, xds.Context, requestDetails.Name, resourceType, requestDetails.Project)
+	if err != nil {
+		xds.Context.Logger.Errorf("An error occurred while checking if the resource is default: %v", err)
+	} else if isDefault {
+		return nil, errors.New("This resource is a default resource and cannot be deleted")
+	}
+	
 	downstreamFilterModel := downstreamfilters.DownstreamFilter{
 		Name:    requestDetails.Name,
 		Project: requestDetails.Project,
@@ -55,7 +63,7 @@ func (xds *AppHandler) DelResource(ctx context.Context, _ models.DBResourceClass
 
 func (xds *AppHandler) delBootstrap(ctx context.Context, filter primitive.M) error {
 	collection := xds.Context.Client.Collection("bootstrap")
-
+	delete(filter, "_id")
 	if err := checkDocumentExists(ctx, xds, collection, filter); err != nil {
 		return err
 	}

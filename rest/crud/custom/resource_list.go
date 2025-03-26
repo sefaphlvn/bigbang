@@ -21,7 +21,7 @@ type Record struct {
 	Collection    string `json:"collection" bson:"collection"`
 }
 
-func (custom *AppHandler) GetCustomResourceList(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (custom *AppHandler) GetCustomResourceList(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	collection := custom.Context.Client.Collection(requestDetails.Collection)
 
 	opts := options.Find().SetProjection(bson.M{

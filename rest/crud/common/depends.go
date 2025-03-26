@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/exp/slices"
 
 	"github.com/sefaphlvn/bigbang/pkg/db"
 	"github.com/sefaphlvn/bigbang/pkg/models"
@@ -46,4 +47,23 @@ func IsDeletable(ctx context.Context, appCtx *db.AppContext, gtype models.GTypes
 	}
 
 	return deletableNames
+}
+
+func IsDefaultResource(ctx context.Context, appCtx *db.AppContext, name string, collection string, project string) (bool, error) {
+	defaultResourceNames := map[string][]string{
+		"users":      {"admin"},
+		"groups":     {"default"},
+		"projects":   {"default"},
+		"extensions": {"bigbang-controller-hpo"},
+		"tls":        {"bigbang-controller-tls"},
+		"clusters":   {"bigbang-controller"},
+	}
+
+	if names, exists := defaultResourceNames[collection]; exists {
+		if slices.Contains(names, name) {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

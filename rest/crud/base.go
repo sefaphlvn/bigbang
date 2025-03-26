@@ -10,8 +10,9 @@ import (
 )
 
 type Application struct {
-	Context *db.AppContext
-	Poke    *bridge.PokeServiceClient
+	Context         *db.AppContext
+	PokeService     *bridge.PokeServiceClient
+	ResourceService *bridge.ResourceServiceClient
 }
 
 func HandleResourceChange(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails, context *db.AppContext, project string, poke *bridge.PokeServiceClient) *poker.Processed {

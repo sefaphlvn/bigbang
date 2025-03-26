@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64 golang:1.22
+FROM --platform=linux/arm64 golang:1.24
 
 RUN apt-get update && apt-get install -y git
 

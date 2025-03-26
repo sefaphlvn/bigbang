@@ -17,8 +17,10 @@ func NewXDSHandler(context *db.AppContext) *AppHandler {
 	}
 
 	PokeClient := bridge.NewPokeServiceClient(conn)
+	ResourceServiceClient := bridge.NewResourceServiceClient(conn)
 	return &AppHandler{
-		Context: context,
-		Poke:    &PokeClient,
+		Context:         context,
+		PokeService:            &PokeClient,
+		ResourceService: &ResourceServiceClient,
 	}
 }

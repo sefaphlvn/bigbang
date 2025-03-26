@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/helper"
 	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
 type GroupWithActiveStatus struct {
@@ -244,4 +246,86 @@ func (handler *AppHandler) UpdateGroup(ctx context.Context, groupCollection *mon
 	}
 
 	return http.StatusOK, "group successfully updated"
+}
+
+func (handler *AppHandler) DeleteGroup(c *gin.Context) {
+	ctx := c.Request.Context()
+	groupID := c.Param("group_id")
+
+	if groupID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Group ID is required"})
+		return
+	}
+
+	if !handler.CheckUserProjectPermission(c) {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "User does not have permission to delete groups"})
+		return
+	}
+
+	groupsCollection := handler.Context.Client.Collection("groups")
+	objectID, err := primitive.ObjectIDFromHex(groupID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid group ID format"})
+		return
+	}
+
+	var group models.Group
+	err = groupsCollection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&group)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			c.JSON(http.StatusNotFound, gin.H{"message": "Group not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to get group information"})
+		}
+		return
+	}
+
+	if group.GroupName != nil && *group.GroupName == "default" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Default group cannot be deleted"})
+		return
+	}
+
+	if group.GroupName != nil && *group.GroupName == "admin" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Admin group cannot be deleted"})
+		return
+	}
+
+	isDefault, err := common.IsDefaultResource(ctx, handler.Context, *group.GroupName, "groups", "")
+	if err != nil {
+		handler.Context.Logger.Errorf("An error occurred while checking if the group is default: %v", err)
+	} else if isDefault {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "This group is a default resource and cannot be deleted"})
+		return
+	}
+
+	usersCollection := handler.Context.Client.Collection("users")
+	_, err = usersCollection.UpdateMany(
+		ctx,
+		bson.M{"base_group": groupID},
+		bson.M{"$unset": bson.M{"base_group": ""}},
+	)
+	if err != nil {
+		handler.Context.Logger.Errorf("Failed to clear base_group in users: %v", err)
+	}
+
+	collectionsToClean := []string{"clusters", "listeners", "routes", "endpoints", "secrets", "extensions", "filters", "bootstrap", "tls"}
+	for _, collectionName := range collectionsToClean {
+		collection := handler.Context.Client.Collection(collectionName)
+		_, err = collection.UpdateMany(
+			ctx,
+			bson.M{"general.permissions.groups": groupID},
+			bson.M{"$pull": bson.M{"general.permissions.groups": groupID}},
+		)
+		if err != nil {
+			handler.Context.Logger.Errorf("Failed to remove group permissions from %s: %v", collectionName, err)
+		}
+	}
+
+	_, err = groupsCollection.DeleteOne(ctx, bson.M{"_id": objectID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to delete group"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Group successfully deleted"})
 }

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -140,7 +141,6 @@ func (handler *AppHandler) GetUserProject(ctx context.Context, userID string) (*
 		return helper.RemoveDuplicatesP(&projects), baseProject
 	}
 
-	// `isOwner` değilse, üye olduğu projeleri buluyoruz
 	filters := bson.M{"members": userID}
 	opts := options.Find().SetProjection(bson.M{"_id": 1, "projectname": 1})
 	cursor, err := projectCollection.Find(ctx, filters, opts)
@@ -213,13 +213,11 @@ func (handler *AppHandler) CreateProject(ctx context.Context, projectCollection 
 	}
 
 	now := time.Now()
-
 	projectWA.CreatedAt = primitive.NewDateTimeFromTime(now)
 	projectWA.UpdatedAt = primitive.NewDateTimeFromTime(now)
 	projectWA.ID = primitive.NewObjectID()
 
 	insertResult, insertErr := projectCollection.InsertOne(ctx, projectWA.Project)
-
 	if insertErr != nil {
 		return http.StatusBadRequest, "Project was not created", "0"
 	}
@@ -229,17 +227,24 @@ func (handler *AppHandler) CreateProject(ctx context.Context, projectCollection 
 		return http.StatusBadRequest, "Invalid project ID", "0"
 	}
 
+	collection := handler.Context.Client.Collection("groups")
+	groupResult, err := db.CreateGroup(ctx, collection, "", projectID.Hex())
+	if err != nil {
+		handler.Context.Logger.Infof("Default group not created: %s", err)
+	}
+	groupID := groupResult.InsertedID.(primitive.ObjectID).Hex()
+
 	for _, vers := range handler.Context.Config.BigbangVersions {
-		fmt.Println(vers)
-		if err := db.CreateDefaultHttpProtocolOptions(ctx, handler.Context, projectID.Hex(), vers); err != nil {
+
+		if err := db.CreateDefaultHttpProtocolOptions(ctx, handler.Context, projectID.Hex(), vers, groupID); err != nil {
 			handler.Context.Logger.Infof("Default hpo not created for version %s: %s", vers, err)
 		}
 
-		if err := db.CreateDefaultUpstreamTLS(ctx, handler.Context, projectID.Hex(), vers); err != nil {
+		if err := db.CreateDefaultUpstreamTLS(ctx, handler.Context, projectID.Hex(), vers, groupID); err != nil {
 			handler.Context.Logger.Infof("Default upstream tls not created for version %s: %s", vers, err)
 		}
 
-		if err := db.CreateDefaultCluster(ctx, handler.Context, projectID.Hex(), vers); err != nil {
+		if err := db.CreateDefaultCluster(ctx, handler.Context, projectID.Hex(), vers, groupID); err != nil {
 			handler.Context.Logger.Infof("Default cluster not created for version %s: %s", vers, err)
 		}
 	}
@@ -329,4 +334,146 @@ func (handler *AppHandler) getAllProjectNamesAndIDs(ctx context.Context, project
 	}
 
 	return projects, nil
+}
+
+func (handler *AppHandler) DeleteProject(c *gin.Context) {
+	ctx := c.Request.Context()
+	projectID := c.Param("project_id")
+
+	if projectID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Project ID is required"})
+		return
+	}
+
+	if !c.GetBool("isOwner") {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Project deletion requires owner privileges"})
+		return
+	}
+
+	projectsCollection := handler.Context.Client.Collection("projects")
+	objectID, err := primitive.ObjectIDFromHex(projectID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid project ID format"})
+		return
+	}
+
+	var project models.Project
+	err = projectsCollection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&project)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			c.JSON(http.StatusNotFound, gin.H{"message": "Project not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Error getting project information"})
+		}
+		return
+	}
+
+	if project.ProjectName != nil && *project.ProjectName == "default" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Default project cannot be deleted"})
+		return
+	}
+
+	resourceDependencies := checkProjectDependencies(ctx, handler.Context, projectID)
+
+	if len(resourceDependencies.NonDefaultResources) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message":      "This project cannot be deleted because it is used by non-default resources",
+			"dependencies": resourceDependencies.NonDefaultResources,
+		})
+		return
+	}
+
+	usersCollection := handler.Context.Client.Collection("users")
+	userResult, err := usersCollection.DeleteMany(ctx, bson.M{"base_project": projectID})
+	if err != nil {
+		handler.Context.Logger.Errorf("Error deleting users with base_project %s: %v", projectID, err)
+	} else {
+		handler.Context.Logger.Infof("Deleted %d users with base_project %s", userResult.DeletedCount, projectID)
+	}
+
+	groupsCollection := handler.Context.Client.Collection("groups")
+
+	groupResult, err := groupsCollection.DeleteMany(ctx, bson.M{"project": projectID})
+	if err != nil {
+		handler.Context.Logger.Errorf("Error deleting groups with project %s: %v", projectID, err)
+	} else {
+		handler.Context.Logger.Infof("Deleted %d groups with project %s", groupResult.DeletedCount, projectID)
+	}
+
+	if len(resourceDependencies.DefaultResources) > 0 {
+		handler.Context.Logger.Infof("Deleted default resources: %v", resourceDependencies.DefaultResources)
+		for _, resource := range resourceDependencies.DefaultResources {
+			collection := handler.Context.Client.Collection(resource.Collection)
+			_, err := collection.DeleteOne(ctx, bson.M{"general.name": resource.Name, "general.project": projectID})
+			if err != nil {
+				handler.Context.Logger.Errorf("Error deleting default resource: %v", err)
+			}
+		}
+	}
+
+	_, err = projectsCollection.DeleteOne(ctx, bson.M{"_id": objectID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Project could not be deleted"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Project deleted successfully"})
+}
+
+type ProjectResource struct {
+	Name       string
+	Collection string
+	IsDefault  bool
+}
+
+type ProjectDependencies struct {
+	DefaultResources    []ProjectResource
+	NonDefaultResources []ProjectResource
+}
+
+func checkProjectDependencies(ctx context.Context, appCtx *db.AppContext, projectID string) ProjectDependencies {
+	var result ProjectDependencies
+	collections := []string{"clusters", "listeners", "routes", "endpoints", "secrets", "extensions", "filters", "bootstrap", "tls", "virtual_hosts"}
+
+	for _, collectionName := range collections {
+		collection := appCtx.Client.Collection(collectionName)
+
+		cursor, err := collection.Find(ctx, bson.M{"general.project": projectID})
+		if err != nil {
+			appCtx.Logger.Errorf("Error getting %s resources: %v", collectionName, err)
+			continue
+		}
+
+		var resources []struct {
+			General struct {
+				Name     string `bson:"name"`
+				Metadata struct {
+					FromTemplate bool `bson:"from_template"`
+				} `bson:"metadata"`
+			} `bson:"general"`
+		}
+
+		if err = cursor.All(ctx, &resources); err != nil {
+			appCtx.Logger.Errorf("Error getting %s resources: %v", collectionName, err)
+			cursor.Close(ctx)
+			continue
+		}
+
+		cursor.Close(ctx)
+
+		for _, resource := range resources {
+			projectResource := ProjectResource{
+				Name:       resource.General.Name,
+				Collection: collectionName,
+				IsDefault:  resource.General.Metadata.FromTemplate,
+			}
+
+			if projectResource.IsDefault {
+				result.DefaultResources = append(result.DefaultResources, projectResource)
+			} else {
+				result.NonDefaultResources = append(result.NonDefaultResources, projectResource)
+			}
+		}
+	}
+	return result
 }

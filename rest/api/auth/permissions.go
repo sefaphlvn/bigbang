@@ -38,7 +38,7 @@ func (handler *AppHandler) GetPermissions(c *gin.Context) {
 		return
 	}
 
-	records := map[string]interface{}{"all": all, "selected": selected}
+	records := map[string]any{"all": all, "selected": selected}
 	c.JSON(http.StatusOK, records)
 }
 

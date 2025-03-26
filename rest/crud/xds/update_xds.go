@@ -3,6 +3,7 @@ package xds
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (xds *AppHandler) UpdateResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) UpdateResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	filter, err := common.AddResourceIDFilter(requestDetails, bson.M{"general.name": requestDetails.Name})
 	if err != nil {
 		return nil, errors.New("invalid id format")
@@ -36,9 +37,10 @@ func (xds *AppHandler) UpdateResource(ctx context.Context, resource models.DBRes
 
 	newResource := resource.GetResource()
 	version, _ := strconv.Atoi(resource.GetVersion().(string))
-	validateErr, isErr, err := resources.Validate(resource.GetGeneral().GType, newResource)
-	if isErr {
-		return validateErr, err
+	nodeid := fmt.Sprintf("%s:%s", requestDetails.Name, requestDetails.Project)
+
+	if err := resources.ValidateResourceWithClient(context.Background(), resource.GetGeneral().GType, resource.GetGeneral().Version, nodeid, newResource, xds.ResourceService); err != nil {
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	resource.SetVersion(strconv.Itoa(version + 1))
@@ -61,7 +63,7 @@ func (xds *AppHandler) UpdateResource(ctx context.Context, resource models.DBRes
 	}
 
 	project := resource.GetGeneral().Project
-	changedResources := crud.HandleResourceChange(ctx, resource, requestDetails, xds.Context, project, xds.Poke)
+	changedResources := crud.HandleResourceChange(ctx, resource, requestDetails, xds.Context, project, xds.PokeService)
 
 	if requestDetails.SaveOrPublish == "download" {
 		if bootstrap, err := xds.DownloadBootstrap(ctx, requestDetails); err != nil {

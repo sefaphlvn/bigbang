@@ -44,8 +44,6 @@ func Authentication() gin.HandlerFunc {
 
 		if claims.Role != nil && *claims.Role == models.RoleOwner {
 			isOwner = true
-		} else if claims.AdminGroup {
-			isOwner = true
 		}
 		c.Set("isOwner", isOwner)
 		c.Next()

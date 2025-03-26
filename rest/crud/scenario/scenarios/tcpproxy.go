@@ -1,6 +1,6 @@
 package scenarios
 
-const TcpProxy = `
+const TCPProxy = `
 {
 	"general": {
 		"name": "{{ .Data.name }}",

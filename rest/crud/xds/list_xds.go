@@ -18,7 +18,7 @@ type Field struct {
 
 type ResourceSchema map[string][]Field
 
-func (xds *AppHandler) ListResource(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) ListResource(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	filter := bson.M{}
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
 	opts := options.Find().SetProjection(bson.M{"resource": 0})

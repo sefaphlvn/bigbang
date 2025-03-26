@@ -192,33 +192,33 @@ var Resources = []ResourceTemplate{
 var Scenarios = map[Scenario]map[string]string{
 	"1": {
 		"cluster":  NonEdsCluster,
-		"listener": SingleListenerHttp,
+		"listener": SingleListenerHTTP,
 		"hcm":      BasicHcm,
 	},
 	"2": {
 		"endpoint": Endpoint,
 		"cluster":  EdsCluster,
-		"listener": SingleListenerHttp,
+		"listener": SingleListenerHTTP,
 		"hcm":      BasicHcm,
 	},
 	"3": {
 		"endpoint": Endpoint,
 		"cluster":  EdsCluster,
-		"listener": SingleListenerHttp,
+		"listener": SingleListenerHTTP,
 		"hcm":      RDSHcm,
 		"route":    RouteWithDirectVirtualHost,
 	},
 	"4": {
 		"endpoint":     Endpoint,
 		"cluster":      EdsCluster,
-		"virtual_host": virtual_host,
-		"listener":     SingleListenerHttp,
+		"virtual_host": virtualHost,
+		"listener":     SingleListenerHTTP,
 		"hcm":          RDSHcm,
 		"route":        RouteWithVHDS,
 	},
 	"5": {
 		"cluster":   NonEdsCluster,
-		"tcp_proxy": TcpProxy,
-		"listener":  SingleListenerTcp,
+		"tcp_proxy": TCPProxy,
+		"listener":  SingleListenerTCP,
 	},
 }

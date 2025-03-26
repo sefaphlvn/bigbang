@@ -10,7 +10,7 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
-func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[string]interface{} {
+func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[string]any {
 	now := time.Now()
 	CreatedAt := primitive.NewDateTimeFromTime(now)
 	UpdatedAt := primitive.NewDateTimeFromTime(now)
@@ -21,52 +21,52 @@ func GetBootstrap(listenerGeneral models.General, config *config.AppConfig) map[
 	data := createDataConfig(nodeID, config.BigbangAddress, listenerGeneral.Version, cluster, admin)
 	general := createGeneralConfig(listenerGeneral, CreatedAt, UpdatedAt)
 
-	return map[string]interface{}{
+	return map[string]any{
 		"general":  general,
-		"resource": map[string]interface{}{"version": "1", "resource": data},
+		"resource": map[string]any{"version": "1", "resource": data},
 	}
 }
 
-func createClusterConfig() map[string]interface{} {
-	cluster := map[string]interface{}{
+func createClusterConfig() map[string]any {
+	cluster := map[string]any{
 		"name": "bigbang-controller",
 	}
 	return cluster
 }
 
-func createDataConfig(nodeID, authority, version string, cluster, admin map[string]interface{}) map[string]interface{} {
-	return map[string]interface{}{
-		"node": map[string]interface{}{
+func createDataConfig(nodeID, authority, version string, cluster, admin map[string]any) map[string]any {
+	return map[string]any{
+		"node": map[string]any{
 			"id": nodeID,
 			"cluster": nodeID,
 		},
-		"static_resources": map[string]interface{}{
-			"clusters": []interface{}{cluster},
+		"static_resources": map[string]any{
+			"clusters": []any{cluster},
 		},
-		"dynamic_resources": map[string]interface{}{
-			"lds_config": map[string]interface{}{
-				"ads": map[string]interface{}{},
+		"dynamic_resources": map[string]any{
+			"lds_config": map[string]any{
+				"ads": map[string]any{},
 				"resource_api_version": "V3",
 			},
-			"cds_config": map[string]interface{}{
-				"ads": map[string]interface{}{},
+			"cds_config": map[string]any{
+				"ads": map[string]any{},
 				"resource_api_version": "V3",
 			},
-			"ads_config": map[string]interface{}{
+			"ads_config": map[string]any{
 				"api_type":              "DELTA_GRPC",
 				"transport_api_version": "V3",
-				"grpc_services": []interface{}{
-					map[string]interface{}{
-						"envoy_grpc": map[string]interface{}{
+				"grpc_services": []any{
+					map[string]any{
+						"envoy_grpc": map[string]any{
 							"cluster_name": "bigbang-controller",
 							"authority":    authority,
 						},
-						"initial_metadata": []interface{}{
-							map[string]interface{}{
+						"initial_metadata": []any{
+							map[string]any{
 								"key":   "nodeid",
 								"value": nodeID,
 							},
-							map[string]interface{}{
+							map[string]any{
 								"key":   "envoy-version",
 								"value": version,
 							},
@@ -80,10 +80,10 @@ func createDataConfig(nodeID, authority, version string, cluster, admin map[stri
 	}
 }
 
-func createAdminConfig() map[string]interface{} {
-	return map[string]interface{}{
-		"address": map[string]interface{}{
-			"socket_address": map[string]interface{}{
+func createAdminConfig() map[string]any {
+	return map[string]any{
+		"address": map[string]any{
+			"socket_address": map[string]any{
 				"Protocol":   "TCP",
 				"address":    "0.0.0.0",
 				"port_value": 30090,
@@ -92,8 +92,8 @@ func createAdminConfig() map[string]interface{} {
 	}
 }
 
-func createGeneralConfig(listenerGeneral models.General, createdAt, updatedAt primitive.DateTime) map[string]interface{} {
-	return map[string]interface{}{
+func createGeneralConfig(listenerGeneral models.General, createdAt, updatedAt primitive.DateTime) map[string]any {
+	return map[string]any{
 		"name":                 listenerGeneral.Name,
 		"version":              listenerGeneral.Version,
 		"type":                 "bootstrap",
@@ -102,20 +102,20 @@ func createGeneralConfig(listenerGeneral models.General, createdAt, updatedAt pr
 		"category":             "bootstrap",
 		"collection":           "bootstrap",
 		"project":              listenerGeneral.Project,
-		"permissions":          map[string]interface{}{"users": []interface{}{}, "groups": []interface{}{}},
-		"additional_resources": []interface{}{},
+		"permissions":          map[string]any{"users": []any{}, "groups": []any{}},
+		"additional_resources": []any{},
 		"created_at":           createdAt,
 		"updated_at":           updatedAt,
-		"config_discovery":     []interface{}{},
-		"typed_config":         []interface{}{},
+		"config_discovery":     []any{},
+		"typed_config":         []any{},
 	}
 }
 
-func createTLSTransportSocket() map[string]interface{} {
-	return map[string]interface{}{
+/* func createTLSTransportSocket() map[string]any {
+	return map[string]any{
 		"name": "envoy.transport_sockets.tls",
-		"typed_config": map[string]interface{}{
+		"typed_config": map[string]any{
 			"@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext",
 		},
 	}
-}
+} */

@@ -8,11 +8,11 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/scenario/scenarios"
 )
 
-func (t *AppHandler) GetScenarios(_ context.Context, _ models.DBResourceClass, _ models.RequestDetails) (interface{}, error) {
+func (t *AppHandler) GetScenarios(_ context.Context, _ models.DBResourceClass, _ models.RequestDetails) (any, error) {
 	return scenarios.Resources, nil
 }
 
-func (t *AppHandler) GetScenario(_ context.Context, _ models.DBResourceClass, reqDetails models.RequestDetails) (interface{}, error) {
+func (t *AppHandler) GetScenario(_ context.Context, _ models.DBResourceClass, reqDetails models.RequestDetails) (any, error) {
 	scenarioID := reqDetails.Metadata["scenario_id"]
 
 	for _, resource := range scenarios.Resources {

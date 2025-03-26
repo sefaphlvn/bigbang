@@ -10,7 +10,7 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
-func (custom *AppHandler) GetCustomHTTPFilterList(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (custom *AppHandler) GetCustomHTTPFilterList(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	collection := custom.Context.Client.Collection(requestDetails.Collection)
 	opts := options.Find()
 	opts.SetProjection(bson.M{

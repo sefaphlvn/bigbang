@@ -11,26 +11,26 @@ type BaseServiceServer struct {
 	context *snapshot.Context
 }
 
-// SnapshotKeyServiceServer service.
-type SnapshotKeyServiceServer struct {
-	bridge.UnimplementedSnapshotKeyServiceServer
+// ResourceServiceServer service.
+type ResourceServiceServer struct {
+	bridge.UnimplementedResourceServiceServer
 	*BaseServiceServer
 }
 
-func NewSnapshotKeyServiceServer(context *snapshot.Context) *SnapshotKeyServiceServer {
-	return &SnapshotKeyServiceServer{
+func NewResourceServiceServer(context *snapshot.Context) *ResourceServiceServer {
+	return &ResourceServiceServer{
 		BaseServiceServer: &BaseServiceServer{context: context},
 	}
 }
 
-// SnapshotResourceServiceServer service.
-type SnapshotResourceServiceServer struct {
-	bridge.UnimplementedSnapshotResourceServiceServer
+// SnapshotServiceServer service.
+type SnapshotServiceServer struct {
+	bridge.UnimplementedSnapshotServiceServer
 	*BaseServiceServer
 }
 
-func NewSnapshotResourceServiceServer(context *snapshot.Context) *SnapshotResourceServiceServer {
-	return &SnapshotResourceServiceServer{
+func NewSnapshotServiceServer(context *snapshot.Context) *SnapshotServiceServer {
+	return &SnapshotServiceServer{
 		BaseServiceServer: &BaseServiceServer{context: context},
 	}
 }
@@ -49,6 +49,7 @@ func NewPokeServiceServer(context *snapshot.Context, db *db.AppContext) *PokeSer
 	}
 }
 
+// ActiveClientsServiceServer service.
 type ActiveClientsServiceServer struct {
 	bridge.UnimplementedActiveClientsServiceServer
 	*BaseServiceServer

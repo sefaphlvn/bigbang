@@ -26,7 +26,7 @@ import (
 
 const (
 	grpcKeepaliveTime        = 30 * time.Second
-	grpcKeepaliveTimeout     = 10 * time.Second
+	grpcKeepaliveTimeout     = 5 * time.Second
 	grpcKeepaliveMinTime     = 15 * time.Second
 	grpcMaxConcurrentStreams = 10000
 	grpcMaxRecvMsgSize       = 1024 * 1024 * 50 // 50MB
@@ -87,10 +87,10 @@ func (s *Server) registerServer(grpcServer *grpc.Server, db *db.AppContext) {
 	routeservice.RegisterVirtualHostDiscoveryServiceServer(grpcServer, s.xdsServer)
 
 	// bridge grpc services
-	bridge.RegisterSnapshotKeyServiceServer(grpcServer, serverBridge.NewSnapshotKeyServiceServer(s.context))
-	bridge.RegisterSnapshotResourceServiceServer(grpcServer, serverBridge.NewSnapshotResourceServiceServer(s.context))
+	bridge.RegisterSnapshotServiceServer(grpcServer, serverBridge.NewSnapshotServiceServer(s.context))
+	bridge.RegisterResourceServiceServer(grpcServer, serverBridge.NewResourceServiceServer(s.context))
 	bridge.RegisterPokeServiceServer(grpcServer, serverBridge.NewPokeServiceServer(s.context, db))
-	bridge.RegisterActiveClientsServiceServer(grpcServer, serverBridge.NewActiveClientsServiceServer(s.context, s.activeClients)) // Aynı referansı geçiyoruz
+	bridge.RegisterActiveClientsServiceServer(grpcServer, serverBridge.NewActiveClientsServiceServer(s.context, s.activeClients))
 
 	// health check
 	grpc_health_v1.RegisterHealthServer(grpcServer, s.healthServer)

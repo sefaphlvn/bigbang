@@ -1,25 +1,20 @@
 package bridge
 
 import (
-	"context"
-	"fmt"
 	"log"
-	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/health/grpc_health_v1"
 
 	"github.com/sefaphlvn/bigbang/pkg/bridge"
 	"github.com/sefaphlvn/bigbang/pkg/db"
 )
 
 type AppHandler struct {
-	Context          *db.AppContext
-	GRPCConn         *grpc.ClientConn
-	SnapshotResource bridge.SnapshotResourceServiceClient
-	SnapshotKeys     bridge.SnapshotKeyServiceClient
-	Poke             bridge.PokeServiceClient
-	ActiveClients    bridge.ActiveClientsServiceClient
+	Context       *db.AppContext
+	GRPCConn      *grpc.ClientConn
+	BSnapshot     bridge.SnapshotServiceClient
+	Poke          bridge.PokeServiceClient
+	ActiveClients bridge.ActiveClientsServiceClient
 }
 
 func NewBridgeHandler(appCtx *db.AppContext) *AppHandler {
@@ -29,15 +24,15 @@ func NewBridgeHandler(appCtx *db.AppContext) *AppHandler {
 	}
 
 	return &AppHandler{
-		Context:          appCtx,
-		GRPCConn:         conn,
-		SnapshotResource: bridge.NewSnapshotResourceServiceClient(conn),
-		SnapshotKeys:     bridge.NewSnapshotKeyServiceClient(conn),
-		Poke:             bridge.NewPokeServiceClient(conn),
-		ActiveClients:    bridge.NewActiveClientsServiceClient(conn),
+		Context:       appCtx,
+		GRPCConn:      conn,
+		BSnapshot:     bridge.NewSnapshotServiceClient(conn),
+		Poke:          bridge.NewPokeServiceClient(conn),
+		ActiveClients: bridge.NewActiveClientsServiceClient(conn),
 	}
 }
 
+/*
 func checkHealth(conn *grpc.ClientConn) error {
 	healthClient := grpc_health_v1.NewHealthClient(conn)
 
@@ -61,7 +56,7 @@ func checkHealth(conn *grpc.ClientConn) error {
 	}
 
 	return fmt.Errorf("Health check failed after retries within 30 seconds")
-}
+} */
 
 func (h *AppHandler) Close() {
 	if h.GRPCConn != nil {

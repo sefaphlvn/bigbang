@@ -12,7 +12,7 @@ type GeneralWithID struct {
 	ID string `json:"id" bson:"_id"`
 }
 
-func TransformGenerals(records []bson.M) interface{} {
+func TransformGenerals(records []bson.M) any {
 	generals := make([]GeneralWithID, 0, len(records))
 
 	for _, record := range records {

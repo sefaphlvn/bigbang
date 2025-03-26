@@ -15,7 +15,7 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 )
 
-func (ar *AllResources) GetTypedConfigs(ctx context.Context, paths []models.TypedConfigPath, jsonData interface{}, context *db.AppContext) (interface{}, error) {
+func (ar *AllResources) GetTypedConfigs(ctx context.Context, paths []models.TypedConfigPath, jsonData any, context *db.AppContext) (any, error) {
 	jsonStringStr, err := helper.MarshalJSON(jsonData, context.Logger)
 	if err != nil {
 		return jsonData, err
@@ -27,7 +27,7 @@ func (ar *AllResources) GetTypedConfigs(ctx context.Context, paths []models.Type
 		}
 	}
 
-	var updatedJSONData interface{}
+	var updatedJSONData any
 	if err := json.Unmarshal([]byte(jsonStringStr), &updatedJSONData); err != nil {
 		context.Logger.Errorf("Error unmarshalling updated JSON: %v", err)
 		return nil, err
@@ -73,11 +73,11 @@ func (ar *AllResources) processTypedConfigPath(ctx context.Context, pathd models
 }
 
 func (ar *AllResources) updateJSONConfig(jsonStringStr *string, path string, typedConfig *anypb.Any, isPerTypedConfig bool, tempTypedConfig *models.TypedConfig) error {
-	var config interface{}
+	var config any
 	var err error
 
 	if isPerTypedConfig && tempTypedConfig.Disabled {
-		config = map[string]interface{}{
+		config = map[string]any{
 			"@type":    "type.googleapis.com/envoy.config.route.v3.FilterConfig",
 			"disabled": true,
 		}

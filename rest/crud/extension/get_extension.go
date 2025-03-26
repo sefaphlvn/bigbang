@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (extension *AppHandler) GetExtensions(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) GetExtensions(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	var records []bson.M
 	filter := bson.M{"general.type": requestDetails.Type, "general.project": requestDetails.Project}
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
@@ -34,7 +34,7 @@ func (extension *AppHandler) GetExtensions(ctx context.Context, _ models.DBResou
 	return generals, nil
 }
 
-func (extension *AppHandler) GetExtension(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) GetExtension(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	return getExtensionByFilter(ctx, resource, extension, requestDetails, bson.M{
 		"general.name":           requestDetails.Name,
 		"general.canonical_name": requestDetails.CanonicalName,
@@ -42,7 +42,7 @@ func (extension *AppHandler) GetExtension(ctx context.Context, resource models.D
 	})
 }
 
-func (extension *AppHandler) GetOtherExtension(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) GetOtherExtension(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	fmt.Println("requestDetails.Version", requestDetails.Version)
 	return getExtensionByFilter(ctx, resource, extension, requestDetails, bson.M{
 		"general.name":    requestDetails.Name,
@@ -50,7 +50,7 @@ func (extension *AppHandler) GetOtherExtension(ctx context.Context, resource mod
 	})
 }
 
-func getExtensionByFilter(ctx context.Context, resource models.DBResourceClass, extension *AppHandler, requestDetails models.RequestDetails, filter bson.M) (interface{}, error) {
+func getExtensionByFilter(ctx context.Context, resource models.DBResourceClass, extension *AppHandler, requestDetails models.RequestDetails, filter bson.M) (any, error) {
 	collection := extension.Context.Client.Collection(requestDetails.Collection)
 	resourceIDFilter, err := common.AddResourceIDFilter(requestDetails, filter)
 	if err != nil {

@@ -17,7 +17,7 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (extension *AppHandler) UpdateExtensions(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) UpdateExtensions(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	filter, err := common.AddResourceIDFilter(requestDetails, bson.M{"general.canonical_name": requestDetails.CanonicalName, "general.project": requestDetails.Project})
 	if err != nil {
 		return nil, errors.New("invalid id format")
@@ -25,7 +25,7 @@ func (extension *AppHandler) UpdateExtensions(ctx context.Context, resource mode
 	return updateResource(ctx, extension, resource, requestDetails, filter)
 }
 
-func (extension *AppHandler) UpdateOtherExtensions(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) UpdateOtherExtensions(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	filter, err := common.AddResourceIDFilter(requestDetails, bson.M{"general.project": requestDetails.Project})
 	if err != nil {
 		return nil, errors.New("invalid id format")
@@ -33,7 +33,7 @@ func (extension *AppHandler) UpdateOtherExtensions(ctx context.Context, resource
 	return updateResource(ctx, extension, resource, requestDetails, filter)
 }
 
-func updateResource(ctx context.Context, extension *AppHandler, resource models.DBResourceClass, requestDetails models.RequestDetails, filter bson.M) (interface{}, error) {
+func updateResource(ctx context.Context, extension *AppHandler, resource models.DBResourceClass, requestDetails models.RequestDetails, filter bson.M) (any, error) {
 	filterWithRestriction := common.AddUserFilter(requestDetails, filter)
 	versionStr, ok := resource.GetVersion().(string)
 	if !ok {
@@ -47,9 +47,10 @@ func updateResource(ctx context.Context, extension *AppHandler, resource models.
 	}
 	resource.SetVersion(strconv.Itoa(version + 1))
 	newResource := resource.GetResource()
-	validateErr, isErr, err := resources.Validate(resource.GetGeneral().GType, newResource)
-	if isErr {
-		return validateErr, err
+	nodeid := fmt.Sprintf("%s:%s", requestDetails.Name, requestDetails.Project)
+
+	if err := resources.ValidateResourceWithClient(context.Background(), resource.GetGeneral().GType, resource.GetGeneral().Version, nodeid, newResource, extension.ResourceService); err != nil {
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	resource.SetTypedConfig(resources.DecodeSetTypedConfigs(resource, extension.Context.Logger))
@@ -71,7 +72,7 @@ func updateResource(ctx context.Context, extension *AppHandler, resource models.
 	}
 
 	project := resource.GetGeneral().Project
-	changedResources := crud.HandleResourceChange(ctx, resource, requestDetails, extension.Context, project, extension.Poke)
+	changedResources := crud.HandleResourceChange(ctx, resource, requestDetails, extension.Context, project, extension.PokeService)
 
 	return gin.H{"message": "Success", "data": changedResources}, nil
 }

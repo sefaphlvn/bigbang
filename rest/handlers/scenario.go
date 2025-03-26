@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
@@ -26,7 +27,7 @@ func (h *Handler) handleScenarioRequest(c *gin.Context, scFunc ScenarioFunc) {
 	c.JSON(http.StatusOK, response)
 }
 
-func (h *Handler) dynamicScenarioFuncs(c *gin.Context, ctx context.Context, scFunc ScenarioFunc, requestDetails models.RequestDetails) (interface{}, error) {
+func (h *Handler) dynamicScenarioFuncs(c *gin.Context, ctx context.Context, scFunc ScenarioFunc, requestDetails models.RequestDetails) (any, error) {
 	resource, err := decodeScenarioResource(c)
 	if err != nil {
 		return nil, err

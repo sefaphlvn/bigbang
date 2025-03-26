@@ -12,10 +12,14 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 )
 
-func (extension *AppHandler) SetExtension(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) SetExtension(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	general := resource.GetGeneral()
 	resourceID := ""
-	resources.PrepareResource(resource, requestDetails, extension.Context.Logger)
+	err := resources.PrepareResource(resource, requestDetails, extension.Context.Logger, extension.ResourceService)
+	if err != nil {
+		return nil, err
+	}
+
 	collection := extension.Context.Client.Collection(general.Collection)
 	inserResult, err := collection.InsertOne(ctx, resource)
 	if err != nil {
@@ -29,7 +33,7 @@ func (extension *AppHandler) SetExtension(ctx context.Context, resource models.D
 		resourceID = oid.Hex()
 	}
 
-	data := map[string]interface{}{"resource_id": resourceID}
+	data := map[string]any{"resource_id": resourceID}
 
-	return map[string]interface{}{"message": "Success", "data": data}, nil
+	return map[string]any{"message": "Success", "data": data}, nil
 }

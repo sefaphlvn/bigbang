@@ -34,12 +34,10 @@ var grpcCmd = &cobra.Command{
 	Run: func(_ *cobra.Command, _ []string) {
 		appConfig := config.Read(cfgFile)
 		logger := log.NewLogger(appConfig)
-		appContext := db.NewMongoDB(appConfig, logger)
+		appContext := db.NewMongoDB(appConfig, logger, true)
 		ctxCache := snapshot.GetContext(logger)
 		grpcserver1.ResetGrpcServerNodeIDs(appContext.Client)
-		// go grpcserver1.ScheduleSetNodeIDs(ctxCache, db.Client)
 
-		//pokeServer := poke.NewPokeServer(ctxCache, db, logger, appConfig)
 		activeClients := &models.ActiveClients{Clients: make(map[string]*models.Client)}
 		activeClientsService := bridge.NewActiveClientsService(logger)
 		pokeService := bridge.NewPokeService(ctxCache, appContext)

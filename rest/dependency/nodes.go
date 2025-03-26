@@ -36,7 +36,6 @@ func (h *AppHandler) AddNode(node Node) {
 }
 
 func (h *AppHandler) AddNodeAndEdge(source Node, target Depend, isUpstream bool) {
-	// Kenar oluştur ve logla
 	var edge Edge
 	if isUpstream {
 		edge = Edge{

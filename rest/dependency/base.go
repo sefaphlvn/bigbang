@@ -74,7 +74,6 @@ func (h *AppHandler) ProcessDownstream(ctx context.Context, activeResource Depen
 	}
 }
 
-// Yardımcı fonksiyonlar.
 func (h *AppHandler) isNodeValid(node Node) bool {
 	return node.ID != "" && node.Name != "" && node.Gtype != ""
 }

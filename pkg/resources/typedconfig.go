@@ -157,21 +157,21 @@ func processPath(jsonStringStr, path string, typedConfigs *[]*models.TypedConfig
 	}
 }
 
-func generateIndexCombinations(jsonStringStr string, arrayPaths []models.ArrayPath) [][]interface{} {
-	var combinations [][]interface{}
+func generateIndexCombinations(jsonStringStr string, arrayPaths []models.ArrayPath) [][]any {
+	var combinations [][]any
 	if len(arrayPaths) == 0 {
 		return combinations
 	}
 
-	indices := make([]interface{}, len(arrayPaths))
+	indices := make([]any, len(arrayPaths))
 	generateCombinations(arrayPaths, indices, 0, &combinations, jsonStringStr)
 
 	return combinations
 }
 
-func generateCombinations(arrayPaths []models.ArrayPath, indices []interface{}, level int, combinations *[][]interface{}, jsonStringStr string) {
+func generateCombinations(arrayPaths []models.ArrayPath, indices []any, level int, combinations *[][]any, jsonStringStr string) {
 	if level == len(indices) {
-		*combinations = append(*combinations, append([]interface{}(nil), indices...))
+		*combinations = append(*combinations, append([]any(nil), indices...))
 		return
 	}
 
@@ -187,7 +187,7 @@ func generateCombinations(arrayPaths []models.ArrayPath, indices []interface{}, 
 	}
 }
 
-func fillIndices(pathTemplate string, indices []interface{}) string {
+func fillIndices(pathTemplate string, indices []any) string {
 	return fmt.Sprintf(pathTemplate, indices...)
 }
 
@@ -207,7 +207,7 @@ func getTypedConfigs(resource models.DBResourceClass, logger *logrus.Logger, pat
 	var typedConfigs []*models.TypedConfig
 	resourceValue := resource.GetResource()
 
-	processResource := func(value interface{}) {
+	processResource := func(value any) {
 		jsonStringStr, err := helper.MarshalJSON(value, logger)
 		if err != nil {
 			logger.Errorf("Error marshaling JSON: %v", err)
@@ -221,11 +221,11 @@ func getTypedConfigs(resource models.DBResourceClass, logger *logrus.Logger, pat
 	}
 
 	switch v := resourceValue.(type) {
-	case []interface{}:
+	case []any:
 		for _, r := range v {
 			processResource(r)
 		}
-	case interface{}:
+	case any:
 		processResource(v)
 	default:
 		logger.Errorf("Unsupported resource type")

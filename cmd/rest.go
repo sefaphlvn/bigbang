@@ -33,7 +33,7 @@ var restCmd = &cobra.Command{
 	Run: func(_ *cobra.Command, _ []string) {
 		appConfig := config.Read(cfgFile)
 		logger := log.NewLogger(appConfig)
-		appContext := db.NewMongoDB(appConfig, logger)
+		appContext := db.NewMongoDB(appConfig, logger, false)
 		xdsHandler := xds.NewXDSHandler(appContext)
 		extensionHandler := extension.NewExtensionHandler(appContext)
 		scenarioHandler := scenario.NewScenarioHandler(appContext)

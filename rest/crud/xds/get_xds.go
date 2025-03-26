@@ -12,7 +12,7 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (xds *AppHandler) GetResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) GetResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
 
 	filter, err := common.AddResourceIDFilter(requestDetails, bson.M{})

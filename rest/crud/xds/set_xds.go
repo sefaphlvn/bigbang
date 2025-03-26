@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,9 +14,12 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud"
 )
 
-func (xds *AppHandler) SetResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) SetResource(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	general := resource.GetGeneral()
-	resources.PrepareResource(resource, requestDetails, xds.Context.Logger)
+	err := resources.PrepareResource(resource, requestDetails, xds.Context.Logger, xds.ResourceService)
+	if err != nil {
+		return nil, err
+	}
 	bootstrapID := ""
 	resourceID := ""
 	collection := xds.Context.Client.Collection(general.Collection)
@@ -46,9 +48,9 @@ func (xds *AppHandler) SetResource(ctx context.Context, resource models.DBResour
 		resourceID = oid.Hex()
 	}
 
-	data := map[string]interface{}{"bootstrap_id": bootstrapID, "resource_id": resourceID}
+	data := map[string]any{"bootstrap_id": bootstrapID, "resource_id": resourceID}
 
-	return map[string]interface{}{"message": "Success", "data": data}, nil
+	return map[string]any{"message": "Success", "data": data}, nil
 }
 
 func (xds *AppHandler) createService(ctx context.Context, serviceName string) error {
@@ -70,7 +72,10 @@ func (xds *AppHandler) createBootstrap(ctx context.Context, listenerGeneral mode
 	collection := xds.Context.Client.Collection("bootstrap")
 	bootstrap := crud.GetBootstrap(listenerGeneral, xds.Context.Config)
 	resource, err := DecodeFromMap(bootstrap)
-	resources.PrepareResource(resource, requestDetails, xds.Context.Logger)
+	if err != nil {
+		return "", err
+	}
+	err = resources.PrepareResource(resource, requestDetails, xds.Context.Logger, xds.ResourceService)
 	if err != nil {
 		return "", err
 	}
@@ -87,10 +92,10 @@ func (xds *AppHandler) createBootstrap(ctx context.Context, listenerGeneral mode
 		return oid.Hex(), nil
 	}
 
-	return "", fmt.Errorf("inserted ID is not a valid ObjectID")
+	return "", errors.New("inserted ID is not a valid ObjectID")
 }
 
-func DecodeFromMap(data map[string]interface{}) (models.DBResourceClass, error) {
+func DecodeFromMap(data map[string]any) (models.DBResourceClass, error) {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil, err

@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+
 	"github.com/sefaphlvn/bigbang/pkg/errstr"
 	"github.com/sefaphlvn/bigbang/pkg/models"
 	"github.com/sefaphlvn/bigbang/pkg/resources"
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type CollectorFunc func(ctx context.Context, resource models.DBResourceClass, requestDetails models.RequestDetails, version string) (models.DBResourceClass, error)
@@ -29,7 +30,7 @@ func (xds *AppHandler) NewBootstrapCollector() *BootstrapCollector {
 	}
 }
 
-func (xds *AppHandler) DownloadBootstrap(ctx context.Context, requestDetails models.RequestDetails) (interface{}, error) {
+func (xds *AppHandler) DownloadBootstrap(ctx context.Context, requestDetails models.RequestDetails) (any, error) {
 	resource := &models.DBResource{}
 	collection := xds.Context.Client.Collection(requestDetails.Collection)
 	filter, err := common.AddResourceIDFilter(requestDetails, bson.M{"general.name": requestDetails.Name})
@@ -78,7 +79,7 @@ func (bc *BootstrapCollector) CollectAll(ctx context.Context, resource models.DB
 func (bc *BootstrapCollector) shouldSkipCollection(resource models.DBResourceClass, collectorName string) (bool, error) {
 	bootstrapMap, ok := resource.GetResource().(primitive.M)
 	if !ok {
-		return false, fmt.Errorf("invalid bootstrap format")
+		return false, errors.New("invalid bootstrap format")
 	}
 
 	switch collectorName {
@@ -112,12 +113,12 @@ func (xds *AppHandler) collectBootstrapClusters(ctx context.Context, resource mo
 
 	staticResources, ok := bootstrapMap["static_resources"].(primitive.M)
 	if !ok {
-		return nil, fmt.Errorf("'static_resources' key not found or invalid")
+		return nil, errors.New("'static_resources' key not found or invalid")
 	}
 
 	clusters, ok := staticResources["clusters"].(primitive.A)
 	if !ok {
-		return nil, fmt.Errorf("'clusters' key not found or invalid")
+		return nil, errors.New("'clusters' key not found or invalid")
 	}
 
 	var clusterNames []string
@@ -142,10 +143,10 @@ func (xds *AppHandler) collectBootstrapClusters(ctx context.Context, resource mo
 	return resource, nil
 }
 
-func (xds *AppHandler) GetNonEdsClusters(ctx context.Context, clusterNames []string, requestDetails models.RequestDetails, version string) ([]interface{}, error) {
+func (xds *AppHandler) GetNonEdsClusters(ctx context.Context, clusterNames []string, requestDetails models.RequestDetails, version string) ([]any, error) {
 	resource := &models.DBResource{}
 	collection := xds.Context.Client.Collection("clusters")
-	results := []interface{}{}
+	results := []any{}
 	for _, clusterName := range clusterNames {
 		filter := bson.M{"general.name": clusterName, "general.project": requestDetails.Project, "general.version": version}
 		result := collection.FindOne(ctx, filter)
@@ -167,7 +168,7 @@ func (xds *AppHandler) GetNonEdsClusters(ctx context.Context, clusterNames []str
 			res := resource.GetResource()
 			cluster, ok := res.(primitive.M)
 			if !ok {
-				return nil, fmt.Errorf("failed to parse cluster")
+				return nil, errors.New("failed to parse cluster")
 			}
 
 			for _, typed := range general.TypedConfig {
@@ -285,12 +286,12 @@ func (xds *AppHandler) collectAccessLoggers(ctx context.Context, resource models
 
 	admin, ok := bootstrapMap["admin"].(primitive.M)
 	if !ok {
-		return nil, fmt.Errorf("'admin' key not found or invalid")
+		return nil, errors.New("'admin' key not found or invalid")
 	}
 
 	accessLog, ok := admin["access_log"].(primitive.A)
 	if !ok {
-		return nil, fmt.Errorf("'access_log' key not found or invalid")
+		return nil, errors.New("'access_log' key not found or invalid")
 	}
 
 	var accessLogs []string
@@ -319,10 +320,10 @@ func (xds *AppHandler) collectAccessLoggers(ctx context.Context, resource models
 	return resource, nil
 }
 
-func (xds *AppHandler) GetAccessLoggers(ctx context.Context, alNames []string, requestDetails models.RequestDetails, version string) ([]interface{}, error) {
+func (xds *AppHandler) GetAccessLoggers(ctx context.Context, alNames []string, requestDetails models.RequestDetails, version string) ([]any, error) {
 	resource := &models.DBResource{}
 	collection := xds.Context.Client.Collection("extensions")
-	results := []interface{}{}
+	results := []any{}
 	for _, alName := range alNames {
 		filter := bson.M{"general.name": alName, "general.project": requestDetails.Project, "general.version": version}
 		result := collection.FindOne(ctx, filter)
@@ -347,7 +348,7 @@ func (xds *AppHandler) GetAccessLoggers(ctx context.Context, alNames []string, r
 		general := resource.GetGeneral()
 		typedConfig := models.TC{
 			Name: general.CanonicalName,
-			TypedConfig: map[string]interface{}{
+			TypedConfig: map[string]any{
 				"@type": "type.googleapis.com/" + general.GType,
 			},
 		}

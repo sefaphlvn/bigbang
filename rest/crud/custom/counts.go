@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sefaphlvn/bigbang/pkg/db"
-	"github.com/sefaphlvn/bigbang/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/sefaphlvn/bigbang/pkg/db"
+	"github.com/sefaphlvn/bigbang/pkg/models"
+	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (custom *AppHandler) GetResourceCounts(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (custom *AppHandler) GetResourceCounts(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	results := make(map[string]int64)
 	var collections []string
 
@@ -20,10 +22,8 @@ func (custom *AppHandler) GetResourceCounts(ctx context.Context, _ models.DBReso
 
 	for _, collectionName := range collections {
 		collection := custom.Context.Client.Collection(collectionName)
-
-		filter := bson.M{
-			"general.project": requestDetails.Project,
-		}
+		filter := bson.M{"general.project": requestDetails.Project}
+		filter = common.AddUserFilter(requestDetails, filter)
 
 		count, err := collection.CountDocuments(ctx, filter)
 		if err != nil {
@@ -36,17 +36,18 @@ func (custom *AppHandler) GetResourceCounts(ctx context.Context, _ models.DBReso
 	return results, nil
 }
 
-func (custom *AppHandler) GetFilterCounts(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (custom *AppHandler) GetFilterCounts(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	groupKey := "$general.canonical_name"
 	if requestDetails.Category != "" {
 		groupKey = "$general.category"
 	}
 	collection := custom.Context.Client.Collection(requestDetails.Collection)
+	filter := bson.M{"general.project": requestDetails.Project}
+	filter = common.AddUserFilter(requestDetails, filter)
+
 	pipeline := mongo.Pipeline{
 		{
-			{Key: "$match", Value: bson.D{
-				{Key: "general.project", Value: requestDetails.Project},
-			}},
+			{Key: "$match", Value: filter},
 		},
 		{
 			{Key: "$group", Value: bson.D{

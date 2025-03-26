@@ -1,6 +1,9 @@
 package models
 
 import (
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
+
 	"github.com/sefaphlvn/bigbang/pkg/models/downstreamfilters"
 	bootstrap "github.com/sefaphlvn/versioned-go-control-plane/envoy/config/bootstrap/v3"
 	cluster "github.com/sefaphlvn/versioned-go-control-plane/envoy/config/cluster/v3"
@@ -45,8 +48,6 @@ import (
 	utm "github.com/sefaphlvn/versioned-go-control-plane/envoy/extensions/path/match/uri_template/v3"
 	tls "github.com/sefaphlvn/versioned-go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	http_protocol_options "github.com/sefaphlvn/versioned-go-control-plane/envoy/extensions/upstreams/http/v3"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 type GTypeMapping struct {
@@ -508,7 +509,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
-	ListenerHttpInspector: {
+	ListenerHTTPInspector: {
 		PrettyName:            "Http Inspector",
 		Collection:            "filters",
 		URL:                   URLs["l_http_inspector"],
@@ -535,7 +536,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
-	ListenerTlsInspector: {
+	ListenerTLSInspector: {
 		PrettyName:            "Original Src",
 		Collection:            "filters",
 		URL:                   URLs["l_original_src"],
@@ -544,7 +545,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
-	ListenerDnsFilter: {
+	ListenerDNSFilter: {
 		PrettyName:            "DNS Filter",
 		Collection:            "filters",
 		URL:                   URLs["l_dns_filter"],
@@ -580,7 +581,7 @@ var gTypeMappings = map[GTypes]GTypeMapping{
 		TypedConfigPaths:      nil,
 		UpstreamPaths:         nil,
 	},
-	HttpLocalRatelimit: {
+	HTTPLocalRatelimit: {
 		PrettyName:            "Local Ratelimit",
 		Collection:            "filters",
 		URL:                   URLs["h_local_ratelimit"],

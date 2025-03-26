@@ -11,7 +11,7 @@ import (
 	"github.com/sefaphlvn/bigbang/pkg/models"
 )
 
-func Validate(gtype models.GTypes, resource interface{}) ([]string, bool, error) {
+func Validate(gtype models.GTypes, resource any) ([]string, bool, error) {
 	msg := gtype.ProtoMessage()
 	if msg == nil {
 		return nil, true, fmt.Errorf("no message found for GType %v", gtype)
@@ -22,7 +22,7 @@ func Validate(gtype models.GTypes, resource interface{}) ([]string, bool, error)
 		s := reflect.ValueOf(resource)
 		var allErrors []string
 
-		for i := 0; i < s.Len(); i++ {
+		for i := range make([]struct{}, s.Len()) {
 			elem := s.Index(i).Interface()
 			if err := validateSingleResource(gtype, elem); err != nil {
 				allErrors = append(allErrors, extractValidationErrors(err)...)
@@ -58,7 +58,7 @@ func extractValidationErrors(err error) []string {
 	return result
 }
 
-func validateSingleResource(gtype models.GTypes, resource interface{}) error {
+func validateSingleResource(gtype models.GTypes, resource any) error {
 	msg := gtype.ProtoMessage()
 	resourceBytes, err := json.Marshal(resource)
 	if err != nil {

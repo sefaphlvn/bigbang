@@ -1,8 +1,6 @@
 package router
 
 import (
-	"log"
-
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
@@ -99,14 +97,17 @@ func initSettingRoutes(rg *gin.RouterGroup, h *handlers.Handler) {
 		{"GET", "/user_list", h.Auth.ListUsers},
 		{"GET", "/user/:user_id", h.Auth.GetUser},
 		{"PUT", "/user/:user_id", h.Auth.SetUpdateUser},
+		{"DELETE", "/user/:user_id", h.Auth.DeleteUser},
 
 		{"GET", "/group_list", h.Auth.ListGroups},
 		{"GET", "/group/:group_id", h.Auth.GetGroup},
 		{"PUT", "/group/:group_id", h.Auth.SetUpdateGroup},
+		{"DELETE", "/group/:group_id", h.Auth.DeleteGroup},
 
 		{"GET", "/project_list", h.Auth.ListProjects},
 		{"GET", "/project/:project_id", h.Auth.GetProject},
 		{"PUT", "/project/:project_id", h.Auth.SetUpdateProject},
+		{"DELETE", "/project/:project_id", h.Auth.DeleteProject},
 
 		{"GET", "/permissions/:kind/:type/:id", h.Auth.GetPermissions},
 	}
@@ -214,9 +215,10 @@ func initRoutes(rg *gin.RouterGroup, routes []struct {
 	}
 }
 
-func logRoutes(r *gin.Engine) {
+/* func logRoutes(r *gin.Engine) {
 	log.Println("Registered Routes:")
 	for _, route := range r.Routes() {
 		log.Printf("Method: %s, Path: %s, Handler: %s\n", route.Method, route.Path, route.Handler)
 	}
 }
+ */

@@ -31,3 +31,4 @@ kind
 .dev
 scripts/
 helm/
+.cursor

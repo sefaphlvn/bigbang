@@ -11,7 +11,7 @@ import (
 	"github.com/sefaphlvn/bigbang/rest/crud/common"
 )
 
-func (extension *AppHandler) ListExtensions(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (interface{}, error) {
+func (extension *AppHandler) ListExtensions(ctx context.Context, _ models.DBResourceClass, requestDetails models.RequestDetails) (any, error) {
 	var records []bson.M
 	collection := extension.Context.Client.Collection(requestDetails.Collection)
 	filter := bson.M{"general.canonical_name": requestDetails.CanonicalName, "general.project": requestDetails.Project}

@@ -22,23 +22,23 @@ func (kt KnownTYPES) String() string {
 	return string(kt)
 }
 
-type ScenarioBody map[string]interface{}
+type ScenarioBody map[string]any
 
 type DBResourceClass interface {
 	GetGeneral() General
 	GetGtype() GTypes
 	SetGeneral(general *General)
-	GetResource() interface{}
-	SetResource(resource interface{})
-	GetVersion() interface{}
+	GetResource() any
+	SetResource(resource any)
+	GetVersion() any
 	GetConfigDiscovery() []*ConfigDiscovery
 	GetTypedConfig() []*TypedConfig
 	SetTypedConfig(typedConfig []*TypedConfig)
-	SetVersion(versionRaw interface{})
+	SetVersion(versionRaw any)
 	SetPermissions(permissions *Permissions)
 
-	SetBootstrapClusters(clusters []interface{})
-	SetBootstrapAccessLoggers(accessLoggers []interface{})
+	SetBootstrapClusters(clusters []any)
+	SetBootstrapAccessLoggers(accessLoggers []any)
 }
 
 type RequestDetails struct {
@@ -78,21 +78,21 @@ type Machine struct {
 }
 
 type General struct {
-	Name            string                 `json:"name" bson:"name"`
-	Version         string                 `json:"version" bson:"version"`
-	Type            KnownTYPES             `json:"type" bson:"type"`
-	GType           GTypes                 `json:"gtype" bson:"gtype"`
-	Project         string                 `json:"project" bson:"project"`
-	Collection      string                 `json:"collection" bson:"collection"`
-	CanonicalName   string                 `json:"canonical_name" bson:"canonical_name"`
-	Category        string                 `json:"category" bson:"category"`
-	Managed         bool                   `json:"managed,omitempty" bson:"managed,omitempty"`
-	Metadata        map[string]interface{} `json:"metadata" bson:"metadata"`
-	Permissions     Permissions            `json:"permissions" bson:"permissions"`
-	ConfigDiscovery []*ConfigDiscovery     `json:"config_discovery,omitempty" bson:"config_discovery,omitempty"`
-	TypedConfig     []*TypedConfig         `json:"typed_config,omitempty" bson:"typed_config,omitempty"`
-	CreatedAt       primitive.DateTime     `json:"created_at,omitempty" bson:"created_at,omitempty"`
-	UpdatedAt       primitive.DateTime     `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	Name            string             `json:"name" bson:"name"`
+	Version         string             `json:"version" bson:"version"`
+	Type            KnownTYPES         `json:"type" bson:"type"`
+	GType           GTypes             `json:"gtype" bson:"gtype"`
+	Project         string             `json:"project" bson:"project"`
+	Collection      string             `json:"collection" bson:"collection"`
+	CanonicalName   string             `json:"canonical_name" bson:"canonical_name"`
+	Category        string             `json:"category" bson:"category"`
+	Managed         bool               `json:"managed,omitempty" bson:"managed,omitempty"`
+	Metadata        map[string]any     `json:"metadata" bson:"metadata"`
+	Permissions     Permissions        `json:"permissions" bson:"permissions"`
+	ConfigDiscovery []*ConfigDiscovery `json:"config_discovery,omitempty" bson:"config_discovery,omitempty"`
+	TypedConfig     []*TypedConfig     `json:"typed_config,omitempty" bson:"typed_config,omitempty"`
+	CreatedAt       primitive.DateTime `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt       primitive.DateTime `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 }
 
 type Permissions struct {
@@ -122,8 +122,8 @@ type TypedConfig struct {
 }
 
 type TC struct {
-	Name        string                 `json:"name" bson:"name"`
-	TypedConfig map[string]interface{} `json:"typed_config" bson:"typed_config"`
+	Name        string         `json:"name" bson:"name"`
+	TypedConfig map[string]any `json:"typed_config" bson:"typed_config"`
 }
 
 type DBResource struct {
@@ -133,8 +133,8 @@ type DBResource struct {
 }
 
 type Resource struct {
-	Version  string      `json:"version" bson:"version"`
-	Resource interface{} `json:"resource" bson:"resource"`
+	Version  string `json:"version" bson:"version"`
+	Resource any    `json:"resource" bson:"resource"`
 }
 
 func (d *DBResource) GetGeneral() General {
@@ -145,11 +145,11 @@ func (d *DBResource) GetGtype() GTypes {
 	return d.General.GType
 }
 
-func (d *DBResource) GetResource() interface{} {
+func (d *DBResource) GetResource() any {
 	return d.Resource.Resource
 }
 
-func (d *DBResource) GetVersion() interface{} {
+func (d *DBResource) GetVersion() any {
 	return d.Resource.Version
 }
 
@@ -165,7 +165,7 @@ func (d *DBResource) SetTypedConfig(typedConfig []*TypedConfig) {
 	d.General.TypedConfig = typedConfig
 }
 
-func (d *DBResource) SetVersion(versionRaw interface{}) {
+func (d *DBResource) SetVersion(versionRaw any) {
 	version, ok := versionRaw.(string)
 	if !ok {
 		d.Resource.Version = "0"
@@ -174,17 +174,17 @@ func (d *DBResource) SetVersion(versionRaw interface{}) {
 	d.Resource.Version = version
 }
 
-func (d *DBResource) SetResource(resource interface{}) {
+func (d *DBResource) SetResource(resource any) {
 	d.Resource.Resource = resource
 }
 
-func (d *DBResource) SetBootstrapClusters(clusters []interface{}) {
+func (d *DBResource) SetBootstrapClusters(clusters []any) {
 	resourceMap, ok := d.Resource.Resource.(primitive.M)
 	if !ok {
-		fmt.Errorf("failed to parse Resource.Resource as map[string]interface{}, got type: %T", d.Resource.Resource)
+		fmt.Printf("failed to parse Resource.Resource as map[string]any, got type: %T\n", d.Resource.Resource)
+		return
 	}
 
-	//fmt.Printf("Type: %T\nValue: %+v\n", resourceMap, resourceMap)
 	staticResources, ok := resourceMap["static_resources"].(primitive.M)
 	if !ok || staticResources == nil {
 		staticResources = make(primitive.M)
@@ -195,10 +195,11 @@ func (d *DBResource) SetBootstrapClusters(clusters []interface{}) {
 	d.Resource.Resource = resourceMap
 }
 
-func (d *DBResource) SetBootstrapAccessLoggers(accessLoggers []interface{}) {
+func (d *DBResource) SetBootstrapAccessLoggers(accessLoggers []any) {
 	resourceMap, ok := d.Resource.Resource.(primitive.M)
 	if !ok {
-		fmt.Errorf("failed to parse Resource.Resource as map[string]interface{}, got type: %T", d.Resource.Resource)
+		fmt.Printf("failed to parse Resource.Resource as map[string]any, got type: %T\n", d.Resource.Resource)
+		return
 	}
 
 	admin, ok := resourceMap["admin"].(primitive.M)

@@ -14,13 +14,7 @@ func AddUserFilter(details models.RequestDetails, mainFilter bson.M) bson.M {
 		mainFilter = bson.M{}
 	}
 
-	userFilter := bson.M{
-		"$or": []bson.M{
-			{"general.project": details.Project},
-			{"general.project": "shared"},
-		},
-	}
-
+	userFilter := bson.M{}
 	if !details.User.IsOwner && details.User.Role != models.RoleAdmin {
 		userFilter = bson.M{
 			"$or": []bson.M{
@@ -29,6 +23,8 @@ func AddUserFilter(details models.RequestDetails, mainFilter bson.M) bson.M {
 			},
 		}
 	}
+
+	mainFilter["general.project"] = details.Project
 
 	for key, value := range userFilter {
 		mainFilter[key] = value

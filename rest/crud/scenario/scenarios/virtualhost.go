@@ -1,6 +1,6 @@
 package scenarios
 
-const virtual_host = `
+const virtualHost = `
 {
 	"general": {
 		"name": "{{ .Data.name }}",

@@ -6,10 +6,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/sefaphlvn/bigbang/grpc/server/snapshot"
 )
 
 func ResetGrpcServerNodeIDs(dbClient *mongo.Database) {
@@ -28,7 +29,7 @@ func ResetGrpcServerNodeIDs(dbClient *mongo.Database) {
 	_, _ = collection.UpdateOne(context.TODO(), filter, update, opts)
 }
 
-func AddOrUpdateGrpcServer(dbClient *mongo.Database, address, nodeID string) error {
+func AddOrUpdateGrpcServer(dbClient *mongo.Database, address, nodeID string) {
 	currentTime := time.Now().Unix()
 	collection := dbClient.Collection("grpc_servers")
 
@@ -45,27 +46,12 @@ func AddOrUpdateGrpcServer(dbClient *mongo.Database, address, nodeID string) err
 
 	opts := options.Update().SetUpsert(true)
 	_, err := collection.UpdateOne(context.TODO(), filter, update, opts)
-	return err
-}
-
-func isNodeIDUnique(dbClient *mongo.Database, nodeID string) (bool, error) {
-	collection := dbClient.Collection("grpc_servers")
-	filter := bson.M{
-		"$or": bson.A{
-			bson.M{"nodeIDs": nodeID},
-			bson.M{"name": GetHostname()},
-		},
-	}
-
-	count, err := collection.CountDocuments(context.TODO(), filter)
 	if err != nil {
-		return false, err
+		fmt.Printf("Error adding or updating GRPC server: %v\n", err)
 	}
-
-	return count == 0, nil
 }
 
-func RemoveNodeID(dbClient *mongo.Database, nodeID string) error {
+func RemoveNodeID(dbClient *mongo.Database, nodeID string) {
 	collection := dbClient.Collection("grpc_servers")
 
 	filter := bson.M{"name": GetHostname()}
@@ -76,7 +62,9 @@ func RemoveNodeID(dbClient *mongo.Database, nodeID string) error {
 	}
 
 	_, err := collection.UpdateOne(context.TODO(), filter, update)
-	return err
+	if err != nil {
+		fmt.Printf("Error removing node ID: %v\n", err)
+	}
 }
 
 func GetHostname() string {
@@ -98,25 +86,25 @@ func SetNodeIDs(ctxCache *snapshot.Context, client *mongo.Database) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			nodeIDs := ctxCache.Cache.Cache.GetStatusKeys()
-			fmt.Println("Snapshot Keys:", nodeIDs)
+	for range ticker.C {
+		nodeIDs := ctxCache.Cache.Cache.GetStatusKeys()
+		fmt.Println("Snapshot Keys:", nodeIDs)
 
-			currentTime := time.Now().Unix()
-			collection := client.Collection("grpc_servers")
+		currentTime := time.Now().Unix()
+		collection := client.Collection("grpc_servers")
 
-			filter := bson.M{"name": GetHostname()}
-			update := bson.M{
-				"$set": bson.M{
-					"lastSync": currentTime,
-					"nodeIDs":  nodeIDs,
-				},
-			}
+		filter := bson.M{"name": GetHostname()}
+		update := bson.M{
+			"$set": bson.M{
+				"lastSync": currentTime,
+				"nodeIDs":  nodeIDs,
+			},
+		}
 
-			opts := options.Update().SetUpsert(false)
-			collection.UpdateOne(context.TODO(), filter, update, opts)
+		opts := options.Update().SetUpsert(false)
+		_, err := collection.UpdateOne(context.TODO(), filter, update, opts)
+		if err != nil {
+			fmt.Printf("Error updating GRPC server node IDs: %v\n", err)
 		}
 	}
 }
